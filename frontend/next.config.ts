@@ -9,6 +9,19 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  images: {
+    // Allow images from any external domain (RSS feeds can have various sources)
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

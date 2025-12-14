@@ -15,16 +15,16 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
   // Register height for an item - debounced and only updates if significantly different
   const registerHeight = useCallback((itemId: number, height: number) => {
     const currentHeight = heightsRef.current.get(itemId) || 0;
-    
+
     // Only update if height changed by more than 20px (avoid micro-adjustments)
     if (Math.abs(currentHeight - height) > 20) {
       pendingUpdatesRef.current.set(itemId, height);
-      
+
       // Debounce updates to batch them together
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
-      
+
       updateTimeoutRef.current = setTimeout(() => {
         if (pendingUpdatesRef.current.size > 0) {
           setItemHeights(prev => {
@@ -50,7 +50,7 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
     // Process items in groups of `columns` size
     for (let i = 0; i < items.length; i += columns) {
       const group = items.slice(i, i + columns);
-      
+
       // Sort group items by their heights (largest first) for better distribution
       const sortedGroup = [...group].sort((a, b) => {
         const heightA = itemHeights.get(a.id) || 300;
@@ -62,7 +62,7 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
       sortedGroup.forEach(item => {
         const shortestColumnIndex = columnHeights.indexOf(Math.min(...columnHeights));
         result[shortestColumnIndex].push(item);
-        
+
         const itemHeight = itemHeights.get(item.id) || 300;
         columnHeights[shortestColumnIndex] += itemHeight;
       });
@@ -77,9 +77,9 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
 // Wrapper component to measure item height
 const MeasuredItem: FC<{
   item: RSSItem;
-  onImageClick: (src: string) => void;
+  onMediaClick: (src: string, type: 'image' | 'video') => void;
   onHeightChange: (id: number, height: number) => void;
-}> = ({ item, onImageClick, onHeightChange }) => {
+}> = ({ item, onMediaClick, onHeightChange }) => {
   const ref = useRef<HTMLDivElement>(null);
   const lastHeightRef = useRef<number>(0);
 
@@ -105,7 +105,7 @@ const MeasuredItem: FC<{
     const imageLoadHandler = () => {
       setTimeout(measureHeight, 50);
     };
-    
+
     images.forEach(img => {
       if (!img.complete) {
         img.addEventListener('load', imageLoadHandler);
@@ -128,7 +128,7 @@ const MeasuredItem: FC<{
 
   return (
     <div ref={ref}>
-      <FeedItemRenderer item={item} onImageClick={onImageClick} />
+      <FeedItemRenderer item={item} onMediaClick={onMediaClick} />
     </div>
   );
 };
@@ -152,19 +152,28 @@ export const FeedItemViewer: FC<{
   const { columnItems, registerHeight } = useMasonryLayout(items, columns);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalImage, setModalImage] = useState<string>('');
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string } | null>(null);
+
+  // Multiple sentinel refs for each column
+  const sentinelRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Use ref to always have access to latest callback
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
+
+  // Callback ref setter for sentinel elements
+  const setSentinelRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
+    sentinelRefs.current[index] = el;
+  }, []);
 
   useEffect(() => {
     if (!hasNext || loading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && onLoadMoreRef.current) {
+        // If any sentinel is intersecting, load more
+        const isAnyIntersecting = entries.some(entry => entry.isIntersecting);
+        if (isAnyIntersecting && onLoadMoreRef.current) {
           onLoadMoreRef.current();
           console.log("Loading more items...");
         }
@@ -172,15 +181,18 @@ export const FeedItemViewer: FC<{
       { threshold: 0.1, rootMargin: '100px' }
     );
 
-    if (sentinelRef.current) {
-      observer.observe(sentinelRef.current);
-    }
+    // Observe all sentinel elements
+    sentinelRefs.current.forEach(ref => {
+      if (ref) {
+        observer.observe(ref);
+      }
+    });
 
     return () => observer.disconnect();
-  }, [hasNext, loading]);
+  }, [hasNext, loading, columns]);
 
-  const handleImageClick = useCallback((src: string) => {
-    setModalImage(src);
+  const handleMediaClick = useCallback((src: string, type: 'image' | 'video' = 'image') => {
+    setModalMedia({ type, src });
     setModalOpen(true);
   }, []);
 
@@ -195,8 +207,15 @@ export const FeedItemViewer: FC<{
         {viewMode === 'board' ? (
           <Stack width="100%">
             {items.map((item) => (
-              <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
+              <FeedItemRenderer key={item.id} item={item} onMediaClick={handleMediaClick} />
             ))}
+            {/* Sentinel element for board mode */}
+            {hasNext && (
+              <div
+                ref={setSentinelRef(0)}
+                style={{ height: "1px", width: "100%" }}
+              />
+            )}
           </Stack>
         ) : (
           columnItems.map((columnData, columnIndex) => (
@@ -206,24 +225,67 @@ export const FeedItemViewer: FC<{
                   <MeasuredItem
                     key={item.id}
                     item={item}
-                    onImageClick={handleImageClick}
+                    onMediaClick={handleMediaClick}
                     onHeightChange={registerHeight}
                   />
                 ))}
+                {/* Sentinel element at the end of each column */}
+                {hasNext && (
+                  <div
+                    ref={setSentinelRef(columnIndex)}
+                    style={{ height: "1px", width: "100%" }}
+                  />
+                )}
               </Stack>
             </Grid>
           ))
         )}
-        {/* Sentinel element for infinite scroll */}
-        <div ref={sentinelRef} style={{ height: "1px", width: "100%" }} />
       </Grid>
       <Modal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setModalMedia(null);
+        }}
         sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        <Box sx={{ maxWidth: '90%', maxHeight: '90%' }}>
-          <img src={modalImage} alt="Enlarged" style={{ maxWidth: '100%', maxHeight: '100%' }} />
+        <Box 
+          sx={{ 
+            width: '90vw', 
+            height: '90vh', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            outline: 'none'
+          }}
+          onClick={() => {
+            setModalOpen(false);
+            setModalMedia(null);
+          }}
+        >
+          {modalMedia?.type === 'video' ? (
+            <video
+              src={modalMedia.src}
+              controls
+              autoPlay
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '100%',
+                objectFit: 'contain'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : modalMedia?.type === 'image' ? (
+            <img 
+              src={modalMedia.src} 
+              alt="Enlarged" 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '100%',
+                objectFit: 'contain'
+              }} 
+            />
+          ) : null}
         </Box>
       </Modal>
     </>

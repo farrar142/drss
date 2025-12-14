@@ -1,36 +1,198 @@
 import { CheckCircle, Favorite } from "@mui/icons-material";
 import { IconButton, Stack } from "@mui/material";
 import parse from 'html-react-parser';
+import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 
-const renderDescription = (description: string, onImageClick: (url: string) => void, onVideoMount: (video: HTMLVideoElement) => void) => {
+// Custom Image component for RSS content
+const RSSImage: FC<{
+  src: string;
+  alt?: string;
+  onClick: () => void;
+}> = ({ src, alt = '', onClick }) => {
+  const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
+
+  // Calculate aspect ratio based height when image loads
+  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    setLoaded(true);
+  };
+
+  // For images without known dimensions, use regular img tag for proper aspect ratio
+  if (error) {
+    // Fallback to regular img tag if Next.js Image fails
+    return (
+      <img
+        src={src}
+        alt={alt}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick();
+        }}
+        loading="lazy"
+        style={{
+          display: 'block',
+          width: '100%',
+          height: 'auto',
+          cursor: 'pointer'
+        }}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={naturalSize?.width || 800}
+      height={naturalSize?.height || 600}
+      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+      style={{
+        width: '100%',
+        height: 'auto',
+        cursor: 'pointer',
+        opacity: loaded ? 1 : 0,
+        transition: 'opacity 0.2s'
+      }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick();
+      }}
+      onLoad={handleLoad}
+      onError={() => setError(true)}
+      loading="lazy"
+      unoptimized={src.startsWith('data:')} // Data URLs should not be optimized
+    />
+  );
+};
+
+// Custom Video component with intersection observer for autoplay
+const RSSVideo: FC<{
+  src?: string;
+  poster?: string;
+  className?: string;
+  onClick?: () => void;
+  [key: string]: any;
+}> = ({ src, poster, className, onClick, ...props }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => { });
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      poster={poster}
+      className={className}
+      muted
+      loop
+      playsInline
+      controls
+      preload="metadata"
+      style={{
+        display: 'block',
+        width: '100%',
+        height: 'auto',
+        cursor: onClick ? 'pointer' : undefined
+      }}
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
+      {...props}
+    />
+  );
+};
+
+const renderDescription = (description: string, onMediaClick: (url: string, type: 'image' | 'video') => void) => {
+  // Helper to check if a node contains an img or video
+  const hasMediaChild = (node: any): boolean => {
+    if (!node.children) return false;
+    return node.children.some((child: any) => 
+      child.name === 'img' || child.name === 'video' || hasMediaChild(child)
+    );
+  };
+
   return parse(description, {
     replace: (domNode: any) => {
       if (domNode.attribs && domNode.attribs.class) {
         domNode.attribs.className = domNode.attribs.class;
         delete domNode.attribs.class;
       }
+      
+      // Handle <a> tags that wrap images - remove the link wrapper
+      if (domNode.name === 'a' && hasMediaChild(domNode)) {
+        // Return just the children without the <a> wrapper
+        return <>{domNode.children?.map((child: any, index: number) => {
+          if (child.name === 'img') {
+            const src = child.attribs?.src;
+            const alt = child.attribs?.alt || '';
+            if (!src) return null;
+            return (
+              <RSSImage
+                key={index}
+                src={src}
+                alt={alt}
+                onClick={() => onMediaClick(src, 'image')}
+              />
+            );
+          }
+          return null;
+        })}</>;
+      }
+      
       if (domNode.name === 'img') {
+        const src = domNode.attribs.src;
+        const alt = domNode.attribs.alt || '';
+
+        // Skip if no src
+        if (!src) return null;
+
         return (
-          <img
-            {...domNode.attribs}
-            onClick={() => onImageClick(domNode.attribs.src)}
-            style={{ display: 'block', margin: '0 auto', maxWidth: '100%', height: 'auto' }}
+          <RSSImage
+            src={src}
+            alt={alt}
+            onClick={() => onMediaClick(src, 'image')}
           />
         );
       }
       if (domNode.name === 'video') {
+        const { class: _, src, ...attribs } = domNode.attribs;
+        const videoSrc = src || attribs.source;
         return (
-          <video
-            {...domNode.attribs}
-            muted
-            loop
-            style={{ display: 'block', margin: '0 auto', maxWidth: '100%', height: 'auto' }}
-            controls
-            ref={(el) => el && onVideoMount(el)}
+          <RSSVideo
+            src={videoSrc}
+            onClick={() => videoSrc && onMediaClick(videoSrc, 'video')}
+            {...attribs}
           />
         );
       }
@@ -40,33 +202,14 @@ const renderDescription = (description: string, onImageClick: (url: string) => v
 
 export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   item: RSSItem,
-  onImageClick: (url: string) => void
-}>(({ item, onImageClick }, ref) => {
+  onMediaClick: (url: string, type: 'image' | 'video') => void
+}>(({ item, onMediaClick }, ref) => {
   const { viewMode } = useRSSStore()
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const onVideoMount = useCallback((video: HTMLVideoElement) => {
-    observerRef.current?.observe(video);
-  }, []);
-
-  const description = useMemo(() => renderDescription(item.description, onImageClick, onVideoMount), [item.description, onImageClick, onVideoMount]);
-
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const video = entry.target as HTMLVideoElement;
-        if (entry.isIntersecting) {
-          video.play().catch(() => { });
-        } else {
-          video.pause();
-        }
-      });
-    });
-    return () => observerRef.current?.disconnect();
-  }, []);
+  const description = useMemo(() => renderDescription(item.description, onMediaClick), [item.description, onMediaClick]);
 
   const handleToggleFavorite = useCallback(async () => {
     try {
