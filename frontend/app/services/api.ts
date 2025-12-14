@@ -95,6 +95,14 @@ export interface ItemSchema {
   is_favorite: boolean;
 }
 
+export type PaginatedResponseItemSchemaNextCursor = string | null;
+
+export interface PaginatedResponseItemSchema {
+  items: ItemSchema[];
+  has_next: boolean;
+  next_cursor?: PaginatedResponseItemSchemaNextCursor;
+}
+
 export interface LoginResponse {
   token: string;
   user: UserResponse;
@@ -130,6 +138,9 @@ export type FeedsRoutersItemListAllItemsParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
+limit?: number;
+cursor?: string | null;
+direction?: string;
 };
 
 /**
@@ -342,7 +353,7 @@ export const feedsRoutersItemToggleItemRead = (
 export const feedsRoutersItemListAllItems = (
     params?: FeedsRoutersItemListAllItemsParams,
  ) => {
-      return axiosInstance<ItemSchema[]>(
+      return axiosInstance<PaginatedResponseItemSchema>(
       {url: `/api/items/`, method: 'GET',
         params
     },

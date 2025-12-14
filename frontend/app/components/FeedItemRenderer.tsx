@@ -1,7 +1,7 @@
 import { CheckCircle, Favorite } from "@mui/icons-material";
 import { IconButton, Stack } from "@mui/material";
 import parse from 'html-react-parser';
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
@@ -38,10 +38,10 @@ const renderDescription = (description: string, onImageClick: (url: string) => v
   });
 }
 
-export const FeedItemRenderer: FC<{
+export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   item: RSSItem,
   onImageClick: (url: string) => void
-}> = ({ item, onImageClick }) => {
+}>(({ item, onImageClick }, ref) => {
   const { viewMode } = useRSSStore()
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
@@ -100,6 +100,7 @@ export const FeedItemRenderer: FC<{
 
   return (
     <div
+      ref={ref}
       key={item.id}
       style={{ padding: '8px', borderBottom: '1px solid #ccc' }}
       onClick={() => setCollapsed(!collapsed)}
@@ -113,4 +114,4 @@ export const FeedItemRenderer: FC<{
       )}
     </div>
   )
-}
+});

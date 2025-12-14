@@ -1,12 +1,14 @@
-import { FC, useState, useCallback, useMemo, } from "react";
+import { FC, useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
 import { Stack, Modal, Box, IconButton, Button, Grid, useTheme, useMediaQuery } from "@mui/material";
 import { FeedItemRenderer } from "./FeedItemRenderer";
 
 export const FeedItemViewer: FC<{
-  items: RSSItem[]
-}> = ({ items }) => {
+  items: RSSItem[],
+  onLoadMore?: () => void,
+  hasNext?: boolean
+}> = ({ items, onLoadMore, hasNext }) => {
   const { viewMode } = useRSSStore();
   const theme = useTheme();
   const isMd = useMediaQuery(theme.breakpoints.down("md"));
@@ -30,6 +32,27 @@ export const FeedItemViewer: FC<{
   const chunkedItems = useMemo(() => chunk(items, columns), [items, columns]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState<string>('');
+  const lastItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onLoadMore || !hasNext) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (lastItemRef.current) {
+      observer.observe(lastItemRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [onLoadMore, hasNext, items.length]); // items.length를 추가해서 아이템이 추가될 때마다 재설정
+
 
   const handleImageClick = useCallback((src: string) => {
     setModalImage(src);
@@ -39,15 +62,17 @@ export const FeedItemViewer: FC<{
   return (
     <>
       <Grid container width="100%">
-        {viewMode === 'board' ? <Stack>{items.map(item => (
-          <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
+        {viewMode === 'board' ? <Stack>{items.map((item, index) => (
+          <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} ref={index === items.length - 1 ? lastItemRef : null} />
         ))}</Stack> : chunkedItems.map((row, rowIndex) => (
           <Grid key={rowIndex} spacing={2} size={12 / columns}>
-            {row.map(item => (
+            {row.map((item, itemIndex) => (
               <Stack key={item.id} >
-                <FeedItemRenderer item={item} onImageClick={handleImageClick} />
+                <FeedItemRenderer item={item} onImageClick={handleImageClick} ref={rowIndex === chunkedItems.length - 1 && itemIndex === row.length - 1 ? lastItemRef : null} />
               </Stack>
             ))}
+
+            <div ref={lastItemRef}></div>
           </Grid>
         ))}
       </Grid>
