@@ -23,7 +23,6 @@ export const CategoryDrawer: FC<{
     const [addCategoryOpen, setAddCategoryOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryDescription, setNewCategoryDescription] = useState('');
-    console.log(feeds)
     useEffect(() => {
         feedsRouterListFeeds().then(setFeeds)
     }, [setFeeds])

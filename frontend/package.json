@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "get-api": "curl -o ./openapi.json http://localhost:8000/api/openapi.json",
     "generate-api": "orval"
   },
   "dependencies": {
