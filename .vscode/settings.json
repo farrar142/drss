@@ -1,0 +1,11 @@
+{
+    "python.analysis.extraPaths": [
+        "./backend" // 'backend' 디렉토리를 소스 루트로 추가
+    ],
+    "python.analysis.autoSearchPaths": true,
+    "python.linting.pylintArgs": [
+        "--init-hook",
+        "import sys; sys.path.append('backend')"
+    ]
+    // 다른 VS Code 설정은 그대로 두시면 됩니다.
+}

@@ -1,10 +1,8 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
-WORKDIR /code
+WORKDIR /usr/src/app
 
-COPY requirements.txt /code/
-RUN pip install -r requirements.txt
-
-COPY . /code/
+COPY ./pyproject.toml ./pyproject.toml
+RUN pip install .
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
