@@ -88,6 +88,32 @@ export interface FeedCreateSchema {
   refresh_interval?: number;
 }
 
+export type FeedUpdateSchemaCategoryId = number | null;
+
+export type FeedUpdateSchemaUrl = string | null;
+
+export type FeedUpdateSchemaTitle = string | null;
+
+export type FeedUpdateSchemaDescription = string | null;
+
+export type FeedUpdateSchemaVisible = boolean | null;
+
+export type FeedUpdateSchemaCustomHeadersAnyOf = { [key: string]: unknown };
+
+export type FeedUpdateSchemaCustomHeaders = FeedUpdateSchemaCustomHeadersAnyOf | null;
+
+export type FeedUpdateSchemaRefreshInterval = number | null;
+
+export interface FeedUpdateSchema {
+  category_id?: FeedUpdateSchemaCategoryId;
+  url?: FeedUpdateSchemaUrl;
+  title?: FeedUpdateSchemaTitle;
+  description?: FeedUpdateSchemaDescription;
+  visible?: FeedUpdateSchemaVisible;
+  custom_headers?: FeedUpdateSchemaCustomHeaders;
+  refresh_interval?: FeedUpdateSchemaRefreshInterval;
+}
+
 export interface ItemSchema {
   id: number;
   feed_id: number;
@@ -251,6 +277,21 @@ export const feedsRouterCreateFeed = (
     }
   
 /**
+ * @summary Update Feed
+ */
+export const feedsRouterUpdateFeed = (
+    feedId: number,
+    feedUpdateSchema: FeedUpdateSchema,
+ ) => {
+      return axiosInstance<FeedSchema>(
+      {url: `/api/feeds/feeds/${feedId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: feedUpdateSchema
+    },
+      );
+    }
+  
+/**
  * @summary Delete Feed
  */
 export const feedsRouterDeleteFeed = (
@@ -263,25 +304,25 @@ export const feedsRouterDeleteFeed = (
     }
   
 /**
- * @summary List Feed Items
+ * @summary Refresh Feed
  */
-export const feedsRouterListFeedItems = (
+export const feedsRouterRefreshFeed = (
     feedId: number,
  ) => {
-      return axiosInstance<ItemSchema[]>(
-      {url: `/api/feeds/feeds/${feedId}/items`, method: 'GET'
+      return axiosInstance<void>(
+      {url: `/api/feeds/feeds/${feedId}/refresh`, method: 'POST'
     },
       );
     }
   
 /**
- * @summary Mark Item Read
+ * @summary Mark All Feed Items Read
  */
-export const feedsRouterMarkItemRead = (
-    itemId: number,
+export const feedsRouterMarkAllFeedItemsRead = (
+    feedId: number,
  ) => {
       return axiosInstance<void>(
-      {url: `/api/feeds/items/${itemId}/read`, method: 'PUT'
+      {url: `/api/feeds/feeds/${feedId}/mark-all-read`, method: 'PUT'
     },
       );
     }
@@ -334,9 +375,10 @@ export type FeedsRouterUpdateCategoryResult = NonNullable<Awaited<ReturnType<typ
 export type FeedsRouterDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteCategory>>>
 export type FeedsRouterListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeeds>>>
 export type FeedsRouterCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateFeed>>>
+export type FeedsRouterUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateFeed>>>
 export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteFeed>>>
-export type FeedsRouterListFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeedItems>>>
-export type FeedsRouterMarkItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkItemRead>>>
+export type FeedsRouterRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshFeed>>>
+export type FeedsRouterMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkAllFeedItemsRead>>>
 export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
 export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>
 export type FeedsRouterGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetCategoryStats>>>

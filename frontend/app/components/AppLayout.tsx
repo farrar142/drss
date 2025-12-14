@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import React, { useState, useEffect, FC } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import {
     Box,
     Typography,
@@ -24,8 +24,6 @@ import {
     InputBase,
     Menu,
     MenuItem,
-    FormControl,
-    Select,
     SelectChangeEvent,
     Card,
     CardContent,
@@ -40,20 +38,23 @@ import {
     Add as AddIcon,
     Delete as DeleteIcon,
     Edit as EditIcon,
-    Search as SearchIcon,
-    Settings as SettingsIcon,
     Logout as LogoutIcon,
     Category as CategoryIcon,
     RssFeed as RssFeedIcon,
+    FilterList as FilterListIcon,
+    Search as SearchIcon,
+    Settings as SettingsIcon,
     Favorite as FavoriteIcon,
     BookmarkBorder as BookmarkBorderIcon,
     ViewList as ViewListIcon,
     ViewModule as ViewModuleIcon,
-    FilterList as FilterListIcon,
     Menu as MenuIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
-const DRAWER_WIDTH = 240;
+import { RSSCategory, RSSFeed } from '../types/rss';
+import { feedsRouterListCategories, feedsRouterValidateFeed, feedsRouterCreateCategory } from '../services/api';
+import { CategoryDrawer } from './CategoryDrawer';
+
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -61,30 +62,15 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
     const router = useRouter();
-    const pathname = usePathname();
+    const pathname = usePathname()
     const { user, logout } = useAuth();
 
     // UI 상태
     const [drawerOpen, setDrawerOpen] = useState(true);
-    const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
     const [searchQuery, setSearchQuery] = useState('');
     const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'favorite'>('all');
     const [viewMode, setViewMode] = useState<'titles' | 'categories'>('categories');
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
-
-    // 폼 상태
-
-    // URL에서 현재 선택된 카테고리/피드 파악하여 drawer 상태 설정
-    useEffect(() => {
-        if (pathname.startsWith('/category/')) {
-            const categoryId = parseInt(pathname.split('/')[2]);
-            if (categoryId) {
-                setExpandedCategories(new Set([categoryId]));
-            }
-        } else {
-            setExpandedCategories(new Set());
-        }
-    }, [pathname]);
 
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen);
@@ -101,16 +87,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     const handleLogout = () => {
         logout();
-        router.push('/auth/login');
+        router.push('/auth/signin');
     };
 
     const handleSearch = async () => {
         // 검색 기능 구현
         console.log('Search:', searchQuery);
-    };
-
-    const handleFilterChange = (event: SelectChangeEvent) => {
-        setFilter(event.target.value as 'all' | 'unread' | 'read' | 'favorite');
     };
 
     const handleViewModeChange = () => {
@@ -156,26 +138,56 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             }}
                             startAdornment={<SearchIcon sx={{ mr: 1 }} />}
                         />
-                        <FormControl size="small" sx={{ minWidth: 100 }}>
-                            <Select
-                                value={filter}
-                                onChange={handleFilterChange}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton
+                                color="inherit"
+                                size="small"
+                                onClick={() => setFilter('all')}
                                 sx={{
-                                    color: 'inherit',
-                                    '& .MuiOutlinedInput-notchedOutline': {
-                                        borderColor: 'rgba(255, 255, 255, 0.23)',
-                                    },
-                                    '& .MuiSvgIcon-root': {
-                                        color: 'inherit',
-                                    },
+                                    bgcolor: filter === 'all' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
                                 }}
+                                title="전체"
                             >
-                                <MenuItem value="all">전체</MenuItem>
-                                <MenuItem value="unread">읽지 않음</MenuItem>
-                                <MenuItem value="read">읽음</MenuItem>
-                                <MenuItem value="favorite">즐겨찾기</MenuItem>
-                            </Select>
-                        </FormControl>
+                                <ViewListIcon />
+                            </IconButton>
+                            <IconButton
+                                color="inherit"
+                                size="small"
+                                onClick={() => setFilter('unread')}
+                                sx={{
+                                    bgcolor: filter === 'unread' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                                }}
+                                title="읽지 않음"
+                            >
+                                <BookmarkBorderIcon />
+                            </IconButton>
+                            <IconButton
+                                color="inherit"
+                                size="small"
+                                onClick={() => setFilter('read')}
+                                sx={{
+                                    bgcolor: filter === 'read' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                                }}
+                                title="읽음"
+                            >
+                                <ViewModuleIcon />
+                            </IconButton>
+                            <IconButton
+                                color="inherit"
+                                size="small"
+                                onClick={() => setFilter('favorite')}
+                                sx={{
+                                    bgcolor: filter === 'favorite' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                                }}
+                                title="즐겨찾기"
+                            >
+                                <FavoriteIcon />
+                            </IconButton>
+                        </Box>
                         <IconButton color="inherit" onClick={handleViewModeChange}>
                             {viewMode === 'titles' ? <ViewModuleIcon /> : <ViewListIcon />}
                         </IconButton>
@@ -193,6 +205,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </Box>
                 </Toolbar>
             </AppBar>
+            <CategoryDrawer open={drawerOpen} pathname={pathname} />
         </Box>
     );
 }
