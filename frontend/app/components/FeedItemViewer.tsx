@@ -4,7 +4,7 @@ import { useRSSStore } from "../stores/rssStore";
 import { Stack, Modal, Box, IconButton, Button, Grid } from "@mui/material";
 import { CheckCircle, Favorite, ExpandMore, ExpandLess } from "@mui/icons-material";
 import parse from 'html-react-parser';
-import { feedsRouterToggleItemFavorite } from "../services/api";
+import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
 
 export const FeedItemViewer: FC<{
   items: RSSItem[]
@@ -88,9 +88,14 @@ const FeedItemRenderer: FC<{
     }
   }, [item.id, isFavorite]);
 
-  const handleToggleRead = useCallback(() => {
-    setIsRead(!isRead);
-  }, [isRead]);
+  const handleToggleRead = useCallback(async () => {
+    try {
+      await feedsRouterToggleItemRead(item.id);
+      setIsRead(!isRead);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [item.id, isRead]);
 
   const titleElement = (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

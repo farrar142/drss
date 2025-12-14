@@ -272,6 +272,14 @@ def toggle_item_favorite(request, item_id: int):
     return {"success": True, "is_favorite": item.is_favorite}
 
 
+@router.put("/items/{item_id}/read", auth=JWTAuth())
+def toggle_item_read(request, item_id: int):
+    item = get_object_or_404(RSSItem, id=item_id, feed__user=request.auth)
+    item.is_read = not item.is_read
+    item.save()
+    return {"success": True, "is_read": item.is_read}
+
+
 class ItemFilterSchema(Schema):
     is_read: bool = None
     is_favorite: bool = None

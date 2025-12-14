@@ -5,37 +5,6 @@
  * OpenAPI spec version: 1.0.0
  */
 import { axiosInstance } from '../utils/axiosInstance';
-export interface LoginResponse {
-  token: string;
-  user: UserResponse;
-}
-
-export interface UserResponse {
-  id: number;
-  username: string;
-  email: string;
-}
-
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-
-export interface SignupResponse {
-  token: string;
-  user: UserResponse;
-}
-
-export interface SignupRequest {
-  username: string;
-  password: string;
-  email: string;
-}
-
-export interface ProtectedResponse {
-  message: string;
-}
-
 export interface FeedValidationResponse {
   title: string;
   description: string;
@@ -126,67 +95,42 @@ export interface ItemSchema {
   is_favorite: boolean;
 }
 
+export interface LoginResponse {
+  token: string;
+  user: UserResponse;
+}
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface SignupResponse {
+  token: string;
+  user: UserResponse;
+}
+
+export interface SignupRequest {
+  username: string;
+  password: string;
+  email: string;
+}
+
+export interface ProtectedResponse {
+  message: string;
+}
+
 export type FeedsRouterListAllItemsParams = {
   is_read?: boolean | null;
   is_favorite?: boolean | null;
   search?: string;
 };
-
-/**
- * @summary Login
- */
-export const usersRouterLogin = (
-  loginRequest: LoginRequest,
-) => {
-  return axiosInstance<LoginResponse>(
-    {
-      url: `/api/auth/login`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
-      data: loginRequest
-    },
-  );
-}
-
-/**
- * @summary Signup
- */
-export const usersRouterSignup = (
-  signupRequest: SignupRequest,
-) => {
-  return axiosInstance<SignupResponse>(
-    {
-      url: `/api/auth/signup`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
-      data: signupRequest
-    },
-  );
-}
-
-/**
- * @summary Protected
- */
-export const usersRouterProtected = (
-
-) => {
-  return axiosInstance<ProtectedResponse>(
-    {
-      url: `/api/auth/protected`, method: 'GET'
-    },
-  );
-}
-
-/**
- * @summary Me
- */
-export const usersRouterMe = (
-
-) => {
-  return axiosInstance<UserResponse>(
-    {
-      url: `/api/auth/me`, method: 'GET'
-    },
-  );
-}
 
 /**
  * @summary Validate Feed
@@ -357,6 +301,19 @@ export const feedsRouterToggleItemFavorite = (
 }
 
 /**
+ * @summary Toggle Item Read
+ */
+export const feedsRouterToggleItemRead = (
+  itemId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/items/${itemId}/read`, method: 'PUT'
+    },
+  );
+}
+
+/**
  * @summary List All Items
  */
 export const feedsRouterListAllItems = (
@@ -383,10 +340,62 @@ export const feedsRouterGetCategoryStats = (
   );
 }
 
-export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
-export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
-export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
-export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
+/**
+ * @summary Login
+ */
+export const usersRouterLogin = (
+  loginRequest: LoginRequest,
+) => {
+  return axiosInstance<LoginResponse>(
+    {
+      url: `/api/auth/login`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
+      data: loginRequest
+    },
+  );
+}
+
+/**
+ * @summary Signup
+ */
+export const usersRouterSignup = (
+  signupRequest: SignupRequest,
+) => {
+  return axiosInstance<SignupResponse>(
+    {
+      url: `/api/auth/signup`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
+      data: signupRequest
+    },
+  );
+}
+
+/**
+ * @summary Protected
+ */
+export const usersRouterProtected = (
+
+) => {
+  return axiosInstance<ProtectedResponse>(
+    {
+      url: `/api/auth/protected`, method: 'GET'
+    },
+  );
+}
+
+/**
+ * @summary Me
+ */
+export const usersRouterMe = (
+
+) => {
+  return axiosInstance<UserResponse>(
+    {
+      url: `/api/auth/me`, method: 'GET'
+    },
+  );
+}
+
 export type FeedsRouterValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterValidateFeed>>>
 export type FeedsRouterListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListCategories>>>
 export type FeedsRouterCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateCategory>>>
@@ -399,5 +408,10 @@ export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof 
 export type FeedsRouterRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshFeed>>>
 export type FeedsRouterMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkAllFeedItemsRead>>>
 export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
+export type FeedsRouterToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemRead>>>
 export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>
 export type FeedsRouterGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetCategoryStats>>>
+export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
+export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
+export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
+export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
