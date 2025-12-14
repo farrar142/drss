@@ -275,6 +275,19 @@ export const feedsRouterRefreshFeed = (
 }
 
 /**
+ * @summary Refresh Category Feeds
+ */
+export const feedsRouterRefreshCategoryFeeds = (
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/categories/${categoryId}/refresh`, method: 'POST'
+    },
+  );
+}
+
+/**
  * @summary Mark All Feed Items Read
  */
 export const feedsRouterMarkAllFeedItemsRead = (
@@ -288,7 +301,20 @@ export const feedsRouterMarkAllFeedItemsRead = (
 }
 
 /**
- * @summary Toggle Item Favorite
+ * @summary Delete All Feed Items
+ */
+export const feedsRouterDeleteAllFeedItems = (
+  feedId: number,
+) => {
+  return axiosInstance<{ success: boolean; deleted_count: number }>(
+    {
+      url: `/api/feeds/feeds/${feedId}/items`, method: 'DELETE'
+    },
+  );
+}
+
+/**
+ * @summary Delete Feed
  */
 export const feedsRouterToggleItemFavorite = (
   itemId: number,
@@ -406,7 +432,9 @@ export type FeedsRouterCreateFeedResult = NonNullable<Awaited<ReturnType<typeof 
 export type FeedsRouterUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateFeed>>>
 export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteFeed>>>
 export type FeedsRouterRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshFeed>>>
+export type FeedsRouterRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshCategoryFeeds>>>
 export type FeedsRouterMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkAllFeedItemsRead>>>
+export type FeedsRouterDeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteAllFeedItems>>>
 export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
 export type FeedsRouterToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemRead>>>
 export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>

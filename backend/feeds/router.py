@@ -250,11 +250,28 @@ def refresh_feed(request, feed_id: int):
     return {"success": True, "message": "Feed refresh scheduled"}
 
 
+@router.post("/categories/{category_id}/refresh", auth=JWTAuth())
+def refresh_category_feeds(request, category_id: int):
+    from feeds.tasks import update_feeds_by_category
+
+    category = get_object_or_404(RSSCategory, id=category_id, user=request.auth)
+    # 비동기로 실행
+    update_feeds_by_category.delay(category.id)
+    return {"success": True, "message": "Category feeds refresh scheduled"}
+
+
 @router.put("/feeds/{feed_id}/mark-all-read", auth=JWTAuth())
 def mark_all_feed_items_read(request, feed_id: int):
     feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
     RSSItem.objects.filter(feed=feed).update(is_read=True)
     return {"success": True}
+
+
+@router.delete("/feeds/{feed_id}/items", auth=JWTAuth())
+def delete_all_feed_items(request, feed_id: int):
+    feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
+    deleted_count, _ = RSSItem.objects.filter(feed=feed).delete()
+    return {"success": True, "deleted_count": deleted_count}
 
 
 @router.delete("/feeds/{feed_id}", auth=JWTAuth())
