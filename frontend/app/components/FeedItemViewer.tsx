@@ -1,7 +1,7 @@
 import { FC, useState, useCallback, useMemo } from "react";
 import { RSSCategory, RSSFeed, RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
-import { Stack, Modal, Box, IconButton, Button, Grid } from "@mui/material";
+import { Stack, Modal, Box, IconButton, Button, Grid, useTheme, useMediaQuery } from "@mui/material";
 import { CheckCircle, Favorite, ExpandMore, ExpandLess } from "@mui/icons-material";
 import parse from 'html-react-parser';
 import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
@@ -10,6 +10,19 @@ export const FeedItemViewer: FC<{
   items: RSSItem[]
 }> = ({ items }) => {
   const { viewMode } = useRSSStore();
+  const theme = useTheme();
+  const isMd = useMediaQuery(theme.breakpoints.down("md"));
+  const isXl = useMediaQuery(theme.breakpoints.up("xl"));
+
+  let columns = 1;
+  if (isXl) columns = 3;
+  else if (!isMd) columns = 2;
+
+  const chunk = (arr: RSSItem[], size: number) =>
+    arr.reduce((acc, _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as RSSItem[][]);
+
+  const chunkedItems = useMemo(() => chunk(items, columns), [items, columns]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState<string>('');
 
@@ -17,25 +30,20 @@ export const FeedItemViewer: FC<{
     setModalImage(src);
     setModalOpen(true);
   }, []);
-  const firstLine = useMemo(() => items.filter((_, i) => i % 3 == 0), [items.length])
-  const secondLine = useMemo(() => items.filter((_, i) => i % 3 == 1), [items.length])
-  const thirdLine = useMemo(() => items.filter((_, i) => i % 3 == 2), [items.length])
   return (
     <>
       <Grid container width="100%">
         {viewMode === 'board' ? <Stack>{items.map(item => (
           <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
-        ))}</Stack> : <>
-          <Grid size={4}>{firstLine.map(item => (
-            <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
-          ))}</Grid>
-          <Grid size={4}>{secondLine.map(item => (
-            <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
-          ))}</Grid>
-          <Grid size={4}>{thirdLine.map(item => (
-            <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
-          ))}</Grid>
-        </>}
+        ))}</Stack> : chunkedItems.map((row, rowIndex) => (
+          <Grid container key={rowIndex} spacing={2}>
+            {row.map(item => (
+              <Grid key={item.id} size={12 / columns}>
+                <FeedItemRenderer item={item} onImageClick={handleImageClick} />
+              </Grid>
+            ))}
+          </Grid>
+        ))}
       </Grid>
       <Modal
         open={modalOpen}

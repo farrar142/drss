@@ -6,21 +6,31 @@ import { createTheme } from '@mui/material/styles';
 import { AuthProvider } from './context/AuthContext';
 import AppLayout from './components/AppLayout';
 
-const theme = createTheme();
+const theme = createTheme({
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 800,
+      md: 1000,
+      lg: 1200,
+      xl: 1536,
+    }
+  }
+});
 
 export function ClientLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <AuthProvider>
-                <AppLayout>
-                    {children}
-                </AppLayout>
-            </AuthProvider>
-        </ThemeProvider>
-    );
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <AppLayout>
+          {children}
+        </AppLayout>
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }

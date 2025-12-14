@@ -50,6 +50,7 @@ import {
   ViewModule as ViewModuleIcon,
   Menu as MenuIcon,
 } from '@mui/icons-material';
+import { useTheme, useMediaQuery } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { feedsRouterListCategories, feedsRouterValidateFeed, feedsRouterCreateCategory } from '../services/api';
@@ -65,6 +66,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname()
   const { user, logout } = useAuth();
+  const theme = useTheme();
+  const isSm = useMediaQuery(theme.breakpoints.down('md'));
 
   // Zustand store
   const {
@@ -107,6 +110,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setViewMode(viewMode === 'board' ? 'feed' : 'board');
   };
 
+  useEffect(() => {
+    setDrawerOpen(!isSm);
+  }, [isSm])
   // 로그인/회원가입 페이지에서는 레이아웃을 적용하지 않음
   if (pathname?.startsWith('/auth/')) {
     return <>{children}</>;
@@ -213,8 +219,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </Box>
         </Toolbar>
       </AppBar>
-      <CategoryDrawer open={drawerOpen} pathname={pathname} />
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, marginLeft: drawerOpen ? `${DRAWER_WIDTH}px` : 0 }}>
+      <CategoryDrawer open={drawerOpen} pathname={pathname} variant={isSm ? 'temporary' : 'persistent'} onClose={toggleDrawer} />
+      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, }}>
         {children}
       </Box>
     </Box>

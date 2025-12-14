@@ -18,8 +18,10 @@ export { DRAWER_WIDTH };
 
 export const CategoryDrawer: FC<{
   open: boolean;
-  pathname: string
-}> = ({ open, pathname }) => {
+  pathname: string;
+  variant?: 'permanent' | 'persistent' | 'temporary';
+  onClose: () => void;
+}> = ({ open, pathname, variant = 'permanent', onClose }) => {
   const router = useRouter();
   const { categories, setCategories, addCategory, removeCategory, feeds, setFeeds } = useRSSStore();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
@@ -58,9 +60,10 @@ export const CategoryDrawer: FC<{
       <Drawer
         anchor="left"
         open={open}
-        hideBackdrop
+        variant={variant}
+        onClose={onClose}
         sx={{
-          width: DRAWER_WIDTH,
+          width: variant === 'persistent' && open ? DRAWER_WIDTH : 0,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
