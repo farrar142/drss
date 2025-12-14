@@ -1,5 +1,5 @@
 from ninja import Schema, Router
-from typing import List
+from typing import List, Optional
 from django.shortcuts import get_object_or_404
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from base.authentications import JWTAuth
@@ -42,6 +42,16 @@ class FeedCreateSchema(Schema):
     visible: bool = True
     custom_headers: dict = {}
     refresh_interval: int = 60
+
+
+class FeedUpdateSchema(Schema):
+    category_id: Optional[int] = None
+    url: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    visible: Optional[bool] = None
+    custom_headers: Optional[dict] = None
+    refresh_interval: Optional[int] = None
 
 
 class FeedValidationResponse(Schema):
@@ -237,25 +247,54 @@ def create_feed(request, data: FeedCreateSchema):
     return feed
 
 
+@router.put("/feeds/{feed_id}", response=FeedSchema, auth=JWTAuth())
+def update_feed(request, feed_id: int, data: FeedUpdateSchema):
+    feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
+
+    if data.category_id is not None:
+        category = get_object_or_404(
+            RSSCategory, id=data.category_id, user=request.auth
+        )
+        feed.category = category
+
+    if data.url is not None:
+        feed.url = data.url
+    if data.title is not None:
+        feed.title = data.title
+    if data.description is not None:
+        feed.description = data.description
+    if data.visible is not None:
+        feed.visible = data.visible
+    if data.custom_headers is not None:
+        feed.custom_headers = data.custom_headers
+    if data.refresh_interval is not None:
+        feed.refresh_interval = data.refresh_interval
+
+    feed.save()
+    return feed
+
+
+@router.post("/feeds/{feed_id}/refresh", auth=JWTAuth())
+def refresh_feed(request, feed_id: int):
+    from feeds.tasks import update_feed_items
+
+    feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
+    # 비동기로 실행
+    update_feed_items.delay(feed.id)
+    return {"success": True, "message": "Feed refresh scheduled"}
+
+
+@router.put("/feeds/{feed_id}/mark-all-read", auth=JWTAuth())
+def mark_all_feed_items_read(request, feed_id: int):
+    feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
+    RSSItem.objects.filter(feed=feed).update(is_read=True)
+    return {"success": True}
+
+
 @router.delete("/feeds/{feed_id}", auth=JWTAuth())
 def delete_feed(request, feed_id: int):
     feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
     feed.delete()
-    return {"success": True}
-
-
-@router.get("/feeds/{feed_id}/items", response=List[ItemSchema], auth=JWTAuth())
-def list_feed_items(request, feed_id: int):
-    feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
-    items = RSSItem.objects.filter(feed=feed)
-    return items
-
-
-@router.put("/items/{item_id}/read", auth=JWTAuth())
-def mark_item_read(request, item_id: int):
-    item = get_object_or_404(RSSItem, id=item_id, feed__user=request.auth)
-    item.is_read = True
-    item.save()
     return {"success": True}
 
 
