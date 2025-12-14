@@ -30,12 +30,12 @@ import { RSSFeed } from "../types/rss";
 import { feedsRouterUpdateFeed, feedsRouterRefreshFeed, feedsRouterDeleteFeed, feedsRouterMarkAllFeedItemsRead, FeedSchema } from "../services/api";
 import { useRSSStore } from "../stores/rssStore";
 
-interface FeedItemProps {
+interface RSSFeedListItemProps {
   feed: FeedSchema;
   categoryId: number;
 }
 
-export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId }) => {
+export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, categoryId }) => {
   const router = useRouter();
   const { updateFeed, removeFeed } = useRSSStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);

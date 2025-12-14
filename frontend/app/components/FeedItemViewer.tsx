@@ -1,4 +1,4 @@
-import { FC, useState, useCallback, useMemo } from "react";
+import { FC, useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { RSSCategory, RSSFeed, RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
 import { Stack, Modal, Box, IconButton, Button, Grid, useTheme, useMediaQuery } from "@mui/material";
@@ -30,17 +30,18 @@ export const FeedItemViewer: FC<{
     setModalImage(src);
     setModalOpen(true);
   }, []);
+
   return (
     <>
       <Grid container width="100%">
         {viewMode === 'board' ? <Stack>{items.map(item => (
           <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
         ))}</Stack> : chunkedItems.map((row, rowIndex) => (
-          <Grid container key={rowIndex} spacing={2}>
+          <Grid key={rowIndex} spacing={2} size={12 / columns}>
             {row.map(item => (
-              <Grid key={item.id} size={12 / columns}>
+              <Stack key={item.id} >
                 <FeedItemRenderer item={item} onImageClick={handleImageClick} />
-              </Grid>
+              </Stack>
             ))}
           </Grid>
         ))}
@@ -58,7 +59,7 @@ export const FeedItemViewer: FC<{
   );
 }
 
-const renderDescription = (description: string, onImageClick: (url: string) => void) => {
+const renderDescription = (description: string, onImageClick: (url: string) => void, onVideoMount: (video: HTMLVideoElement) => void) => {
   return parse(description, {
     replace: (domNode: any) => {
       if (domNode.attribs && domNode.attribs.class) {
@@ -74,6 +75,17 @@ const renderDescription = (description: string, onImageClick: (url: string) => v
           />
         );
       }
+      if (domNode.name === 'video') {
+        return (
+          <video
+            {...domNode.attribs}
+            muted
+            style={{ display: 'block', margin: '0 auto', maxWidth: '100%', height: 'auto' }}
+            controls
+            ref={(el) => el && onVideoMount(el)}
+          />
+        );
+      }
     }
   });
 }
@@ -82,11 +94,32 @@ const FeedItemRenderer: FC<{
   item: RSSItem,
   onImageClick: (url: string) => void
 }> = ({ item, onImageClick }) => {
-  const description = useMemo(() => renderDescription(item.description, onImageClick), [item.description]);
   const { viewMode } = useRSSStore()
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  const onVideoMount = useCallback((video: HTMLVideoElement) => {
+    observerRef.current?.observe(video);
+  }, []);
+
+  const description = useMemo(() => renderDescription(item.description, onImageClick, onVideoMount), [item.description, onImageClick, onVideoMount]);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          video.play().catch(() => { });
+        } else {
+          video.pause();
+        }
+      });
+    });
+    return () => observerRef.current?.disconnect();
+  }, []);
+
   const handleToggleFavorite = useCallback(async () => {
     try {
       await feedsRouterToggleItemFavorite(item.id);

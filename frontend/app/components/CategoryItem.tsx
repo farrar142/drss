@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { FC, useEffect, useMemo, useState } from "react";
 import { feedsRouterCreateFeed, feedsRouterListFeeds, feedsRouterValidateFeed } from "../services/api";
 import { RSSCategory, RSSFeed } from "../types/rss";
-import { FeedItem } from './FeedItem';
+import { RSSFeedListItem } from './RSSFeedListItem';
 import { useRSSStore } from "../stores/rssStore";
 
 export const CategoryItem: FC<{
@@ -134,7 +134,7 @@ export const CategoryItem: FC<{
           </AccordionSummary>
           <AccordionDetails>
             <List dense>
-              {feeds.map(feed => <FeedItem feed={feed} key={feed.id} categoryId={category.id} />)}
+              {feeds.map(feed => <RSSFeedListItem feed={feed} key={feed.id} categoryId={category.id} />)}
             </List>
             <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setAddFeedOpen(true)} fullWidth sx={{ mt: 1 }}>
               RSS 피드 추가
