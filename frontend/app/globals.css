@@ -163,6 +163,26 @@
   @apply bg-card/90 -translate-y-0.5 shadow-xl;
 }
 
+/* Sidebar utility classes that map to CSS variables so components can use semantic class names */
+.bg-sidebar-background { background-color: hsl(var(--sidebar-background)); }
+.text-sidebar-foreground { color: hsl(var(--sidebar-foreground)); }
+.bg-sidebar-primary { background-color: hsl(var(--sidebar-primary)); }
+.text-sidebar-primary-foreground { color: hsl(var(--sidebar-primary-foreground)); }
+.bg-sidebar-accent { background-color: hsl(var(--sidebar-accent)); }
+.text-sidebar-accent-foreground { color: hsl(var(--sidebar-accent-foreground)); }
+.border-sidebar-border { border-color: hsl(var(--sidebar-border)); }
+
+/* Hover variants (escape the colon for utility-like usage in className strings) */
+.hover\:bg-sidebar-accent:hover { background-color: hsl(var(--sidebar-accent)); }
+.hover\:text-sidebar-accent-foreground:hover { color: hsl(var(--sidebar-accent-foreground)); }
+.hover\:bg-sidebar-accent\/50:hover { background-color: var(--sidebar-accent-50); }
+
+/* Opacity helpers */
+.bg-sidebar-accent\/50 { background-color: var(--sidebar-accent-50); }
+.bg-accent\/50 { background-color: var(--accent-50); }
+.bg-sidebar-primary\/50 { background-color: var(--sidebar-primary-50); }
+.hover\:bg-accent\/50:hover { background-color: var(--accent-50); }
+
 /* Animation keyframes */
 @keyframes fadeIn {
   from {

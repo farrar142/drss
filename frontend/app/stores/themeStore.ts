@@ -163,4 +163,22 @@ export function applyThemeColors(colors: ThemeColors) {
   // Accent (primary 기반)
   root.style.setProperty('--accent', `${primary.h} ${primary.s}% ${primary.l}%`);
   root.style.setProperty('--ring', `${primary.h} ${primary.s}% ${primary.l}%`);
+
+  // Sidebar-specific variables (so sidebar uses user's custom colors)
+  root.style.setProperty('--sidebar-primary', `${primary.h} ${primary.s}% ${primary.l}%`);
+  root.style.setProperty('--sidebar-primary-foreground', primary.l > 50 ? '0 0% 0%' : '0 0% 100%');
+
+  // Make a lighter accent for sidebar backgrounds (improve contrast)
+  const sidebarAccentL = Math.min(primary.l + 35, 95);
+  root.style.setProperty('--sidebar-accent', `${primary.h} ${primary.s}% ${sidebarAccentL}%`);
+  root.style.setProperty('--sidebar-accent-foreground', sidebarAccentL > 50 ? '0 0% 0%' : '0 0% 100%');
+
+  // Sidebar border and ring
+  root.style.setProperty('--sidebar-border', `${primary.h} ${Math.min(primary.s, 20)}% ${Math.min(primary.l + 60, 97)}%`);
+  root.style.setProperty('--sidebar-ring', `${primary.h} ${primary.s}% ${primary.l}%`);
+
+  // Provide alpha variants for convenience (used by utility classes like /50)
+  root.style.setProperty('--sidebar-accent-50', `hsl(${primary.h} ${primary.s}% ${primary.l}% / 0.5)`);
+  root.style.setProperty('--accent-50', `hsl(${primary.h} ${primary.s}% ${primary.l}% / 0.5)`);
+  root.style.setProperty('--sidebar-primary-50', `hsl(${primary.h} ${primary.s}% ${primary.l}% / 0.5)`);
 }
