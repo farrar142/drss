@@ -1,18 +1,26 @@
 root = true
 
+# [*] 섹션은 모든 파일의 기본 설정입니다.
 [*]
 indent_style = space
-indent_size = 2
+indent_size = 2    <-- 기본은 2칸 (웹 파일 대상)
 end_of_line = lf
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
 
+# 웹 개발 파일: 2칸 명시 (선택적이지만 명확성을 위해 유지)
 [*.{js,jsx,ts,tsx}]
 indent_size = 2
 
 [*.{json,yml,yaml}]
 indent_size = 2
 
+# 마크다운 파일
 [*.md]
 trim_trailing_whitespace = false
+
+# ⭐️ 추가: Python 파일(*.py)은 4칸으로 설정
+[*.py]
+indent_style = space
+indent_size = 4    <-- 파이썬 파일은 4칸으로 덮어씁니다.
