@@ -103,3 +103,65 @@ def list_all_items(
         direction,
         field_name="published_at",
     )
+
+
+@router.get("/category/{category_id}", response=PaginatedResponse[ItemSchema])
+def list_items_by_category(
+    request,
+    category_id: int,
+    is_read: Optional[bool] = None,
+    is_favorite: Optional[bool] = None,
+    search: str = "",
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    direction: str = "before",
+):
+    items = RSSItem.objects.filter(
+        feed__user=request.auth, feed__category_id=category_id
+    )
+
+    if is_read is not None:
+        items = items.filter(is_read=is_read)
+    if is_favorite is not None:
+        items = items.filter(is_favorite=is_favorite)
+    if search:
+        items = items.filter(title__icontains=search) | items.filter(
+            description__icontains=search
+        )
+    return get_paginated_items(
+        items,
+        limit,
+        cursor,
+        direction,
+        field_name="published_at",
+    )
+
+
+@router.get("/feed/{feed_id}", response=PaginatedResponse[ItemSchema])
+def list_items_by_feed(
+    request,
+    feed_id: int,
+    is_read: Optional[bool] = None,
+    is_favorite: Optional[bool] = None,
+    search: str = "",
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    direction: str = "before",
+):
+    items = RSSItem.objects.filter(feed__user=request.auth, feed_id=feed_id)
+
+    if is_read is not None:
+        items = items.filter(is_read=is_read)
+    if is_favorite is not None:
+        items = items.filter(is_favorite=is_favorite)
+    if search:
+        items = items.filter(title__icontains=search) | items.filter(
+            description__icontains=search
+        )
+    return get_paginated_items(
+        items,
+        limit,
+        cursor,
+        direction,
+        field_name="published_at",
+    )

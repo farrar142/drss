@@ -143,6 +143,24 @@ cursor?: string | null;
 direction?: string;
 };
 
+export type FeedsRoutersItemListItemsByCategoryParams = {
+is_read?: boolean | null;
+is_favorite?: boolean | null;
+search?: string;
+limit?: number;
+cursor?: string | null;
+direction?: string;
+};
+
+export type FeedsRoutersItemListItemsByFeedParams = {
+is_read?: boolean | null;
+is_favorite?: boolean | null;
+search?: string;
+limit?: number;
+cursor?: string | null;
+direction?: string;
+};
+
 /**
  * @summary Validate Feed
  */
@@ -361,6 +379,34 @@ export const feedsRoutersItemListAllItems = (
     }
   
 /**
+ * @summary List Items By Category
+ */
+export const feedsRoutersItemListItemsByCategory = (
+    categoryId: number,
+    params?: FeedsRoutersItemListItemsByCategoryParams,
+ ) => {
+      return axiosInstance<PaginatedResponseItemSchema>(
+      {url: `/api/items/category/${categoryId}`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * @summary List Items By Feed
+ */
+export const feedsRoutersItemListItemsByFeed = (
+    feedId: number,
+    params?: FeedsRoutersItemListItemsByFeedParams,
+ ) => {
+      return axiosInstance<PaginatedResponseItemSchema>(
+      {url: `/api/items/feed/${feedId}`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
  * @summary Login
  */
 export const usersRouterLogin = (
@@ -429,6 +475,8 @@ export type FeedsRoutersCategoryGetCategoryStatsResult = NonNullable<Awaited<Ret
 export type FeedsRoutersItemToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemFavorite>>>
 export type FeedsRoutersItemToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemRead>>>
 export type FeedsRoutersItemListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListAllItems>>>
+export type FeedsRoutersItemListItemsByCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListItemsByCategory>>>
+export type FeedsRoutersItemListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListItemsByFeed>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
