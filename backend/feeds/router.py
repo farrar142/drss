@@ -6,7 +6,7 @@ from base.authentications import JWTAuth
 import feedparser
 import requests
 from datetime import datetime
-from feeds.utils import fetch_feed_data
+from feeds.utils import fetch_feed_data, extract_favicon_url
 
 router = Router()
 
@@ -168,42 +168,7 @@ def create_feed(request, data: FeedCreateSchema):
             description = description or feed.feed.get("description", "")
 
             # Favicon 추출 시도
-            try:
-                from urllib.parse import urlparse
-
-                parsed_url = urlparse(data.url)
-                base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-
-                # favicon.ico 시도
-                favicon_response = requests.get(f"{base_url}/favicon.ico", timeout=5)
-                if favicon_response.status_code == 200:
-                    favicon_url = f"{base_url}/favicon.ico"
-                else:
-                    # HTML에서 favicon 링크 찾기 시도
-                    html_response = requests.get(base_url, headers=headers, timeout=10)
-                    if html_response.status_code == 200:
-                        import re
-
-                        html_content = html_response.text
-                        # rel="icon" 또는 rel="shortcut icon" 찾기
-                        favicon_match = re.search(
-                            r'<link[^>]+rel=["\'](?:shortcut )?icon["\'][^>]+href=["\']([^"\']+)["\']',
-                            html_content,
-                            re.IGNORECASE,
-                        )
-                        if favicon_match:
-                            favicon_href = favicon_match.group(1)
-                            if favicon_href.startswith("http"):
-                                favicon_url = favicon_href
-                            elif favicon_href.startswith("//"):
-                                favicon_url = f"{parsed_url.scheme}:{favicon_href}"
-                            elif favicon_href.startswith("/"):
-                                favicon_url = f"{base_url}{favicon_href}"
-                            else:
-                                favicon_url = f"{base_url}/{favicon_href}"
-            except Exception:
-                # Favicon 추출 실패 시 무시
-                pass
+            favicon_url = extract_favicon_url(data.url, data.custom_headers)
 
         except Exception as e:
             # RSS 파싱 실패 시 기본값 사용
