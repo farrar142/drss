@@ -198,14 +198,32 @@ export const FeedItemViewer: FC<{
 
   return (
     <>
-      <Grid container width="100%">
+      <Grid container width="100%" spacing={2}>
         <Grid size={12}>
-          <Button onClick={onLoadNew}>
-            새글불러오기
+          <Button
+            onClick={onLoadNew}
+            variant="contained"
+            sx={{
+              background: 'var(--button-gradient)',
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1,
+              boxShadow: '0 4px 15px var(--shadow-color)',
+              '&:hover': {
+                background: 'var(--button-gradient-hover)',
+                boxShadow: '0 6px 20px var(--shadow-color)',
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            새글 불러오기
           </Button>
         </Grid>
         {viewMode === 'board' ? (
-          <Stack width="100%">
+          <Stack width="100%" spacing={1.5} sx={{ px: 1 }}>
             {items.map((item) => (
               <FeedItemRenderer key={item.id} item={item} onMediaClick={handleMediaClick} />
             ))}
@@ -247,16 +265,26 @@ export const FeedItemViewer: FC<{
           setModalOpen(false);
           setModalMedia(null);
         }}
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(10px)',
+        }}
       >
-        <Box 
-          sx={{ 
-            width: '90vw', 
-            height: '90vh', 
-            display: 'flex', 
-            alignItems: 'center', 
+        <Box
+          sx={{
+            width: '90vw',
+            height: '90vh',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
-            outline: 'none'
+            outline: 'none',
+            background: 'var(--modal-bg)',
+            borderRadius: 4,
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 8px 32px var(--shadow-color)',
+            p: 2,
           }}
           onClick={() => {
             setModalOpen(false);
@@ -268,22 +296,24 @@ export const FeedItemViewer: FC<{
               src={modalMedia.src}
               controls
               autoPlay
-              style={{ 
-                maxWidth: '100%', 
+              style={{
+                maxWidth: '100%',
                 maxHeight: '100%',
-                objectFit: 'contain'
+                objectFit: 'contain',
+                borderRadius: '8px',
               }}
               onClick={(e) => e.stopPropagation()}
             />
           ) : modalMedia?.type === 'image' ? (
-            <img 
-              src={modalMedia.src} 
-              alt="Enlarged" 
-              style={{ 
-                maxWidth: '100%', 
+            <img
+              src={modalMedia.src}
+              alt="Enlarged"
+              style={{
+                maxWidth: '100%',
                 maxHeight: '100%',
-                objectFit: 'contain'
-              }} 
+                objectFit: 'contain',
+                borderRadius: '8px',
+              }}
             />
           ) : null}
         </Box>

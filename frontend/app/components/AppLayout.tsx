@@ -49,10 +49,14 @@ import {
   ViewList as ViewListIcon,
   ViewModule as ViewModuleIcon,
   Menu as MenuIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
+  SettingsBrightness as SettingsBrightnessIcon,
 } from '@mui/icons-material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import { useRSSStore } from '../stores/rssStore';
+import { useThemeStore } from '../stores/themeStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 
 
@@ -67,7 +71,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('md'));
 
-  // Zustand store
+  // Zustand stores
   const {
     searchQuery,
     filter,
@@ -77,14 +81,40 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setViewMode,
   } = useRSSStore();
 
+  const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
+
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
+  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
 
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
   };
 
+  const handleThemeClick = (event: React.MouseEvent<HTMLElement>) => {
+    setThemeAnchorEl(event.currentTarget);
+  };
+
+  const handleThemeClose = () => {
+    setThemeAnchorEl(null);
+  };
+
+  const handleThemeChange = (newMode: 'system' | 'light' | 'dark') => {
+    setThemeMode(newMode);
+    handleThemeClose();
+  };
+
+  const getThemeIcon = () => {
+    switch (themeMode) {
+      case 'light':
+        return <LightModeIcon />;
+      case 'dark':
+        return <DarkModeIcon />;
+      default:
+        return <SettingsBrightnessIcon />;
+    }
+  };
 
   const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
     setSettingsAnchorEl(event.currentTarget);
@@ -117,99 +147,230 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      {/* 상단 AppBar */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      {/* 상단 AppBar - Glassmorphism */}
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          background: 'var(--appbar-bg)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid var(--glass-border)',
+          boxShadow: 'var(--glass-shadow)',
+          color: 'var(--text-primary)',
+        }}
+      >
         <Toolbar>
           <IconButton
-            color="inherit"
             aria-label="toggle drawer"
             onClick={toggleDrawer}
             edge="start"
-            sx={{ mr: 2 }}
+            sx={{
+              mr: 2,
+              color: 'var(--text-primary)',
+              '&:hover': {
+                background: 'var(--glass-bg)',
+              }
+            }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }} onClick={() => router.push("/home")}>
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{
+              flexGrow: 1,
+              cursor: 'pointer',
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+              color: 'var(--text-primary)',
+            }}
+            onClick={() => router.push("/home")}
+          >
             DRSS - RSS Reader
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <InputBase
               placeholder="검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               sx={{
-                color: 'inherit',
+                color: 'var(--text-primary)',
                 '& .MuiInputBase-input': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  borderRadius: 1,
-                  padding: '4px 8px',
+                  background: 'var(--input-bg)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: 2,
+                  padding: '8px 12px',
                   width: '200px',
+                  border: '1px solid var(--glass-border)',
+                  transition: 'all 0.2s ease',
+                  color: 'var(--text-primary)',
+                  '&:focus': {
+                    background: 'var(--glass-bg-hover)',
+                    borderColor: 'var(--accent-color)',
+                  },
+                  '&::placeholder': {
+                    color: 'var(--text-muted)',
+                  },
                 },
               }}
-              startAdornment={<SearchIcon sx={{ mr: 1 }} />}
+              startAdornment={<SearchIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />}
             />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+              sx={{
+                display: { xs: 'none', md: 'flex' },
+                alignItems: 'center',
+                gap: 0.5,
+                background: 'var(--glass-bg)',
+                borderRadius: 2,
+                padding: '4px',
+              }}
+            >
               <IconButton
-                color="inherit"
                 size="small"
                 onClick={() => setFilter('all')}
                 sx={{
-                  bgcolor: filter === 'all' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                  color: 'var(--text-primary)',
+                  bgcolor: filter === 'all' ? 'var(--accent-light)' : 'transparent',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
                 }}
                 title="전체"
               >
-                <ViewListIcon />
+                <ViewListIcon fontSize="small" />
               </IconButton>
               <IconButton
-                color="inherit"
                 size="small"
                 onClick={() => setFilter('unread')}
                 sx={{
-                  bgcolor: filter === 'unread' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                  color: 'var(--text-primary)',
+                  bgcolor: filter === 'unread' ? 'var(--accent-light)' : 'transparent',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
                 }}
                 title="읽지 않음"
               >
-                <BookmarkBorderIcon />
+                <BookmarkBorderIcon fontSize="small" />
               </IconButton>
               <IconButton
-                color="inherit"
                 size="small"
                 onClick={() => setFilter('read')}
                 sx={{
-                  bgcolor: filter === 'read' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                  color: 'var(--text-primary)',
+                  bgcolor: filter === 'read' ? 'var(--accent-light)' : 'transparent',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
                 }}
                 title="읽음"
               >
-                <ViewModuleIcon />
+                <ViewModuleIcon fontSize="small" />
               </IconButton>
               <IconButton
-                color="inherit"
                 size="small"
                 onClick={() => setFilter('favorite')}
                 sx={{
-                  bgcolor: filter === 'favorite' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' }
+                  color: 'var(--text-primary)',
+                  bgcolor: filter === 'favorite' ? 'var(--accent-light)' : 'transparent',
+                  borderRadius: 1.5,
+                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
                 }}
                 title="즐겨찾기"
               >
-                <FavoriteIcon />
+                <FavoriteIcon fontSize="small" />
               </IconButton>
             </Box>
-            <IconButton color="inherit" onClick={handleViewModeChange} title={viewMode}>
+            <IconButton
+              onClick={handleViewModeChange}
+              title={viewMode}
+              sx={{
+                color: 'var(--text-primary)',
+                background: 'var(--glass-bg)',
+                '&:hover': { background: 'var(--glass-bg-hover)' }
+              }}
+            >
               {viewMode === 'board' ? <ViewModuleIcon /> : <ViewListIcon />}
             </IconButton>
-            <IconButton color="inherit" onClick={handleSettingsClick}>
+            {/* Theme Switcher */}
+            <IconButton
+              onClick={handleThemeClick}
+              title="테마 변경"
+              sx={{
+                color: 'var(--text-primary)',
+                background: 'var(--glass-bg)',
+                '&:hover': { background: 'var(--glass-bg-hover)' }
+              }}
+            >
+              {getThemeIcon()}
+            </IconButton>
+            <Menu
+              anchorEl={themeAnchorEl}
+              open={Boolean(themeAnchorEl)}
+              onClose={handleThemeClose}
+              PaperProps={{
+                sx: {
+                  background: 'var(--dialog-bg)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 2,
+                  boxShadow: 'var(--glass-shadow)',
+                  '& .MuiMenuItem-root': {
+                    color: 'var(--text-primary)',
+                    gap: 1.5,
+                    '&:hover': {
+                      background: 'var(--glass-bg)',
+                    },
+                  },
+                },
+              }}
+            >
+              <MenuItem onClick={() => handleThemeChange('system')}>
+                <SettingsBrightnessIcon fontSize="small" />
+                시스템 설정
+                {themeMode === 'system' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
+              </MenuItem>
+              <MenuItem onClick={() => handleThemeChange('light')}>
+                <LightModeIcon fontSize="small" />
+                라이트 모드
+                {themeMode === 'light' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
+              </MenuItem>
+              <MenuItem onClick={() => handleThemeChange('dark')}>
+                <DarkModeIcon fontSize="small" />
+                다크 모드
+                {themeMode === 'dark' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
+              </MenuItem>
+            </Menu>
+            <IconButton
+              onClick={handleSettingsClick}
+              sx={{
+                color: 'var(--text-primary)',
+                background: 'var(--glass-bg)',
+                '&:hover': { background: 'var(--glass-bg-hover)' }
+              }}
+            >
               <SettingsIcon />
             </IconButton>
             <Menu
               anchorEl={settingsAnchorEl}
               open={Boolean(settingsAnchorEl)}
               onClose={handleSettingsClose}
+              PaperProps={{
+                sx: {
+                  background: 'var(--dialog-bg)',
+                  backdropFilter: 'blur(20px)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 2,
+                  boxShadow: 'var(--glass-shadow)',
+                  '& .MuiMenuItem-root': {
+                    color: 'var(--text-primary)',
+                    '&:hover': {
+                      background: 'var(--glass-bg)',
+                    },
+                  },
+                },
+              }}
             >
               <MenuItem onClick={handleSettingsClose}>설정</MenuItem>
               <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
@@ -218,7 +379,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </Toolbar>
       </AppBar>
       <CategoryDrawer open={drawerOpen} pathname={pathname} variant={isSm ? 'temporary' : 'persistent'} onClose={toggleDrawer} />
-      <Box component="main" sx={{ flexGrow: 1, p: 3, mt: 8, }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          mt: 8,
+          minHeight: 'calc(100vh - 64px)',
+        }}
+      >
         {children}
       </Box>
     </Box>

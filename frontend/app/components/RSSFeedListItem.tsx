@@ -109,20 +109,61 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
       <ListItem key={feed.id} disablePadding>
         <ListItemButton
           onClick={() => router.push(`/category/${categoryId}/feed/${feed.id}`)}
-          sx={{ display: 'flex', justifyContent: 'space-between', p: 0, m: 0 }}
-
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            p: 1,
+            m: 0,
+            borderRadius: 1.5,
+            '&:hover': {
+              background: 'var(--hover-bg)',
+            },
+          }}
         >
-
           {feed.favicon_url ? (
-            <Avatar src={feed.favicon_url} sx={{ width: 24, height: 24 }} />
+            <Avatar src={feed.favicon_url} sx={{ width: 20, height: 20 }} />
           ) : (
-            <RssFeedIcon fontSize="small" />
+            <RssFeedIcon fontSize="small" sx={{ color: 'var(--accent-solid)' }} />
           )}
-          <Typography fontSize="0.7rem">{feed.title}</Typography>
-          <Typography>{feed.item_count}</Typography>
+          <Typography
+            fontSize="0.75rem"
+            sx={{
+              flexGrow: 1,
+              mx: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: 'var(--text-primary)',
+            }}
+          >
+            {feed.title}
+          </Typography>
+          <Typography
+            fontSize="0.7rem"
+            sx={{
+              background: 'var(--accent-color)',
+              px: 1,
+              py: 0.25,
+              borderRadius: 1,
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+            }}
+          >
+            {feed.item_count}
+          </Typography>
         </ListItemButton>
-        <IconButton sx={{ p: 0, m: 0, pl: 0.5 }} onClick={handleMenuClick} size="small">
-          <MoreVertIcon />
+        <IconButton
+          sx={{
+            p: 0.5,
+            m: 0,
+            '&:hover': {
+              background: 'var(--hover-bg)',
+            },
+          }}
+          onClick={handleMenuClick}
+          size="small"
+        >
+          <MoreVertIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
         </IconButton>
       </ListItem>
 
@@ -130,67 +171,149 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
+        PaperProps={{
+          sx: {
+            background: 'var(--dialog-bg)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 2,
+            boxShadow: '0 8px 32px var(--shadow-color)',
+            '& .MuiMenuItem-root': {
+              color: 'var(--text-primary)',
+              '&:hover': {
+                background: 'var(--hover-bg)',
+              },
+            },
+          },
+        }}
       >
         <MenuItem onClick={handleEdit}>
-          <EditIcon sx={{ mr: 1 }} />
+          <EditIcon sx={{ mr: 1, color: 'var(--accent-solid)' }} />
           수정
         </MenuItem>
         <MenuItem onClick={handleRefresh}>
-          <RefreshIcon sx={{ mr: 1 }} />
+          <RefreshIcon sx={{ mr: 1, color: '#4caf50' }} />
           새로고침
         </MenuItem>
         <MenuItem onClick={handleMarkAllRead}>
-          <CheckCircleIcon sx={{ mr: 1 }} />
+          <CheckCircleIcon sx={{ mr: 1, color: '#2196f3' }} />
           전체 읽음 처리
         </MenuItem>
         <MenuItem onClick={handleDelete}>
-          <DeleteIcon sx={{ mr: 1 }} />
+          <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />
           삭제
         </MenuItem>
       </Menu>
 
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)}>
-        <DialogTitle>피드 수정</DialogTitle>
+      <Dialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        PaperProps={{
+          sx: {
+            background: 'var(--dialog-bg)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid var(--border-color)',
+            borderRadius: 3,
+            boxShadow: '0 8px 32px var(--shadow-color)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: 'var(--text-primary)', fontWeight: 600 }}>피드 수정</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
             label="제목"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                color: 'var(--text-primary)',
+                '& fieldset': { borderColor: 'var(--border-color)' },
+                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
+                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
+              },
+              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            }}
           />
           <TextField
             margin="dense"
             label="설명"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
+            sx={{
+              mt: 2,
+              '& .MuiOutlinedInput-root': {
+                color: 'var(--text-primary)',
+                '& fieldset': { borderColor: 'var(--border-color)' },
+                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
+                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
+              },
+              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            }}
           />
           <TextField
             margin="dense"
             label="URL"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={editUrl}
             onChange={(e) => setEditUrl(e.target.value)}
+            sx={{
+              mt: 2,
+              '& .MuiOutlinedInput-root': {
+                color: 'var(--text-primary)',
+                '& fieldset': { borderColor: 'var(--border-color)' },
+                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
+                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
+              },
+              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            }}
           />
           <TextField
             margin="dense"
             label="새로고침 간격 (분)"
             type="number"
             fullWidth
-            variant="standard"
+            variant="outlined"
             value={editRefreshInterval}
             onChange={(e) => setEditRefreshInterval(Number(e.target.value))}
             inputProps={{ min: 1 }}
+            sx={{
+              mt: 2,
+              '& .MuiOutlinedInput-root': {
+                color: 'var(--text-primary)',
+                '& fieldset': { borderColor: 'var(--border-color)' },
+                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
+                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
+              },
+              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
+            }}
           />
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)}>취소</Button>
-          <Button onClick={handleEditSave}>저장</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setEditOpen(false)}
+            sx={{ color: 'var(--text-secondary)' }}
+          >
+            취소
+          </Button>
+          <Button
+            onClick={handleEditSave}
+            variant="contained"
+            sx={{
+              background: 'var(--button-gradient)',
+              '&:hover': {
+                background: 'var(--button-gradient-hover)',
+              },
+            }}
+          >
+            저장
+          </Button>
         </DialogActions>
       </Dialog>
     </>

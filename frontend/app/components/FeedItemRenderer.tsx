@@ -137,7 +137,7 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
   // Helper to check if a node contains an img or video
   const hasMediaChild = (node: any): boolean => {
     if (!node.children) return false;
-    return node.children.some((child: any) => 
+    return node.children.some((child: any) =>
       child.name === 'img' || child.name === 'video' || hasMediaChild(child)
     );
   };
@@ -148,7 +148,7 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
         domNode.attribs.className = domNode.attribs.class;
         delete domNode.attribs.class;
       }
-      
+
       // Handle <a> tags that wrap images - remove the link wrapper
       if (domNode.name === 'a' && hasMediaChild(domNode)) {
         // Return just the children without the <a> wrapper
@@ -169,7 +169,7 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
           return null;
         })}</>;
       }
-      
+
       if (domNode.name === 'img') {
         const src = domNode.attribs.src;
         const alt = domNode.attribs.alt || '';
@@ -230,14 +230,42 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   }, [item.id, isRead]);
 
   const titleElement = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <IconButton size="small" onClick={handleToggleRead}>
-        <CheckCircle color={isRead ? 'primary' : 'disabled'} />
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      flexWrap: 'wrap',
+    }}>
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); handleToggleRead(); }}
+        sx={{
+          background: isRead ? 'var(--accent-color)' : 'var(--hover-bg)',
+          '&:hover': { background: 'var(--accent-hover)' },
+        }}
+      >
+        <CheckCircle sx={{ color: isRead ? 'var(--accent-solid)' : 'var(--text-secondary)' }} />
       </IconButton>
-      <IconButton size="small" onClick={handleToggleFavorite}>
-        <Favorite color={isFavorite ? 'error' : 'disabled'} />
+      <IconButton
+        size="small"
+        onClick={(e) => { e.stopPropagation(); handleToggleFavorite(); }}
+        sx={{
+          background: isFavorite ? 'rgba(244, 67, 54, 0.2)' : 'var(--hover-bg)',
+          '&:hover': { background: 'rgba(244, 67, 54, 0.3)' },
+        }}
+      >
+        <Favorite sx={{ color: isFavorite ? '#f44336' : 'var(--text-secondary)' }} />
       </IconButton>
-      <h3 style={{ margin: 0, flexGrow: 1 }}>{item.title}</h3>
+      <h3 style={{
+        margin: 0,
+        flexGrow: 1,
+        fontSize: '1rem',
+        fontWeight: 600,
+        color: 'var(--text-primary)',
+        lineHeight: 1.4,
+      }}>
+        {item.title}
+      </h3>
     </div>
   );
 
@@ -245,15 +273,45 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
     <div
       ref={ref}
       key={item.id}
-      style={{ padding: '8px', borderBottom: '1px solid #ccc' }}
+      className="glass-card"
+      style={{
+        padding: '16px',
+        cursor: 'pointer',
+        marginBottom: viewMode === 'board' ? '12px' : '0',
+      }}
       onClick={() => setCollapsed(!collapsed)}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
         {titleElement}
-        <a href={item.link} target="_blank" rel="noopener noreferrer">Read more</a>
+        <a
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            padding: '6px 12px',
+            background: 'var(--button-gradient)',
+            borderRadius: '6px',
+            color: '#fff',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          Read more
+        </a>
       </Stack>
       {(viewMode === 'feed' || !collapsed) && (
-        <div>{description}</div>
+        <div style={{
+          marginTop: '12px',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
+          overflow: 'hidden',
+        }}>
+          {description}
+        </div>
       )}
     </div>
   )
