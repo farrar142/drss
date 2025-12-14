@@ -1,9 +1,10 @@
 import { create } from 'zustand';
 import { RSSFeed, RSSCategory } from '../types/rss';
+import { FeedSchema } from '../services/api';
 
 interface RSSStore {
     // Data
-    feeds: RSSFeed[];
+    feeds: FeedSchema[];
     categories: RSSCategory[];
 
     // UI State

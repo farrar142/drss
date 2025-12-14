@@ -26,11 +26,11 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { RSSFeed } from "../types/rss";
-import { feedsRouterUpdateFeed, feedsRouterRefreshFeed, feedsRouterDeleteFeed, feedsRouterMarkAllFeedItemsRead } from "../services/api";
+import { feedsRouterUpdateFeed, feedsRouterRefreshFeed, feedsRouterDeleteFeed, feedsRouterMarkAllFeedItemsRead, FeedSchema } from "../services/api";
 import { useRSSStore } from "../stores/rssStore";
 
 interface FeedItemProps {
-    feed: RSSFeed;
+    feed: FeedSchema;
     categoryId: number;
 }
 
@@ -43,7 +43,6 @@ export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId }) => {
     const [editDescription, setEditDescription] = useState(feed.description);
     const [editUrl, setEditUrl] = useState(feed.url);
     const [editRefreshInterval, setEditRefreshInterval] = useState(feed.refresh_interval);
-
     const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
     };

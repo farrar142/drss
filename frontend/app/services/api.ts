@@ -74,6 +74,7 @@ export interface FeedSchema {
   custom_headers?: FeedSchemaCustomHeaders;
   refresh_interval?: number;
   last_updated: string;
+  item_count: number;
 }
 
 export type FeedCreateSchemaCustomHeaders = { [key: string]: unknown };

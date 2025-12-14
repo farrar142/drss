@@ -16,6 +16,7 @@ export interface RSSFeed {
     custom_headers?: Record<string, any>;
     refresh_interval?: number;
     last_updated: string;
+    item_count: number;
 }
 
 export interface RSSItem {
