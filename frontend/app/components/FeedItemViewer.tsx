@@ -11,7 +11,10 @@ export const FeedItemViewer: FC<{
       <div
         key={item.id}
         style={{ padding: '8px', borderBottom: '1px solid #ccc' }}>
-      </div>))
-    }
+        <h3>{item.title}</h3>
+        <div dangerouslySetInnerHTML={{ __html: item.description }} />
+        <a href={item.link} target="_blank" rel="noopener noreferrer">Read more</a>
+      </div>
+    ))}
   </Stack>
 }

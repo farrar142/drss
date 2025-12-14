@@ -75,7 +75,7 @@ class ItemSchema(Schema):
     title: str
     link: str
     description: str
-    published_at: str
+    published_at: datetime
     is_read: bool
     is_favorite: bool
 
@@ -293,7 +293,25 @@ def list_all_items(
             description__icontains=search
         )
 
-    return items.order_by("-published_at")
+    items = items.order_by("-published_at")
+
+    # Convert to list and format published_at as string
+    result = []
+    for item in items:
+        result.append(
+            {
+                "id": item.id,
+                "feed_id": item.feed_id,
+                "title": item.title,
+                "link": item.link,
+                "description": item.description,
+                "published_at": item.published_at.isoformat(),
+                "is_read": item.is_read,
+                "is_favorite": item.is_favorite,
+            }
+        )
+
+    return result
 
 
 @router.get("/categories/{category_id}/stats", auth=JWTAuth())

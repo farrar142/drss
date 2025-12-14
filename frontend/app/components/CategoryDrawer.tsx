@@ -14,6 +14,8 @@ import { CategoryItem } from "./CategoryItem";
 
 const DRAWER_WIDTH = 240;
 
+export { DRAWER_WIDTH };
+
 export const CategoryDrawer: FC<{
   open: boolean;
   pathname: string

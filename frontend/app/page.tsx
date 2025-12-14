@@ -1,13 +1,22 @@
-import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
+'use client';
 
-export default async function Home() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from './context/AuthContext';
 
-  if (token) {
-    redirect('/home');
-  } else {
-    redirect('/auth/signin');
-  }
+export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.push('/home');
+      } else {
+        router.push('/auth/signin');
+      }
+    }
+  }, [user, loading, router]);
+
+  return <>awdawdawdawdddddddddddddddddddd</>;
 }

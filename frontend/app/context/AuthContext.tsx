@@ -37,9 +37,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log('AuthProvider useEffect');
     const token = localStorage.getItem('token');
-    console.log('Token in localStorage:', token);
     if (token) {
       fetchUser();
     } else {
@@ -48,13 +46,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const fetchUser = async () => {
-    console.log('fetchUser called');
     try {
       const response = await usersRouterMe();
-      console.log('usersRouterMe response:', response);
       setUser(response);
     } catch (error: any) {
-      console.error('fetchUser error:', error);
       if (error.response?.status === 401) {
         // 토큰 만료
         localStorage.removeItem('token');
@@ -66,7 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('사용자 정보 로드 실패:', error);
       }
     } finally {
-      console.log('fetchUser finally, setting loading to false');
       setLoading(false);
     }
   };
