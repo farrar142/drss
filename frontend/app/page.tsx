@@ -8,8 +8,9 @@ import { useAuth } from './context/AuthContext';
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
-
+  console.log('Home component rendered', { loading, user });
   useEffect(() => {
+    console.log('useEffect triggered', { loading, user });
     if (!loading) {
       if (user) {
         router.push('/home');
@@ -29,5 +30,5 @@ export default function Home() {
     );
   }
 
-  return null;
+  return <></>;
 }
