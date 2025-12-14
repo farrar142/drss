@@ -12,7 +12,7 @@ type PaginatedResponse<T> = {
   next_cursor?: string | null;
 }
 
-const usePagination = <T = unknown>(paginationApi: (args: {
+const usePagination = <T extends { id: number }>(paginationApi: (args: {
   limit: number;
   cursor?: string;
   direction?: 'after' | 'before';
@@ -22,21 +22,26 @@ const usePagination = <T = unknown>(paginationApi: (args: {
   const [hasNext, setHasNext] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
+  const removeDuplicates = useCallback((items: T[]) => {
+    const seen = new Set<number>();
+    return items.filter(item => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, []);
+
   const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'after') => {
     if (loading) return;
     setLoading(true);
     try {
       const response = await paginationApi({
-        limit: 5,
+        limit: 10,
         cursor: cursor || undefined,
         direction
       });
       const newItems = response.items
-      if (direction === 'after') {
-        setItems(prev => [...prev, ...newItems]);
-      } else {
-        setItems(prev => [...newItems, ...prev]);
-      }
+      setItems(prev => removeDuplicates(direction === 'before' ? [...prev, ...newItems] : [...newItems, ...prev]));
       setHasNext(response.has_next);
       setNextCursor(response.next_cursor || null);
     } catch (error) {
@@ -44,7 +49,7 @@ const usePagination = <T = unknown>(paginationApi: (args: {
     } finally {
       setLoading(false);
     }
-  }, [loading]);
+  }, [loading, removeDuplicates]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -53,17 +58,24 @@ const usePagination = <T = unknown>(paginationApi: (args: {
   }, [loadItems, items.length]);
 
   const handleLoadMore = useCallback(() => {
+    //이전 글 불러오기
     if (hasNext && nextCursor) {
-      loadItems(nextCursor, 'after');
+      loadItems(nextCursor, 'before');
     }
   }, [hasNext, nextCursor, loadItems]);
-  return { items, handleLoadMore, hasNext }
+
+  const handleLoadNew = useCallback(() => {
+    //새로 생긴 글 불러오기
+    loadItems(null, 'after');
+  }, [loadItems]);
+
+  return { items, handleLoadMore, handleLoadNew, hasNext }
 }
 
 export default function HomePage() {
   const { } = useRSSStore();
-  const { items, handleLoadMore, hasNext } = usePagination<RSSItem>(feedsRoutersItemListAllItems);
+  const { items, handleLoadMore, handleLoadNew, hasNext } = usePagination<RSSItem>(feedsRoutersItemListAllItems);
 
 
-  return <FeedItemViewer items={items} onLoadMore={handleLoadMore} hasNext={hasNext} />;
+  return <FeedItemViewer items={items} onLoadMore={handleLoadMore} onLoadNew={handleLoadNew} hasNext={hasNext} />;
 }

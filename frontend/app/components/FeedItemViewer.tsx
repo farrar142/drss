@@ -7,8 +7,9 @@ import { FeedItemRenderer } from "./FeedItemRenderer";
 export const FeedItemViewer: FC<{
   items: RSSItem[],
   onLoadMore?: () => void,
+  onLoadNew?: () => void,
   hasNext?: boolean
-}> = ({ items, onLoadMore, hasNext }) => {
+}> = ({ items, onLoadMore, onLoadNew, hasNext }) => {
   const { viewMode } = useRSSStore();
   const theme = useTheme();
   const isMd = useMediaQuery(theme.breakpoints.down("md"));
@@ -62,6 +63,11 @@ export const FeedItemViewer: FC<{
   return (
     <>
       <Grid container width="100%">
+        <Grid size={12}>
+          <Button onClick={onLoadNew}>
+            새글불러오기
+          </Button>
+        </Grid>
         {viewMode === 'board' ? <Stack>{items.map((item, index) => (
           <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} ref={index === items.length - 1 ? lastItemRef : null} />
         ))}</Stack> : chunkedItems.map((row, rowIndex) => (
