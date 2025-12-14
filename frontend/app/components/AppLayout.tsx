@@ -104,7 +104,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleViewModeChange = () => {
-    setViewMode(viewMode === 'titles' ? 'categories' : 'titles');
+    setViewMode(viewMode === 'board' ? 'feed' : 'board');
   };
 
   // 로그인/회원가입 페이지에서는 레이아웃을 적용하지 않음
@@ -196,8 +196,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <FavoriteIcon />
               </IconButton>
             </Box>
-            <IconButton color="inherit" onClick={handleViewModeChange}>
-              {viewMode === 'titles' ? <ViewModuleIcon /> : <ViewListIcon />}
+            <IconButton color="inherit" onClick={handleViewModeChange} title={viewMode}>
+              {viewMode === 'board' ? <ViewModuleIcon /> : <ViewListIcon />}
             </IconButton>
             <IconButton color="inherit" onClick={handleSettingsClick}>
               <SettingsIcon />
