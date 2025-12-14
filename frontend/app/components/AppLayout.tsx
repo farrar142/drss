@@ -130,7 +130,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }} onClick={() => router.push("/home")}>
             DRSS - RSS Reader
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

@@ -6,55 +6,44 @@ type PaginatedResponse<T> = {
   next_cursor?: string | null;
 }
 
-type PaginationState<T> = {
-  items: T[];
-  hasNext: boolean;
-  nextCursor: string | null;
-  newestCursor: string | null;
+export type PaginationFilters = {
+  is_read?: boolean;
+  is_favorite?: boolean;
+  search?: string;
 }
-
-// Global cache to persist state across key changes
-const paginationCache = new Map<string | number, PaginationState<any>>();
 
 export const usePagination = <T extends { id: number }>(
   paginationApi: (args: {
     limit: number;
     cursor?: string;
     direction?: 'after' | 'before';
-  }) => Promise<PaginatedResponse<T>>,
+  } & PaginationFilters) => Promise<PaginatedResponse<T>>,
   getCursorField: (item: T) => string,
-  key?: string | number  // key to cache and restore pagination state
+  key?: string | number,  // key to reset pagination when changed
+  filters?: PaginationFilters
 ) => {
-  const cacheKey = key ?? '__default__';
-
-  // Initialize state from cache or defaults
-  const getInitialState = (): PaginationState<T> => {
-    const cached = paginationCache.get(cacheKey);
-    if (cached) return cached;
-    return { items: [], hasNext: false, nextCursor: null, newestCursor: null };
-  };
-
-  const [state, setState] = useState<PaginationState<T>>(getInitialState);
+  const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasNext, setHasNext] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [newestCursor, setNewestCursor] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);  // Track if initial load is done
+
+  // Combine key and filters into a single dependency string
+  const cacheKey = `${key ?? '__default__'}-${JSON.stringify(filters ?? {})}`;
   const prevKeyRef = useRef(cacheKey);
 
-  // Restore state from cache when key changes
+  // Reset state when key or filters change
   useEffect(() => {
     if (prevKeyRef.current !== cacheKey) {
-      const cached = paginationCache.get(cacheKey);
-      if (cached) {
-        setState(cached);
-      } else {
-        setState({ items: [], hasNext: false, nextCursor: null, newestCursor: null });
-      }
+      setItems([]);
+      setHasNext(false);
+      setNextCursor(null);
+      setNewestCursor(null);
+      setInitialized(false);  // Reset initialized flag
       prevKeyRef.current = cacheKey;
     }
   }, [cacheKey]);
-
-  // Save state to cache whenever it changes
-  useEffect(() => {
-    paginationCache.set(cacheKey, state);
-  }, [cacheKey, state]);
 
   const removeDuplicates = useCallback((items: T[]) => {
     const seen = new Set<number>();
@@ -91,75 +80,62 @@ export const usePagination = <T extends { id: number }>(
       const response = await paginationApi({
         limit: 10,
         cursor: cursor || undefined,
-        direction
+        direction,
+        ...filters
       });
       const newItems = response.items;
 
-      setState(prev => {
-        const mergedItems = direction === 'before'
-          ? [...prev.items, ...newItems]  // older items at the end
-          : [...newItems, ...prev.items]; // newer items at the beginning
-        const uniqueItems = removeDuplicates(mergedItems);
-
-        let newNewestCursor = prev.newestCursor;
-        if (newItems.length > 0) {
-          const newestItem = direction === 'before' ? newItems[0] : newItems[newItems.length - 1];
-          const newestItemCursor = getCursorField(newestItem);
-          if (!newNewestCursor || compareCursors(newestItemCursor, newNewestCursor) > 0) {
-            newNewestCursor = newestItemCursor;
-          }
-        }
-
-        return {
-          items: uniqueItems,
-          hasNext: direction === 'before' ? response.has_next : prev.hasNext,
-          nextCursor: direction === 'before' ? (response.next_cursor || null) : prev.nextCursor,
-          newestCursor: newNewestCursor,
-        };
+      setItems(prev => {
+        const merged = direction === 'before'
+          ? [...prev, ...newItems]  // older items at the end
+          : [...newItems, ...prev]; // newer items at the beginning
+        return removeDuplicates(merged);
       });
+
+      if (direction === 'before') {
+        // Update cursor for loading older items
+        setHasNext(response.has_next);
+        setNextCursor(response.next_cursor || null);
+      }
+
+      // Update newest cursor if we got new items
+      if (newItems.length > 0) {
+        // For 'before' direction, first item is newest; for 'after', last item is newest
+        const newestItem = direction === 'before' ? newItems[0] : newItems[newItems.length - 1];
+        const newestItemCursor = getCursorField(newestItem);
+        setNewestCursor(prev => {
+          if (!prev) return newestItemCursor;
+          // Keep the most recent cursor
+          return compareCursors(newestItemCursor, prev) > 0 ? newestItemCursor : prev;
+        });
+      }
     } catch (error) {
       console.error('Failed to load items:', error);
     } finally {
       setLoading(false);
+      setInitialized(true);  // Mark as initialized after first load attempt
     }
-  }, [loading, paginationApi, removeDuplicates, getCursorField, compareCursors]);
+  }, [loading, paginationApi, removeDuplicates, getCursorField, compareCursors, filters]);
 
   useEffect(() => {
-    if (state.items.length === 0 && !loading) {
+    if (!initialized && !loading) {
       loadItems(undefined, 'before');  // Initial load - get newest items first
     }
-  }, [state.items.length, loading, loadItems]);
+  }, [initialized, loading, loadItems]);
 
   const handleLoadMore = useCallback(() => {
     // 이전 글 불러오기 (older items)
-    if (state.hasNext && state.nextCursor) {
-      loadItems(state.nextCursor, 'before');
+    if (hasNext && nextCursor) {
+      loadItems(nextCursor, 'before');
     }
-  }, [state.hasNext, state.nextCursor, loadItems]);
+  }, [hasNext, nextCursor, loadItems]);
 
   const handleLoadNew = useCallback(() => {
     // 새로 생긴 글 불러오기 (newer items)
-    if (state.newestCursor) {
-      loadItems(state.newestCursor, 'after');
+    if (newestCursor) {
+      loadItems(newestCursor, 'after');
     }
-  }, [state.newestCursor, loadItems]);
+  }, [newestCursor, loadItems]);
 
-  const clearCache = useCallback(() => {
-    paginationCache.delete(cacheKey);
-    setState({ items: [], hasNext: false, nextCursor: null, newestCursor: null });
-  }, [cacheKey]);
-
-  return {
-    items: state.items,
-    handleLoadMore,
-    handleLoadNew,
-    hasNext: state.hasNext,
-    loading,
-    clearCache  // Expose method to manually clear cache if needed
-  }
-}
-
-// Utility to clear all pagination cache
-export const clearAllPaginationCache = () => {
-  paginationCache.clear();
+  return { items, handleLoadMore, handleLoadNew, hasNext, loading }
 }
