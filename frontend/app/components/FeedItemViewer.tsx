@@ -8,8 +8,9 @@ export const FeedItemViewer: FC<{
   items: RSSItem[],
   onLoadMore?: () => void,
   onLoadNew?: () => void,
-  hasNext?: boolean
-}> = ({ items, onLoadMore, onLoadNew, hasNext }) => {
+  hasNext?: boolean,
+  loading?: boolean
+}> = ({ items, onLoadMore, onLoadNew, hasNext, loading }) => {
   const { viewMode } = useRSSStore();
   const theme = useTheme();
   const isMd = useMediaQuery(theme.breakpoints.down("md"));
@@ -33,26 +34,31 @@ export const FeedItemViewer: FC<{
   const chunkedItems = useMemo(() => chunk(items, columns), [items, columns]);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState<string>('');
-  const lastItemRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Use ref to always have access to latest callback
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
 
   useEffect(() => {
-    if (!onLoadMore || !hasNext) return;
+    if (!hasNext || loading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
-          onLoadMore();
+        if (entries[0].isIntersecting && onLoadMoreRef.current) {
+          onLoadMoreRef.current();
+          console.log("Loading more items...");
         }
       },
-      { threshold: 1.0 }
+      { threshold: 0.1, rootMargin: '100px' }
     );
 
-    if (lastItemRef.current) {
-      observer.observe(lastItemRef.current);
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
     }
 
     return () => observer.disconnect();
-  }, [onLoadMore, hasNext, items.length]); // items.length를 추가해서 아이템이 추가될 때마다 재설정
+  }, [hasNext, loading]);
 
 
   const handleImageClick = useCallback((src: string) => {
@@ -68,19 +74,20 @@ export const FeedItemViewer: FC<{
             새글불러오기
           </Button>
         </Grid>
-        {viewMode === 'board' ? <Stack>{items.map((item, index) => (
-          <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} ref={index === items.length - 1 ? lastItemRef : null} />
+        {viewMode === 'board' ? <Stack>{items.map((item) => (
+          <FeedItemRenderer key={item.id} item={item} onImageClick={handleImageClick} />
         ))}</Stack> : chunkedItems.map((row, rowIndex) => (
           <Grid key={rowIndex} spacing={2} size={12 / columns}>
-            {row.map((item, itemIndex) => (
+            {row.map((item) => (
               <Stack key={item.id} >
-                <FeedItemRenderer item={item} onImageClick={handleImageClick} ref={rowIndex === chunkedItems.length - 1 && itemIndex === row.length - 1 ? lastItemRef : null} />
+                <FeedItemRenderer item={item} onImageClick={handleImageClick} />
               </Stack>
             ))}
 
-            <div ref={lastItemRef}></div>
           </Grid>
         ))}
+        {/* Sentinel element for infinite scroll */}
+        <div ref={sentinelRef} style={{ height: "1px", width: "100%" }} />
       </Grid>
       <Modal
         open={modalOpen}
