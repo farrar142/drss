@@ -6,9 +6,10 @@ import {
     RssFeed as RssFeedIcon,
 } from '@mui/icons-material';
 import { FC, useState, useEffect } from "react";
-import { feedsRouterListCategories, feedsRouterCreateCategory, feedsRouterDeleteCategory, feedsRouterListAllItems, feedsRouterListFeeds } from "../services/api";
+import { feedsRouterListCategories, feedsRouterCreateCategory, feedsRouterDeleteCategory, feedsRouterListFeeds } from "../services/api";
 import { RSSCategory, RSSFeed } from "../types/rss";
 import { useRouter } from "next/navigation";
+import { useRSSStore } from "../stores/rssStore";
 import { CategoryItem } from "./CategoryItem";
 
 const DRAWER_WIDTH = 240;
@@ -18,26 +19,23 @@ export const CategoryDrawer: FC<{
     pathname: string
 }> = ({ open, pathname }) => {
     const router = useRouter();
-    const [categories, setCategories] = useState<RSSCategory[]>([]);
+    const { categories, setCategories, addCategory, removeCategory, feeds, setFeeds } = useRSSStore();
     const [addCategoryOpen, setAddCategoryOpen] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryDescription, setNewCategoryDescription] = useState('');
-    const [feeds, setFeeds] = useState<RSSFeed[]>([]);
-
+    console.log(feeds)
     useEffect(() => {
         feedsRouterListFeeds().then(setFeeds)
-    }, [])
+    }, [setFeeds])
 
     useEffect(() => {
-        feedsRouterListCategories().then(res => {
-            setCategories(res);
-        })
-    }, [])
+        feedsRouterListCategories().then(setCategories)
+    }, [setCategories])
 
     const handleAddCategory = async () => {
         try {
-            await feedsRouterCreateCategory({ name: newCategoryName, description: newCategoryDescription });
-            setCategories(await feedsRouterListCategories());
+            const newCategory = await feedsRouterCreateCategory({ name: newCategoryName, description: newCategoryDescription });
+            addCategory(newCategory);
             setAddCategoryOpen(false);
             setNewCategoryName('');
             setNewCategoryDescription('');
@@ -46,8 +44,12 @@ export const CategoryDrawer: FC<{
         }
     };
     const handleDeleteCategory = async (category: RSSCategory) => {
-        await feedsRouterDeleteCategory(category.id);
-        setCategories(await feedsRouterListCategories());
+        try {
+            await feedsRouterDeleteCategory(category.id);
+            removeCategory(category.id);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return (

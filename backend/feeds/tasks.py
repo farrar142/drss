@@ -5,6 +5,7 @@ from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.utils import timezone as django_timezone
+from feeds.utils import fetch_feed_data
 
 
 @shared_task
@@ -21,15 +22,8 @@ def update_feed_items(feed_id):
         return f"Feed {feed_id} does not exist"
 
     try:
-        # Custom headers를 포함한 요청
-        headers = {"User-Agent": "RSS Reader/1.0"}
-        headers.update(feed.custom_headers or {})
-
-        response = requests.get(feed.url, headers=headers, timeout=30)
-        response.raise_for_status()
-
-        # RSS 파싱
-        feed_data = feedparser.parse(response.content)
+        # RSS 피드 데이터 가져오기
+        feed_data = fetch_feed_data(feed.url, feed.custom_headers)
 
         if feed_data.bozo:
             return f"Failed to parse feed {feed.url}: {feed_data.bozo_exception}"

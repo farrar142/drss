@@ -27,15 +27,16 @@ import {
 import { useRouter } from "next/navigation";
 import { RSSFeed } from "../types/rss";
 import { feedsRouterUpdateFeed, feedsRouterRefreshFeed, feedsRouterDeleteFeed, feedsRouterMarkAllFeedItemsRead } from "../services/api";
+import { useRSSStore } from "../stores/rssStore";
 
 interface FeedItemProps {
     feed: RSSFeed;
     categoryId: number;
-    onUpdate: () => void;
 }
 
-export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId, onUpdate }) => {
+export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId }) => {
     const router = useRouter();
+    const { updateFeed, removeFeed } = useRSSStore();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [editOpen, setEditOpen] = useState(false);
     const [editTitle, setEditTitle] = useState(feed.title);
@@ -58,13 +59,13 @@ export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId, onUpdate }
 
     const handleEditSave = async () => {
         try {
-            await feedsRouterUpdateFeed(feed.id, {
+            const updatedFeed = await feedsRouterUpdateFeed(feed.id, {
                 title: editTitle,
                 description: editDescription,
                 url: editUrl,
                 refresh_interval: editRefreshInterval,
             });
-            onUpdate();
+            updateFeed(updatedFeed);
             setEditOpen(false);
         } catch (error) {
             console.error(error);
@@ -85,7 +86,7 @@ export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId, onUpdate }
         if (confirm('정말로 이 피드를 삭제하시겠습니까?')) {
             try {
                 await feedsRouterDeleteFeed(feed.id);
-                onUpdate();
+                removeFeed(feed.id);
             } catch (error) {
                 console.error(error);
             }

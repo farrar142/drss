@@ -10,6 +10,7 @@ import { FC, useEffect, useMemo, useState } from "react";
 import { feedsRouterCreateFeed, feedsRouterListFeeds, feedsRouterValidateFeed } from "../services/api";
 import { RSSCategory, RSSFeed } from "../types/rss";
 import { FeedItem } from './FeedItem';
+import { useRSSStore } from "../stores/rssStore";
 
 export const CategoryItem: FC<{
     category: RSSCategory,
@@ -19,6 +20,7 @@ export const CategoryItem: FC<{
 }> =
     ({ category, pathname, deleteCategory, feeds: _feeds }) => {
         const router = useRouter();
+        const { addFeed } = useRSSStore();
         const [expanded, setExpanded] = useState(false);
         const [addFeedOpen, setAddFeedOpen] = useState(false);
         const [newFeedUrl, setNewFeedUrl] = useState('');
@@ -87,7 +89,7 @@ export const CategoryItem: FC<{
                     }
                 }
 
-                await feedsRouterCreateFeed({
+                const newFeed = await feedsRouterCreateFeed({
                     category_id: category.id,
                     url: newFeedUrl,
                     title: newFeedTitle,
@@ -95,9 +97,7 @@ export const CategoryItem: FC<{
                     custom_headers: customHeaders,
                     refresh_interval: newFeedRefreshInterval,
                 });
-                // Reload feeds
-                const allFeeds = await feedsRouterListFeeds();
-                const categoryFeeds = allFeeds.filter(feed => feed.category_id === category.id);
+                addFeed(newFeed);
                 setAddFeedOpen(false);
                 setNewFeedUrl('');
                 setNewFeedTitle('');
@@ -119,10 +119,7 @@ export const CategoryItem: FC<{
                     </AccordionSummary>
                     <AccordionDetails>
                         <List dense>
-                            {feeds.map(feed => <FeedItem feed={feed} key={feed.id} categoryId={category.id} onUpdate={() => {
-                                // Reload feeds
-
-                            }} />)}
+                            {feeds.map(feed => <FeedItem feed={feed} key={feed.id} categoryId={category.id} />)}
                         </List>
                         <Button variant="outlined" startIcon={<AddIcon />} onClick={() => setAddFeedOpen(true)} fullWidth sx={{ mt: 1 }}>
                             RSS 피드 추가

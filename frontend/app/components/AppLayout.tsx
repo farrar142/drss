@@ -53,6 +53,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { feedsRouterListCategories, feedsRouterValidateFeed, feedsRouterCreateCategory } from '../services/api';
+import { useRSSStore } from '../stores/rssStore';
 import { CategoryDrawer } from './CategoryDrawer';
 
 
@@ -65,11 +66,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const pathname = usePathname()
     const { user, logout } = useAuth();
 
-    // UI 상태
+    // Zustand store
+    const {
+        searchQuery,
+        filter,
+        viewMode,
+        setSearchQuery,
+        setFilter,
+        setViewMode,
+    } = useRSSStore();
+
+    // Local state
     const [drawerOpen, setDrawerOpen] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'favorite'>('all');
-    const [viewMode, setViewMode] = useState<'titles' | 'categories'>('categories');
     const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
 
     const toggleDrawer = () => {

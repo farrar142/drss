@@ -6,6 +6,7 @@ from base.authentications import JWTAuth
 import feedparser
 import requests
 from datetime import datetime
+from feeds.utils import fetch_feed_data
 
 router = Router()
 
@@ -80,18 +81,7 @@ class ItemSchema(Schema):
 @router.post("/feeds/validate", response=FeedValidationResponse, auth=JWTAuth())
 def validate_feed(request, data: FeedValidationRequest):
     try:
-        # Custom headers를 포함한 요청
-        headers = {"User-Agent": "RSS Reader/1.0"}
-        headers.update(data.custom_headers)
-
-        response = requests.get(data.url, headers=headers, timeout=10)
-        response.raise_for_status()
-
-        # RSS 파싱
-        feed = feedparser.parse(response.content)
-
-        if feed.bozo:  # 파싱 에러
-            raise Exception("Invalid RSS feed")
+        feed = fetch_feed_data(data.url, data.custom_headers)
 
         title = feed.feed.get("title", "Unknown Title")
         description = feed.feed.get("description", "")
@@ -171,18 +161,7 @@ def create_feed(request, data: FeedCreateSchema):
     # 제목이 제공되지 않은 경우 RSS 피드를 파싱해서 메타데이터 추출
     if not title:
         try:
-            # Custom headers를 포함한 요청
-            headers = {"User-Agent": "RSS Reader/1.0"}
-            headers.update(data.custom_headers)
-
-            response = requests.get(data.url, headers=headers, timeout=10)
-            response.raise_for_status()
-
-            # RSS 파싱
-            feed = feedparser.parse(response.content)
-
-            if feed.bozo:  # 파싱 에러
-                raise Exception("Invalid RSS feed")
+            feed = fetch_feed_data(data.url, data.custom_headers)
 
             # RSS 피드에서 제목 추출
             title = feed.feed.get("title", "Unknown Title")
