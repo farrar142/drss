@@ -6,6 +6,8 @@
     "python.linting.pylintArgs": [
         "--init-hook",
         "import sys; sys.path.append('backend')"
-    ]
+    ],
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
     // 다른 VS Code 설정은 그대로 두시면 됩니다.
 }

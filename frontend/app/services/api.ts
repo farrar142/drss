@@ -127,244 +127,262 @@ export interface ItemSchema {
 }
 
 export type FeedsRouterListAllItemsParams = {
-is_read?: boolean | null;
-is_favorite?: boolean | null;
-search?: string;
+  is_read?: boolean | null;
+  is_favorite?: boolean | null;
+  search?: string;
 };
 
 /**
  * @summary Login
  */
 export const usersRouterLogin = (
-    loginRequest: LoginRequest,
- ) => {
-      return axiosInstance<LoginResponse>(
-      {url: `/api/auth/login`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  loginRequest: LoginRequest,
+) => {
+  return axiosInstance<LoginResponse>(
+    {
+      url: `/api/auth/login`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: loginRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Signup
  */
 export const usersRouterSignup = (
-    signupRequest: SignupRequest,
- ) => {
-      return axiosInstance<SignupResponse>(
-      {url: `/api/auth/signup`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  signupRequest: SignupRequest,
+) => {
+  return axiosInstance<SignupResponse>(
+    {
+      url: `/api/auth/signup`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: signupRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Protected
  */
 export const usersRouterProtected = (
-    
- ) => {
-      return axiosInstance<ProtectedResponse>(
-      {url: `/api/auth/protected`, method: 'GET'
+
+) => {
+  return axiosInstance<ProtectedResponse>(
+    {
+      url: `/api/auth/protected`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Me
  */
 export const usersRouterMe = (
-    
- ) => {
-      return axiosInstance<UserResponse>(
-      {url: `/api/auth/me`, method: 'GET'
+
+) => {
+  return axiosInstance<UserResponse>(
+    {
+      url: `/api/auth/me`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Validate Feed
  */
 export const feedsRouterValidateFeed = (
-    feedValidationRequest: FeedValidationRequest,
- ) => {
-      return axiosInstance<FeedValidationResponse>(
-      {url: `/api/feeds/feeds/validate`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  feedValidationRequest: FeedValidationRequest,
+) => {
+  return axiosInstance<FeedValidationResponse>(
+    {
+      url: `/api/feeds/feeds/validate`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: feedValidationRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary List Categories
  */
 export const feedsRouterListCategories = (
-    
- ) => {
-      return axiosInstance<CategorySchema[]>(
-      {url: `/api/feeds/categories`, method: 'GET'
+
+) => {
+  return axiosInstance<CategorySchema[]>(
+    {
+      url: `/api/feeds/categories`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Create Category
  */
 export const feedsRouterCreateCategory = (
-    categoryCreateSchema: CategoryCreateSchema,
- ) => {
-      return axiosInstance<CategorySchema>(
-      {url: `/api/feeds/categories`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  categoryCreateSchema: CategoryCreateSchema,
+) => {
+  return axiosInstance<CategorySchema>(
+    {
+      url: `/api/feeds/categories`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: categoryCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Update Category
  */
 export const feedsRouterUpdateCategory = (
-    categoryId: number,
-    categoryCreateSchema: CategoryCreateSchema,
- ) => {
-      return axiosInstance<CategorySchema>(
-      {url: `/api/feeds/categories/${categoryId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  categoryId: number,
+  categoryCreateSchema: CategoryCreateSchema,
+) => {
+  return axiosInstance<CategorySchema>(
+    {
+      url: `/api/feeds/categories/${categoryId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: categoryCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Delete Category
  */
 export const feedsRouterDeleteCategory = (
-    categoryId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/categories/${categoryId}`, method: 'DELETE'
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/categories/${categoryId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary List Feeds
  */
 export const feedsRouterListFeeds = (
-    
- ) => {
-      return axiosInstance<FeedSchema[]>(
-      {url: `/api/feeds/feeds`, method: 'GET'
+
+) => {
+  return axiosInstance<FeedSchema[]>(
+    {
+      url: `/api/feeds/feeds`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Create Feed
  */
 export const feedsRouterCreateFeed = (
-    feedCreateSchema: FeedCreateSchema,
- ) => {
-      return axiosInstance<FeedSchema>(
-      {url: `/api/feeds/feeds`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  feedCreateSchema: FeedCreateSchema,
+) => {
+  return axiosInstance<FeedSchema>(
+    {
+      url: `/api/feeds/feeds`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: feedCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Update Feed
  */
 export const feedsRouterUpdateFeed = (
-    feedId: number,
-    feedUpdateSchema: FeedUpdateSchema,
- ) => {
-      return axiosInstance<FeedSchema>(
-      {url: `/api/feeds/feeds/${feedId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  feedId: number,
+  feedUpdateSchema: FeedUpdateSchema,
+) => {
+  return axiosInstance<FeedSchema>(
+    {
+      url: `/api/feeds/feeds/${feedId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: feedUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Delete Feed
  */
 export const feedsRouterDeleteFeed = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/feeds/${feedId}`, method: 'DELETE'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/feeds/${feedId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Refresh Feed
  */
 export const feedsRouterRefreshFeed = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/feeds/${feedId}/refresh`, method: 'POST'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/feeds/${feedId}/refresh`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Mark All Feed Items Read
  */
 export const feedsRouterMarkAllFeedItemsRead = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/feeds/${feedId}/mark-all-read`, method: 'PUT'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/feeds/${feedId}/mark-all-read`, method: 'PUT'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Toggle Item Favorite
  */
 export const feedsRouterToggleItemFavorite = (
-    itemId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/items/${itemId}/favorite`, method: 'PUT'
+  itemId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/items/${itemId}/favorite`, method: 'PUT'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary List All Items
  */
 export const feedsRouterListAllItems = (
-    params?: FeedsRouterListAllItemsParams,
- ) => {
-      return axiosInstance<ItemSchema[]>(
-      {url: `/api/feeds/items`, method: 'GET',
-        params
+  params?: FeedsRouterListAllItemsParams,
+) => {
+  return axiosInstance<ItemSchema[]>(
+    {
+      url: `/api/feeds/items`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Get Category Stats
  */
 export const feedsRouterGetCategoryStats = (
-    categoryId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/categories/${categoryId}/stats`, method: 'GET'
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/categories/${categoryId}/stats`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>

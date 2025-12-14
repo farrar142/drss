@@ -4,7 +4,7 @@ import {
     ExpandMore as ExpandMoreIcon,
     RssFeed as RssFeedIcon,
 } from '@mui/icons-material';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, ListItemButton, ListItemIcon, ListItemText, TextField, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { FC, useEffect, useMemo, useState } from "react";
 import { feedsRouterCreateFeed, feedsRouterListFeeds, feedsRouterValidateFeed } from "../services/api";
@@ -36,6 +36,8 @@ export const CategoryItem: FC<{
         useEffect(() => {
             if (categoryIdFromPath && parseInt(categoryIdFromPath) === category.id) {
                 setExpanded(true);
+            } else {
+                setExpanded(false);
             }
         }, [pathname, category.id]);
 
@@ -73,7 +75,7 @@ export const CategoryItem: FC<{
         };
 
         const handleSummaryClick = () => {
-            setExpanded(!expanded);
+            setExpanded(p => !p);
             router.push(`/category/${category.id}`);
         };
 
@@ -113,9 +115,20 @@ export const CategoryItem: FC<{
         return (
             <>
                 <Accordion expanded={expanded}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />} onClick={handleSummaryClick}>
-                        <CategoryIcon sx={{ mr: 1 }} />
-                        <Typography>{category.name}</Typography>
+                    <AccordionSummary expandIcon={
+                        <div onClick={() => setExpanded(p => !p)}>
+                            <ExpandMoreIcon />
+                        </div>}
+                        sx={{ minHeight: "24px !important" }}
+                        slotProps={{ "content": { sx: { margin: "0 !important", padding: 0 } } }}
+                    >
+                        <Box
+                            sx={{ display: 'flex', alignItems: 'center', mr: 1, width: "100%", m: 0, p: 0 }}
+                            onClick={handleSummaryClick}
+                        >
+                            <CategoryIcon sx={{ mr: 1 }} />
+                            <Typography >{category.name}</Typography>
+                        </Box>
                     </AccordionSummary>
                     <AccordionDetails>
                         <List dense>
