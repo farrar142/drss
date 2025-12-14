@@ -52,8 +52,6 @@ import {
 } from '@mui/icons-material';
 import { useTheme, useMediaQuery } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
-import { RSSCategory, RSSFeed } from '../types/rss';
-import { feedsRouterListCategories, feedsRouterValidateFeed, feedsRouterCreateCategory } from '../services/api';
 import { useRSSStore } from '../stores/rssStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 

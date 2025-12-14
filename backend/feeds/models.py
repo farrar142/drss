@@ -44,6 +44,7 @@ class RSSItem(models.Model):
     is_read = models.BooleanField(default=False)
     is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    feed_id: int
 
     class Meta:
         ordering = ["-published_at"]

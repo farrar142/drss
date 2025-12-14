@@ -1,10 +1,7 @@
-import { FC, useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { RSSCategory, RSSFeed, RSSItem } from "../types/rss";
+import { FC, useState, useCallback, useMemo, } from "react";
+import { RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
 import { Stack, Modal, Box, IconButton, Button, Grid, useTheme, useMediaQuery } from "@mui/material";
-import { CheckCircle, Favorite, ExpandMore, ExpandLess } from "@mui/icons-material";
-import parse from 'html-react-parser';
-import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
 import { FeedItemRenderer } from "./FeedItemRenderer";
 
 export const FeedItemViewer: FC<{

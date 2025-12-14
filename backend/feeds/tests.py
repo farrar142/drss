@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from ninja.testing import TestClient
-from feeds.router import router
+from feeds.routers.router import router
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from django.utils import timezone
 import jwt

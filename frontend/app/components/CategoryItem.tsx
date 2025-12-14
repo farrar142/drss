@@ -7,10 +7,10 @@ import {
 import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { FC, useEffect, useMemo, useState } from "react";
-import { feedsRouterCreateFeed, feedsRouterListFeeds, feedsRouterValidateFeed } from "../services/api";
 import { RSSCategory, RSSFeed } from "../types/rss";
 import { RSSFeedListItem } from './RSSFeedListItem';
 import { useRSSStore } from "../stores/rssStore";
+import { feedsRoutersFeedCreateFeed, feedsRoutersFeedValidateFeed } from '../services/api';
 
 export const CategoryItem: FC<{
   category: RSSCategory,
@@ -53,7 +53,7 @@ export const CategoryItem: FC<{
         if (newFeedCustomHeaders.trim()) {
           customHeaders = JSON.parse(newFeedCustomHeaders);
         }
-        const result = await feedsRouterValidateFeed({
+        const result = await feedsRoutersFeedValidateFeed({
           url: newFeedUrl,
           custom_headers: customHeaders,
         });
@@ -91,7 +91,7 @@ export const CategoryItem: FC<{
           }
         }
 
-        const newFeed = await feedsRouterCreateFeed({
+        const newFeed = await feedsRoutersFeedCreateFeed({
           category_id: category.id,
           url: newFeedUrl,
           title: newFeedTitle,

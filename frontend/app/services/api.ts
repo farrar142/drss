@@ -19,17 +19,6 @@ export interface FeedValidationRequest {
   custom_headers?: FeedValidationRequestCustomHeaders;
 }
 
-export interface CategorySchema {
-  id: number;
-  name: string;
-  description: string;
-}
-
-export interface CategoryCreateSchema {
-  name: string;
-  description?: string;
-}
-
 export type FeedSchemaCustomHeaders = { [key: string]: unknown };
 
 export interface FeedSchema {
@@ -84,6 +73,17 @@ export interface FeedUpdateSchema {
   refresh_interval?: FeedUpdateSchemaRefreshInterval;
 }
 
+export interface CategorySchema {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface CategoryCreateSchema {
+  name: string;
+  description?: string;
+}
+
 export interface ItemSchema {
   id: number;
   feed_id: number;
@@ -126,319 +126,298 @@ export interface ProtectedResponse {
   message: string;
 }
 
-export type FeedsRouterListAllItemsParams = {
-  is_read?: boolean | null;
-  is_favorite?: boolean | null;
-  search?: string;
+export type FeedsRoutersItemListAllItemsParams = {
+is_read?: boolean | null;
+is_favorite?: boolean | null;
+search?: string;
 };
 
 /**
  * @summary Validate Feed
  */
-export const feedsRouterValidateFeed = (
-  feedValidationRequest: FeedValidationRequest,
-) => {
-  return axiosInstance<FeedValidationResponse>(
-    {
-      url: `/api/feeds/feeds/validate`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
+export const feedsRoutersFeedValidateFeed = (
+    feedValidationRequest: FeedValidationRequest,
+ ) => {
+      return axiosInstance<FeedValidationResponse>(
+      {url: `/api/feeds/validate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: feedValidationRequest
     },
-  );
-}
-
-/**
- * @summary List Categories
- */
-export const feedsRouterListCategories = (
-
-) => {
-  return axiosInstance<CategorySchema[]>(
-    {
-      url: `/api/feeds/categories`, method: 'GET'
-    },
-  );
-}
-
-/**
- * @summary Create Category
- */
-export const feedsRouterCreateCategory = (
-  categoryCreateSchema: CategoryCreateSchema,
-) => {
-  return axiosInstance<CategorySchema>(
-    {
-      url: `/api/feeds/categories`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
-      data: categoryCreateSchema
-    },
-  );
-}
-
-/**
- * @summary Update Category
- */
-export const feedsRouterUpdateCategory = (
-  categoryId: number,
-  categoryCreateSchema: CategoryCreateSchema,
-) => {
-  return axiosInstance<CategorySchema>(
-    {
-      url: `/api/feeds/categories/${categoryId}`, method: 'PUT',
-      headers: { 'Content-Type': 'application/json', },
-      data: categoryCreateSchema
-    },
-  );
-}
-
-/**
- * @summary Delete Category
- */
-export const feedsRouterDeleteCategory = (
-  categoryId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/categories/${categoryId}`, method: 'DELETE'
-    },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary List Feeds
  */
-export const feedsRouterListFeeds = (
-
-) => {
-  return axiosInstance<FeedSchema[]>(
-    {
-      url: `/api/feeds/feeds`, method: 'GET'
+export const feedsRoutersFeedListFeeds = (
+    
+ ) => {
+      return axiosInstance<FeedSchema[]>(
+      {url: `/api/feeds/feeds`, method: 'GET'
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Create Feed
  */
-export const feedsRouterCreateFeed = (
-  feedCreateSchema: FeedCreateSchema,
-) => {
-  return axiosInstance<FeedSchema>(
-    {
-      url: `/api/feeds/feeds`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
+export const feedsRoutersFeedCreateFeed = (
+    feedCreateSchema: FeedCreateSchema,
+ ) => {
+      return axiosInstance<FeedSchema>(
+      {url: `/api/feeds/feeds`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: feedCreateSchema
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Update Feed
  */
-export const feedsRouterUpdateFeed = (
-  feedId: number,
-  feedUpdateSchema: FeedUpdateSchema,
-) => {
-  return axiosInstance<FeedSchema>(
-    {
-      url: `/api/feeds/feeds/${feedId}`, method: 'PUT',
-      headers: { 'Content-Type': 'application/json', },
+export const feedsRoutersFeedUpdateFeed = (
+    feedId: number,
+    feedUpdateSchema: FeedUpdateSchema,
+ ) => {
+      return axiosInstance<FeedSchema>(
+      {url: `/api/feeds/${feedId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
       data: feedUpdateSchema
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Delete Feed
  */
-export const feedsRouterDeleteFeed = (
-  feedId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/feeds/${feedId}`, method: 'DELETE'
+export const feedsRoutersFeedDeleteFeed = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}`, method: 'DELETE'
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Refresh Feed
  */
-export const feedsRouterRefreshFeed = (
-  feedId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/feeds/${feedId}/refresh`, method: 'POST'
+export const feedsRoutersFeedRefreshFeed = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/refresh`, method: 'POST'
     },
-  );
-}
-
-/**
- * @summary Refresh Category Feeds
- */
-export const feedsRouterRefreshCategoryFeeds = (
-  categoryId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/categories/${categoryId}/refresh`, method: 'POST'
-    },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Mark All Feed Items Read
  */
-export const feedsRouterMarkAllFeedItemsRead = (
-  feedId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/feeds/${feedId}/mark-all-read`, method: 'PUT'
+export const feedsRoutersFeedMarkAllFeedItemsRead = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/mark-all-read`, method: 'PUT'
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Delete All Feed Items
  */
-export const feedsRouterDeleteAllFeedItems = (
-  feedId: number,
-) => {
-  return axiosInstance<{ success: boolean; deleted_count: number }>(
-    {
-      url: `/api/feeds/feeds/${feedId}/items`, method: 'DELETE'
+export const feedsRoutersFeedDeleteAllFeedItems = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/items`, method: 'DELETE'
     },
-  );
-}
-
+      );
+    }
+  
 /**
- * @summary Delete Feed
+ * @summary List Categories
  */
-export const feedsRouterToggleItemFavorite = (
-  itemId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/items/${itemId}/favorite`, method: 'PUT'
+export const feedsRoutersCategoryListCategories = (
+    
+ ) => {
+      return axiosInstance<CategorySchema[]>(
+      {url: `/api/categories/`, method: 'GET'
     },
-  );
-}
-
+      );
+    }
+  
 /**
- * @summary Toggle Item Read
+ * @summary Create Category
  */
-export const feedsRouterToggleItemRead = (
-  itemId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/items/${itemId}/read`, method: 'PUT'
+export const feedsRoutersCategoryCreateCategory = (
+    categoryCreateSchema: CategoryCreateSchema,
+ ) => {
+      return axiosInstance<CategorySchema>(
+      {url: `/api/categories/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: categoryCreateSchema
     },
-  );
-}
-
+      );
+    }
+  
 /**
- * @summary List All Items
+ * @summary Update Category
  */
-export const feedsRouterListAllItems = (
-  params?: FeedsRouterListAllItemsParams,
-) => {
-  return axiosInstance<ItemSchema[]>(
-    {
-      url: `/api/feeds/items`, method: 'GET',
-      params
+export const feedsRoutersCategoryUpdateCategory = (
+    categoryId: number,
+    categoryCreateSchema: CategoryCreateSchema,
+ ) => {
+      return axiosInstance<CategorySchema>(
+      {url: `/api/categories/${categoryId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: categoryCreateSchema
     },
-  );
-}
-
+      );
+    }
+  
+/**
+ * @summary Delete Category
+ */
+export const feedsRoutersCategoryDeleteCategory = (
+    categoryId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/categories/${categoryId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * @summary Refresh Category Feeds
+ */
+export const feedsRoutersCategoryRefreshCategoryFeeds = (
+    categoryId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/categories/${categoryId}/refresh`, method: 'POST'
+    },
+      );
+    }
+  
 /**
  * @summary Get Category Stats
  */
-export const feedsRouterGetCategoryStats = (
-  categoryId: number,
-) => {
-  return axiosInstance<void>(
-    {
-      url: `/api/feeds/categories/${categoryId}/stats`, method: 'GET'
+export const feedsRoutersCategoryGetCategoryStats = (
+    categoryId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/categories/${categoryId}/stats`, method: 'GET'
     },
-  );
-}
-
+      );
+    }
+  
+/**
+ * @summary Toggle Item Favorite
+ */
+export const feedsRoutersItemToggleItemFavorite = (
+    itemId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/items/${itemId}/favorite`, method: 'PUT'
+    },
+      );
+    }
+  
+/**
+ * @summary Toggle Item Read
+ */
+export const feedsRoutersItemToggleItemRead = (
+    itemId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/items/${itemId}/read`, method: 'PUT'
+    },
+      );
+    }
+  
+/**
+ * @summary List All Items
+ */
+export const feedsRoutersItemListAllItems = (
+    params?: FeedsRoutersItemListAllItemsParams,
+ ) => {
+      return axiosInstance<ItemSchema[]>(
+      {url: `/api/items/`, method: 'GET',
+        params
+    },
+      );
+    }
+  
 /**
  * @summary Login
  */
 export const usersRouterLogin = (
-  loginRequest: LoginRequest,
-) => {
-  return axiosInstance<LoginResponse>(
-    {
-      url: `/api/auth/login`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
+    loginRequest: LoginRequest,
+ ) => {
+      return axiosInstance<LoginResponse>(
+      {url: `/api/auth/login`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: loginRequest
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Signup
  */
 export const usersRouterSignup = (
-  signupRequest: SignupRequest,
-) => {
-  return axiosInstance<SignupResponse>(
-    {
-      url: `/api/auth/signup`, method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
+    signupRequest: SignupRequest,
+ ) => {
+      return axiosInstance<SignupResponse>(
+      {url: `/api/auth/signup`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
       data: signupRequest
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Protected
  */
 export const usersRouterProtected = (
-
-) => {
-  return axiosInstance<ProtectedResponse>(
-    {
-      url: `/api/auth/protected`, method: 'GET'
+    
+ ) => {
+      return axiosInstance<ProtectedResponse>(
+      {url: `/api/auth/protected`, method: 'GET'
     },
-  );
-}
-
+      );
+    }
+  
 /**
  * @summary Me
  */
 export const usersRouterMe = (
-
-) => {
-  return axiosInstance<UserResponse>(
-    {
-      url: `/api/auth/me`, method: 'GET'
+    
+ ) => {
+      return axiosInstance<UserResponse>(
+      {url: `/api/auth/me`, method: 'GET'
     },
-  );
-}
-
-export type FeedsRouterValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterValidateFeed>>>
-export type FeedsRouterListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListCategories>>>
-export type FeedsRouterCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateCategory>>>
-export type FeedsRouterUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateCategory>>>
-export type FeedsRouterDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteCategory>>>
-export type FeedsRouterListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeeds>>>
-export type FeedsRouterCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateFeed>>>
-export type FeedsRouterUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateFeed>>>
-export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteFeed>>>
-export type FeedsRouterRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshFeed>>>
-export type FeedsRouterRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshCategoryFeeds>>>
-export type FeedsRouterMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkAllFeedItemsRead>>>
-export type FeedsRouterDeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteAllFeedItems>>>
-export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
-export type FeedsRouterToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemRead>>>
-export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>
-export type FeedsRouterGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetCategoryStats>>>
+      );
+    }
+  
+export type FeedsRoutersFeedValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedValidateFeed>>>
+export type FeedsRoutersFeedListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedListFeeds>>>
+export type FeedsRoutersFeedCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedCreateFeed>>>
+export type FeedsRoutersFeedUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedUpdateFeed>>>
+export type FeedsRoutersFeedDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedDeleteFeed>>>
+export type FeedsRoutersFeedRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedRefreshFeed>>>
+export type FeedsRoutersFeedMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedMarkAllFeedItemsRead>>>
+export type FeedsRoutersFeedDeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedDeleteAllFeedItems>>>
+export type FeedsRoutersCategoryListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryListCategories>>>
+export type FeedsRoutersCategoryCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryCreateCategory>>>
+export type FeedsRoutersCategoryUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryUpdateCategory>>>
+export type FeedsRoutersCategoryDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryDeleteCategory>>>
+export type FeedsRoutersCategoryRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryRefreshCategoryFeeds>>>
+export type FeedsRoutersCategoryGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryGetCategoryStats>>>
+export type FeedsRoutersItemToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemFavorite>>>
+export type FeedsRoutersItemToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemRead>>>
+export type FeedsRoutersItemListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListAllItems>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>

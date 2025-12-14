@@ -2,9 +2,9 @@ import { CheckCircle, Favorite } from "@mui/icons-material";
 import { IconButton, Stack } from "@mui/material";
 import parse from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
+import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 
 const renderDescription = (description: string, onImageClick: (url: string) => void, onVideoMount: (video: HTMLVideoElement) => void) => {
   return parse(description, {
@@ -70,7 +70,7 @@ export const FeedItemRenderer: FC<{
 
   const handleToggleFavorite = useCallback(async () => {
     try {
-      await feedsRouterToggleItemFavorite(item.id);
+      await feedsRoutersItemToggleItemFavorite(item.id);
       setIsFavorite(!isFavorite);
     } catch (error) {
       console.error(error);
@@ -79,7 +79,7 @@ export const FeedItemRenderer: FC<{
 
   const handleToggleRead = useCallback(async () => {
     try {
-      await feedsRouterToggleItemRead(item.id);
+      await feedsRoutersItemToggleItemRead(item.id);
       setIsRead(!isRead);
     } catch (error) {
       console.error(error);

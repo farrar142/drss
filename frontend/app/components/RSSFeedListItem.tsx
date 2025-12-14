@@ -27,8 +27,8 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { RSSFeed } from "../types/rss";
-import { feedsRouterUpdateFeed, feedsRouterRefreshFeed, feedsRouterDeleteFeed, feedsRouterMarkAllFeedItemsRead, FeedSchema } from "../services/api";
 import { useRSSStore } from "../stores/rssStore";
+import { FeedSchema, feedsRoutersFeedDeleteFeed, feedsRoutersFeedMarkAllFeedItemsRead, feedsRoutersFeedRefreshFeed, feedsRoutersFeedUpdateFeed } from "../services/api";
 
 interface RSSFeedListItemProps {
   feed: FeedSchema;
@@ -59,7 +59,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
 
   const handleEditSave = async () => {
     try {
-      const updatedFeed = await feedsRouterUpdateFeed(feed.id, {
+      const updatedFeed = await feedsRoutersFeedUpdateFeed(feed.id, {
         title: editTitle,
         description: editDescription,
         url: editUrl,
@@ -74,7 +74,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
 
   const handleRefresh = async () => {
     try {
-      await feedsRouterRefreshFeed(feed.id);
+      await feedsRoutersFeedRefreshFeed(feed.id);
       alert('피드 새로고침이 예약되었습니다.');
     } catch (error) {
       console.error(error);
@@ -85,7 +85,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
   const handleDelete = async () => {
     if (confirm('정말로 이 피드를 삭제하시겠습니까?')) {
       try {
-        await feedsRouterDeleteFeed(feed.id);
+        await feedsRoutersFeedDeleteFeed(feed.id);
         removeFeed(feed.id);
       } catch (error) {
         console.error(error);
@@ -96,7 +96,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
 
   const handleMarkAllRead = async () => {
     try {
-      await feedsRouterMarkAllFeedItemsRead(feed.id);
+      await feedsRoutersFeedMarkAllFeedItemsRead(feed.id);
       alert('모든 아이템을 읽음으로 표시했습니다.');
     } catch (error) {
       console.error(error);
