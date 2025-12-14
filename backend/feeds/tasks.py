@@ -1,0 +1,118 @@
+import feedparser
+import requests
+from datetime import datetime, timezone
+from celery import shared_task
+from django.contrib.auth import get_user_model
+from django.apps import apps
+from django.utils import timezone as django_timezone
+
+
+@shared_task
+def update_feed_items(feed_id):
+    """
+    특정 RSS 피드의 아이템들을 업데이트하는 task
+    """
+    RSSFeed = apps.get_model("feeds", "RSSFeed")
+    RSSItem = apps.get_model("feeds", "RSSItem")
+
+    try:
+        feed = RSSFeed.objects.get(id=feed_id)
+    except RSSFeed.DoesNotExist:
+        return f"Feed {feed_id} does not exist"
+
+    try:
+        # Custom headers를 포함한 요청
+        headers = {"User-Agent": "RSS Reader/1.0"}
+        headers.update(feed.custom_headers or {})
+
+        response = requests.get(feed.url, headers=headers, timeout=30)
+        response.raise_for_status()
+
+        # RSS 파싱
+        feed_data = feedparser.parse(response.content)
+
+        if feed_data.bozo:
+            return f"Failed to parse feed {feed.url}: {feed_data.bozo_exception}"
+
+        # 새로운 아이템들 수집
+        new_items = []
+        existing_guids = set(
+            RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
+        )
+
+        for entry in feed_data.entries:
+            # GUID 생성 (없으면 link 사용)
+            guid = (
+                getattr(entry, "id", None) or getattr(entry, "guid", None) or entry.link
+            )
+
+            if guid in existing_guids:
+                continue
+
+            # 제목 추출
+            title = getattr(entry, "title", "No Title")
+
+            # 설명 추출
+            description = ""
+            if hasattr(entry, "description"):
+                description = entry.description
+            elif hasattr(entry, "summary"):
+                description = entry.summary
+
+            # 링크 추출
+            link = getattr(entry, "link", "")
+
+            # 발행일 추출
+            published_at = django_timezone.now()
+            if hasattr(entry, "published_parsed") and entry.published_parsed:
+                try:
+                    published_at = datetime(
+                        *entry.published_parsed[:6], tzinfo=timezone.utc
+                    )
+                except (ValueError, TypeError):
+                    pass
+            elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
+                try:
+                    published_at = datetime(
+                        *entry.updated_parsed[:6], tzinfo=timezone.utc
+                    )
+                except (ValueError, TypeError):
+                    pass
+
+            new_items.append(
+                RSSItem(
+                    feed=feed,
+                    title=title,
+                    link=link,
+                    description=description,
+                    published_at=published_at,
+                    guid=guid,
+                )
+            )
+
+        # 새로운 아이템들 bulk create
+        if new_items:
+            RSSItem.objects.bulk_create(new_items)
+            feed.last_updated = django_timezone.now()
+            feed.save()
+
+        return f"Updated feed {feed.title}: {len(new_items)} new items"
+
+    except Exception as e:
+        return f"Failed to update feed {feed.url}: {str(e)}"
+
+
+@shared_task
+def update_all_feeds():
+    """
+    모든 활성화된 RSS 피드들을 업데이트하는 task
+    """
+    RSSFeed = apps.get_model("feeds", "RSSFeed")
+    feeds = RSSFeed.objects.filter(visible=True)
+    results = []
+
+    for feed in feeds:
+        result = update_feed_items.delay(feed.id)
+        results.append(result)
+
+    return f"Scheduled updates for {len(feeds)} feeds"

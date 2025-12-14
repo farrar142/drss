@@ -52,6 +52,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (error.response?.status === 401) {
                 // 토큰 만료
                 localStorage.removeItem('token');
+                // 쿠키에서도 제거
+                document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                 setUser(null);
             } else {
                 // 다른 에러
@@ -69,6 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         const { token, user } = response;
         localStorage.setItem('token', token);
+        // 쿠키에도 저장 (middleware에서 사용)
+        document.cookie = `token=${token}; path=/; max-age=86400`; // 24시간
         setUser(user);
     };
 
@@ -80,9 +84,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         const { token, user } = response;
         localStorage.setItem('token', token);
+        // 쿠키에도 저장 (middleware에서 사용)
+        document.cookie = `token=${token}; path=/; max-age=86400`; // 24시간
         setUser(user);
-    }; const logout = () => {
+    };
+
+    const logout = () => {
         localStorage.removeItem('token');
+        // 쿠키에서도 제거
+        document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         setUser(null);
     };
 
