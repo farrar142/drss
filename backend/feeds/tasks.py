@@ -39,6 +39,7 @@ def update_feed_items(feed_id):
         existing_guids = set(
             RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
         )
+        from feedparser import FeedParserDict
 
         for entry in feed_data.entries:
             # GUID 생성 (없으면 link 사용)

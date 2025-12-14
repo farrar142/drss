@@ -46,8 +46,8 @@ INSTALLED_APPS = [
     "users",
     "feeds",
     "ninja",
-    "django_celery_beat",
     "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -150,8 +150,6 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
-
-# Celery Beat Settings
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CORS_ALLOW_ALL_ORIGINS = True
