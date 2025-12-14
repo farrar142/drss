@@ -1,8 +1,29 @@
+'use client';
+
 import { FC, useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
-import { Stack, Modal, Box, Button, Grid, useTheme, useMediaQuery } from "@mui/material";
 import { FeedItemRenderer } from "./FeedItemRenderer";
+
+// Custom hook for media queries
+const useMediaQuery = (query: string): boolean => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
 
 // Masonry layout hook - distributes items into columns in sequential groups
 // Items are processed in groups of `columns` size, maintaining reading order
@@ -141,9 +162,8 @@ export const FeedItemViewer: FC<{
   loading?: boolean
 }> = ({ items, onLoadMore, onLoadNew, hasNext, loading }) => {
   const { viewMode } = useRSSStore();
-  const theme = useTheme();
-  const isMd = useMediaQuery(theme.breakpoints.down("md"));
-  const isXl = useMediaQuery(theme.breakpoints.up("xl"));
+  const isMd = useMediaQuery('(max-width: 768px)');
+  const isXl = useMediaQuery('(min-width: 1280px)');
 
   let columns = 1;
   if (isXl) columns = 3;
@@ -196,49 +216,44 @@ export const FeedItemViewer: FC<{
     setModalOpen(true);
   }, []);
 
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalMedia(null);
+  };
+
   return (
     <>
-      <Grid container width="100%" spacing={2}>
-        <Grid size={12}>
-          <Button
-            onClick={onLoadNew}
-            variant="contained"
-            sx={{
-              background: 'var(--button-gradient)',
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 3,
-              py: 1,
-              boxShadow: '0 4px 15px var(--shadow-color)',
-              '&:hover': {
-                background: 'var(--button-gradient-hover)',
-                boxShadow: '0 6px 20px var(--shadow-color)',
-                transform: 'translateY(-1px)',
-              },
-              transition: 'all 0.2s ease',
-            }}
-          >
-            새글 불러오기
-          </Button>
-        </Grid>
+      <div className="w-full space-y-4">
+        {/* Load New Button */}
+        <Button
+          onClick={onLoadNew}
+          className="shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+        >
+          새글 불러오기
+        </Button>
+
+        {/* Content Grid */}
         {viewMode === 'board' ? (
-          <Stack width="100%" spacing={1.5} sx={{ px: 1 }}>
+          // Board Mode - Single Column
+          <div className="w-full space-y-3 px-1">
             {items.map((item) => (
               <FeedItemRenderer key={item.id} item={item} onMediaClick={handleMediaClick} />
             ))}
             {/* Sentinel element for board mode */}
             {hasNext && (
-              <div
-                ref={setSentinelRef(0)}
-                style={{ height: "1px", width: "100%" }}
-              />
+              <div ref={setSentinelRef(0)} className="h-px w-full" />
             )}
-          </Stack>
+          </div>
         ) : (
-          columnItems.map((columnData, columnIndex) => (
-            <Grid key={columnIndex} size={12 / columns}>
-              <Stack spacing={2}>
+          // Masonry Mode - Multiple Columns
+          <div className={cn(
+            "grid gap-4",
+            columns === 1 && "grid-cols-1",
+            columns === 2 && "grid-cols-2",
+            columns === 3 && "grid-cols-3"
+          )}>
+            {columnItems.map((columnData, columnIndex) => (
+              <div key={columnIndex} className="space-y-4">
                 {columnData.map((item) => (
                   <MeasuredItem
                     key={item.id}
@@ -249,75 +264,61 @@ export const FeedItemViewer: FC<{
                 ))}
                 {/* Sentinel element at the end of each column */}
                 {hasNext && (
-                  <div
-                    ref={setSentinelRef(columnIndex)}
-                    style={{ height: "1px", width: "100%" }}
-                  />
+                  <div ref={setSentinelRef(columnIndex)} className="h-px w-full" />
                 )}
-              </Stack>
-            </Grid>
-          ))
+              </div>
+            ))}
+          </div>
         )}
-      </Grid>
-      <Modal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setModalMedia(null);
-        }}
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <Box
-          sx={{
-            width: '90vw',
-            height: '90vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            outline: 'none',
-            background: 'var(--modal-bg)',
-            borderRadius: 4,
-            border: '1px solid var(--border-color)',
-            boxShadow: '0 8px 32px var(--shadow-color)',
-            p: 2,
-          }}
-          onClick={() => {
-            setModalOpen(false);
-            setModalMedia(null);
-          }}
+      </div>
+
+      {/* Media Modal */}
+      {modalOpen && (
+        <div
+          className={cn(
+            "fixed inset-0 z-50 flex items-center justify-center",
+            "bg-black/80 backdrop-blur-sm"
+          )}
+          onClick={closeModal}
         >
-          {modalMedia?.type === 'video' ? (
-            <video
-              src={modalMedia.src}
-              controls
-              autoPlay
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain',
-                borderRadius: '8px',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : modalMedia?.type === 'image' ? (
-            <img
-              src={modalMedia.src}
-              alt="Enlarged"
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain',
-                borderRadius: '8px',
-              }}
-            />
-          ) : null}
-        </Box>
-      </Modal>
+          {/* Close Button */}
+          <button
+            onClick={closeModal}
+            className={cn(
+              "absolute top-4 right-4 p-2 rounded-full",
+              "bg-white/10 hover:bg-white/20 transition-colors"
+            )}
+          >
+            <X className="w-6 h-6 text-white" />
+          </button>
+
+          {/* Media Content */}
+          <div
+            className={cn(
+              "w-[90vw] h-[90vh] flex items-center justify-center",
+              "bg-card/90 rounded-2xl border border-border p-4",
+              "shadow-2xl"
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {modalMedia?.type === 'video' ? (
+              <video
+                src={modalMedia.src}
+                controls
+                autoPlay
+                className="max-w-full max-h-full object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : modalMedia?.type === 'image' ? (
+              <img
+                src={modalMedia.src}
+                alt="Enlarged"
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            ) : null}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -1,34 +1,42 @@
+'use client';
+
 import React, { useState } from "react";
 import {
-  RssFeed as RssFeedIcon,
-  MoreVert as MoreVertIcon,
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  Delete as DeleteIcon,
-  CheckCircle as CheckCircleIcon,
-} from '@mui/icons-material';
-import {
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
-  Menu,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Avatar,
-  Box,
-  Button,
-  Typography,
-} from "@mui/material";
+  Rss,
+  MoreVertical,
+  Pencil,
+  RefreshCw,
+  Trash2,
+  CheckCircle
+} from 'lucide-react';
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RSSFeed } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
-import { FeedSchema, feedsRoutersFeedDeleteFeed, feedsRoutersFeedMarkAllFeedItemsRead, feedsRoutersFeedRefreshFeed, feedsRoutersFeedUpdateFeed } from "../services/api";
+import {
+  FeedSchema,
+  feedsRoutersFeedDeleteFeed,
+  feedsRoutersFeedMarkAllFeedItemsRead,
+  feedsRoutersFeedRefreshFeed,
+  feedsRoutersFeedUpdateFeed
+} from "../services/api";
 
 interface RSSFeedListItemProps {
   feed: FeedSchema;
@@ -38,23 +46,14 @@ interface RSSFeedListItemProps {
 export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, categoryId }) => {
   const router = useRouter();
   const { updateFeed, removeFeed } = useRSSStore();
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(feed.title);
   const [editDescription, setEditDescription] = useState(feed.description);
   const [editUrl, setEditUrl] = useState(feed.url);
   const [editRefreshInterval, setEditRefreshInterval] = useState(feed.refresh_interval);
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
 
   const handleEdit = () => {
     setEditOpen(true);
-    setAnchorEl(null);
   };
 
   const handleEditSave = async () => {
@@ -79,7 +78,6 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
     } catch (error) {
       console.error(error);
     }
-    setAnchorEl(null);
   };
 
   const handleDelete = async () => {
@@ -91,7 +89,6 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
         console.error(error);
       }
     }
-    setAnchorEl(null);
   };
 
   const handleMarkAllRead = async () => {
@@ -101,220 +98,140 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
     } catch (error) {
       console.error(error);
     }
-    setAnchorEl(null);
   };
 
   return (
     <>
-      <ListItem key={feed.id} disablePadding>
-        <ListItemButton
+      <div className="flex items-center group">
+        {/* Feed Item Button */}
+        <button
           onClick={() => router.push(`/category/${categoryId}/feed/${feed.id}`)}
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            p: 1,
-            m: 0,
-            borderRadius: 1.5,
-            '&:hover': {
-              background: 'var(--hover-bg)',
-            },
-          }}
-        >
-          {feed.favicon_url ? (
-            <Avatar src={feed.favicon_url} sx={{ width: 20, height: 20 }} />
-          ) : (
-            <RssFeedIcon fontSize="small" sx={{ color: 'var(--accent-solid)' }} />
+          className={cn(
+            "flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md",
+            "hover:bg-sidebar-accent/50 transition-colors",
+            "text-left"
           )}
-          <Typography
-            fontSize="0.75rem"
-            sx={{
-              flexGrow: 1,
-              mx: 1,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              color: 'var(--text-primary)',
-            }}
-          >
-            {feed.title}
-          </Typography>
-          <Typography
-            fontSize="0.7rem"
-            sx={{
-              background: 'var(--accent-color)',
-              px: 1,
-              py: 0.25,
-              borderRadius: 1,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-            }}
-          >
-            {feed.item_count}
-          </Typography>
-        </ListItemButton>
-        <IconButton
-          sx={{
-            p: 0.5,
-            m: 0,
-            '&:hover': {
-              background: 'var(--hover-bg)',
-            },
-          }}
-          onClick={handleMenuClick}
-          size="small"
         >
-          <MoreVertIcon fontSize="small" sx={{ color: 'var(--text-secondary)' }} />
-        </IconButton>
-      </ListItem>
+          {/* Feed Icon */}
+          {feed.favicon_url ? (
+            <img
+              src={feed.favicon_url}
+              alt=""
+              className="w-4 h-4 rounded-sm object-cover"
+            />
+          ) : (
+            <Rss className="w-4 h-4 text-primary shrink-0" />
+          )}
 
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        PaperProps={{
-          sx: {
-            background: 'var(--dialog-bg)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 2,
-            boxShadow: '0 8px 32px var(--shadow-color)',
-            '& .MuiMenuItem-root': {
-              color: 'var(--text-primary)',
-              '&:hover': {
-                background: 'var(--hover-bg)',
-              },
-            },
-          },
-        }}
-      >
-        <MenuItem onClick={handleEdit}>
-          <EditIcon sx={{ mr: 1, color: 'var(--accent-solid)' }} />
-          수정
-        </MenuItem>
-        <MenuItem onClick={handleRefresh}>
-          <RefreshIcon sx={{ mr: 1, color: '#4caf50' }} />
-          새로고침
-        </MenuItem>
-        <MenuItem onClick={handleMarkAllRead}>
-          <CheckCircleIcon sx={{ mr: 1, color: '#2196f3' }} />
-          전체 읽음 처리
-        </MenuItem>
-        <MenuItem onClick={handleDelete}>
-          <DeleteIcon sx={{ mr: 1, color: '#f44336' }} />
-          삭제
-        </MenuItem>
-      </Menu>
+          {/* Feed Title */}
+          <span className="text-xs text-sidebar-foreground truncate flex-1">
+            {feed.title}
+          </span>
 
-      <Dialog
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        PaperProps={{
-          sx: {
-            background: 'var(--dialog-bg)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 3,
-            boxShadow: '0 8px 32px var(--shadow-color)',
-          },
-        }}
-      >
-        <DialogTitle sx={{ color: 'var(--text-primary)', fontWeight: 600 }}>피드 수정</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="제목"
-            fullWidth
-            variant="outlined"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
-          <TextField
-            margin="dense"
-            label="설명"
-            fullWidth
-            variant="outlined"
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            sx={{
-              mt: 2,
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
-          <TextField
-            margin="dense"
-            label="URL"
-            fullWidth
-            variant="outlined"
-            value={editUrl}
-            onChange={(e) => setEditUrl(e.target.value)}
-            sx={{
-              mt: 2,
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
-          <TextField
-            margin="dense"
-            label="새로고침 간격 (분)"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={editRefreshInterval}
-            onChange={(e) => setEditRefreshInterval(Number(e.target.value))}
-            inputProps={{ min: 1 }}
-            sx={{
-              mt: 2,
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
+          {/* Item Count Badge */}
+          <span className={cn(
+            "text-[10px] px-1.5 py-0.5 rounded",
+            "bg-accent/50 text-foreground font-semibold"
+          )}>
+            {feed.item_count}
+          </span>
+        </button>
+
+        {/* Menu Button */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={cn(
+              "p-1 rounded opacity-0 group-hover:opacity-100",
+              "hover:bg-sidebar-accent transition-all",
+              "focus:opacity-100"
+            )}>
+              <MoreVertical className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={handleEdit}>
+              <Pencil className="w-4 h-4 mr-2 text-primary" />
+              수정
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleRefresh}>
+              <RefreshCw className="w-4 h-4 mr-2 text-green-500" />
+              새로고침
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleMarkAllRead}>
+              <CheckCircle className="w-4 h-4 mr-2 text-blue-500" />
+              전체 읽음 처리
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>피드 수정</DialogTitle>
+            <DialogDescription>
+              피드 정보를 수정합니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">제목</Label>
+              <Input
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">설명</Label>
+              <Input
+                id="edit-description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-url">URL</Label>
+              <Input
+                id="edit-url"
+                value={editUrl}
+                onChange={(e) => setEditUrl(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-refresh">새로고침 간격 (분)</Label>
+              <Input
+                id="edit-refresh"
+                type="number"
+                min={1}
+                value={editRefreshInterval}
+                onChange={(e) => setEditRefreshInterval(Number(e.target.value))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={handleEditSave}>
+              저장
+            </Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => setEditOpen(false)}
-            sx={{ color: 'var(--text-secondary)' }}
-          >
-            취소
-          </Button>
-          <Button
-            onClick={handleEditSave}
-            variant="contained"
-            sx={{
-              background: 'var(--button-gradient)',
-              '&:hover': {
-                background: 'var(--button-gradient-hover)',
-              },
-            }}
-          >
-            저장
-          </Button>
-        </DialogActions>
       </Dialog>
     </>
   );

@@ -1,20 +1,32 @@
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Box, Button, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
+'use client';
 
+import { FC, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Rss, Plus, FolderOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
-  Add as AddIcon,
-  Category as CategoryIcon,
-  RssFeed as RssFeedIcon,
-} from '@mui/icons-material';
-import { FC, useState, useEffect } from "react";
-import { RSSCategory, RSSFeed } from "../types/rss";
-import { useRouter } from "next/navigation";
-import { useRSSStore } from "../stores/rssStore";
-import { CategoryItem } from "./CategoryItem";
-import { feedsRoutersCategoryCreateCategory, feedsRoutersCategoryDeleteCategory, feedsRoutersCategoryListCategories, feedsRoutersFeedListFeeds } from "../services/api";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { RSSCategory } from '../types/rss';
+import { useRSSStore } from '../stores/rssStore';
+import { CategoryItem } from './CategoryItem';
+import {
+  feedsRoutersCategoryCreateCategory,
+  feedsRoutersCategoryDeleteCategory,
+  feedsRoutersCategoryListCategories,
+  feedsRoutersFeedListFeeds,
+} from '../services/api';
 
-const DRAWER_WIDTH = 240;
-
-export { DRAWER_WIDTH };
+export const DRAWER_WIDTH = 240;
 
 export const CategoryDrawer: FC<{
   open: boolean;
@@ -27,17 +39,21 @@ export const CategoryDrawer: FC<{
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
-  useEffect(() => {
-    feedsRoutersFeedListFeeds().then(setFeeds)
-  }, [setFeeds])
 
   useEffect(() => {
-    feedsRoutersCategoryListCategories().then(setCategories)
-  }, [setCategories])
+    feedsRoutersFeedListFeeds().then(setFeeds);
+  }, [setFeeds]);
+
+  useEffect(() => {
+    feedsRoutersCategoryListCategories().then(setCategories);
+  }, [setCategories]);
 
   const handleAddCategory = async () => {
     try {
-      const newCategory = await feedsRoutersCategoryCreateCategory({ name: newCategoryName, description: newCategoryDescription });
+      const newCategory = await feedsRoutersCategoryCreateCategory({
+        name: newCategoryName,
+        description: newCategoryDescription,
+      });
       addCategory(newCategory);
       setAddCategoryOpen(false);
       setNewCategoryName('');
@@ -46,6 +62,7 @@ export const CategoryDrawer: FC<{
       console.error(error);
     }
   };
+
   const handleDeleteCategory = async (category: RSSCategory) => {
     try {
       await feedsRoutersCategoryDeleteCategory(category.id);
@@ -53,68 +70,29 @@ export const CategoryDrawer: FC<{
     } catch (error) {
       console.error(error);
     }
-  }
+  };
 
-  return (
-    <>
-      <Drawer
-        anchor="left"
-        open={open}
-        variant={variant}
-        onClose={onClose}
-        sx={{
-          width: variant === 'persistent' && open ? DRAWER_WIDTH : 0,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            top: '64px',
-            height: 'calc(100% - 64px)',
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'var(--glass-bg)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderRight: '1px solid var(--border-color)',
-            boxShadow: '4px 0 24px var(--shadow-color)',
-          },
-        }}
-      >
-        <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          <List>
-            <ListItem disablePadding>
-              <ListItemButton
-                selected={pathname === '/home'}
-                onClick={() => router.push('/home')}
-                sx={{
-                  mx: 1,
-                  my: 0.5,
-                  borderRadius: 2,
-                  '&.Mui-selected': {
-                    background: 'var(--accent-color)',
-                    '&:hover': {
-                      background: 'var(--accent-hover)',
-                    },
-                  },
-                  '&:hover': {
-                    background: 'var(--hover-bg)',
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ color: 'var(--text-primary)', minWidth: 40 }}>
-                  <RssFeedIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary="메인 스트림"
-                  primaryTypographyProps={{
-                    fontWeight: pathname === '/home' ? 600 : 400,
-                    color: 'var(--text-primary)',
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
-          </List>
-          {categories.map(category => (
+  const DrawerContent = () => (
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1 py-2">
+        {/* Main Stream */}
+        <div className="px-2">
+          <button
+            onClick={() => router.push('/home')}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              pathname === '/home' && 'bg-sidebar-primary text-sidebar-primary-foreground'
+            )}
+          >
+            <Rss className="h-4 w-4" />
+            <span className="font-medium">메인 스트림</span>
+          </button>
+        </div>
+
+        {/* Categories */}
+        <div className="mt-2 space-y-1">
+          {categories.map((category) => (
             <CategoryItem
               feeds={feeds}
               category={category}
@@ -123,101 +101,117 @@ export const CategoryDrawer: FC<{
               deleteCategory={handleDeleteCategory}
             />
           ))}
-        </Box>
-        <Box sx={{ p: 2 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setAddCategoryOpen(true)}
-            fullWidth
-            sx={{
-              background: 'var(--button-gradient)',
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: '0 4px 15px var(--shadow-color)',
-              '&:hover': {
-                background: 'var(--button-gradient-hover)',
-                boxShadow: '0 6px 20px var(--shadow-color)',
-              },
-            }}
-          >
-            카테고리 추가
-          </Button>
-        </Box>
-      </Drawer>
-      <Dialog
-        open={addCategoryOpen}
-        onClose={() => setAddCategoryOpen(false)}
-        PaperProps={{
-          sx: {
-            background: 'var(--dialog-bg)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 3,
-            boxShadow: '0 8px 32px var(--shadow-color)',
-          },
-        }}
+        </div>
+      </ScrollArea>
+
+      {/* Add Category Button */}
+      <div className="border-t border-sidebar-border p-3">
+        <Button
+          onClick={() => setAddCategoryOpen(true)}
+          className="w-full"
+          size="sm"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          카테고리 추가
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Temporary (mobile) drawer
+  if (variant === 'temporary') {
+    return (
+      <>
+        <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+          <SheetContent side="left" className="w-[240px] p-0 pt-14" onClose={onClose}>
+            <DrawerContent />
+          </SheetContent>
+        </Sheet>
+
+        {/* Add Category Dialog */}
+        <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
+          <DialogContent onClose={() => setAddCategoryOpen(false)}>
+            <DialogHeader>
+              <DialogTitle>카테고리 추가</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">이름</Label>
+                <Input
+                  id="name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="카테고리 이름"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">설명</Label>
+                <Input
+                  id="description"
+                  value={newCategoryDescription}
+                  onChange={(e) => setNewCategoryDescription(e.target.value)}
+                  placeholder="카테고리 설명"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
+                취소
+              </Button>
+              <Button onClick={handleAddCategory}>추가</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // Persistent drawer
+  return (
+    <>
+      <aside
+        className={cn(
+          'fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] border-r border-sidebar-border bg-sidebar-background transition-transform duration-300',
+          !open && '-translate-x-full'
+        )}
+        style={{ width: DRAWER_WIDTH }}
       >
-        <DialogTitle sx={{ color: 'var(--text-primary)', fontWeight: 600 }}>카테고리 추가</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="이름"
-            fullWidth
-            variant="outlined"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
-          <TextField
-            margin="dense"
-            label="설명"
-            fullWidth
-            variant="outlined"
-            value={newCategoryDescription}
-            onChange={(e) => setNewCategoryDescription(e.target.value)}
-            sx={{
-              mt: 2,
-              '& .MuiOutlinedInput-root': {
-                color: 'var(--text-primary)',
-                '& fieldset': { borderColor: 'var(--border-color)' },
-                '&:hover fieldset': { borderColor: 'var(--text-secondary)' },
-                '&.Mui-focused fieldset': { borderColor: 'var(--accent-solid)' },
-              },
-              '& .MuiInputLabel-root': { color: 'var(--text-secondary)' },
-            }}
-          />
+        <DrawerContent />
+      </aside>
+
+      {/* Add Category Dialog */}
+      <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
+        <DialogContent onClose={() => setAddCategoryOpen(false)}>
+          <DialogHeader>
+            <DialogTitle>카테고리 추가</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">이름</Label>
+              <Input
+                id="name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="카테고리 이름"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">설명</Label>
+              <Input
+                id="description"
+                value={newCategoryDescription}
+                onChange={(e) => setNewCategoryDescription(e.target.value)}
+                placeholder="카테고리 설명"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={handleAddCategory}>추가</Button>
+          </DialogFooter>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={() => setAddCategoryOpen(false)}
-            sx={{ color: 'var(--text-secondary)' }}
-          >
-            취소
-          </Button>
-          <Button
-            onClick={handleAddCategory}
-            variant="contained"
-            sx={{
-              background: 'var(--button-gradient)',
-              '&:hover': {
-                background: 'var(--button-gradient-hover)',
-              },
-            }}
-          >
-            추가
-          </Button>
-        </DialogActions>
       </Dialog>
     </>
   );

@@ -1,64 +1,40 @@
 'use client';
 
-import React, { useState, useEffect, FC } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  Box,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  ListItemSecondaryAction,
-  ListItemIcon,
-  IconButton,
-  AppBar,
-  Toolbar,
-  InputBase,
   Menu,
-  MenuItem,
-  SelectChangeEvent,
-  Card,
-  CardContent,
-  CardActions,
-  Chip,
-  Alert,
-  Fab,
-  Avatar,
-  Container,
-} from '@mui/material';
+  Search,
+  Settings,
+  Sun,
+  Moon,
+  Monitor,
+  ListFilter,
+  LayoutGrid,
+  LayoutList,
+  Bookmark,
+  BookmarkCheck,
+  Heart,
+  LogOut,
+  Palette,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Logout as LogoutIcon,
-  Category as CategoryIcon,
-  RssFeed as RssFeedIcon,
-  FilterList as FilterListIcon,
-  Search as SearchIcon,
-  Settings as SettingsIcon,
-  Favorite as FavoriteIcon,
-  BookmarkBorder as BookmarkBorderIcon,
-  ViewList as ViewListIcon,
-  ViewModule as ViewModuleIcon,
-  Menu as MenuIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
-  SettingsBrightness as SettingsBrightnessIcon,
-} from '@mui/icons-material';
-import { useTheme, useMediaQuery } from '@mui/material';
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from '@/components/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useAuth } from '../context/AuthContext';
 import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
-
+import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -66,10 +42,8 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
-  const pathname = usePathname()
-  const { user, logout } = useAuth();
-  const theme = useTheme();
-  const isSm = useMediaQuery(theme.breakpoints.down('md'));
+  const pathname = usePathname();
+  const { logout } = useAuth();
 
   // Zustand stores
   const {
@@ -85,43 +59,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
-  const [themeAnchorEl, setThemeAnchorEl] = useState<null | HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1000);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    setDrawerOpen(!isMobile);
+  }, [isMobile]);
 
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
-  };
-
-  const handleThemeClick = (event: React.MouseEvent<HTMLElement>) => {
-    setThemeAnchorEl(event.currentTarget);
-  };
-
-  const handleThemeClose = () => {
-    setThemeAnchorEl(null);
-  };
-
-  const handleThemeChange = (newMode: 'system' | 'light' | 'dark') => {
-    setThemeMode(newMode);
-    handleThemeClose();
-  };
-
-  const getThemeIcon = () => {
-    switch (themeMode) {
-      case 'light':
-        return <LightModeIcon />;
-      case 'dark':
-        return <DarkModeIcon />;
-      default:
-        return <SettingsBrightnessIcon />;
-    }
-  };
-
-  const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
-    setSettingsAnchorEl(event.currentTarget);
-  };
-
-  const handleSettingsClose = () => {
-    setSettingsAnchorEl(null);
   };
 
   const handleLogout = () => {
@@ -130,266 +84,166 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleSearch = async () => {
-    // 검색 기능 구현
     console.log('Search:', searchQuery);
   };
 
-  const handleViewModeChange = () => {
-    setViewMode(viewMode === 'board' ? 'feed' : 'board');
+  const getThemeIcon = () => {
+    switch (themeMode) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'dark':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
   };
 
-  useEffect(() => {
-    setDrawerOpen(!isSm);
-  }, [isSm])
-  // 로그인/회원가입 페이지에서는 레이아웃을 적용하지 않음
+  // Auth pages don't use the layout
   if (pathname?.startsWith('/auth/')) {
     return <>{children}</>;
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* 상단 AppBar - Glassmorphism */}
-      <AppBar
-        position="fixed"
-        sx={{
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          background: 'var(--appbar-bg)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--glass-border)',
-          boxShadow: 'var(--glass-shadow)',
-          color: 'var(--text-primary)',
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            aria-label="toggle drawer"
-            onClick={toggleDrawer}
-            edge="start"
-            sx={{
-              mr: 2,
-              color: 'var(--text-primary)',
-              '&:hover': {
-                background: 'var(--glass-bg)',
-              }
-            }}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-full items-center gap-4 px-4">
+          <Button variant="ghost" size="icon" onClick={toggleDrawer}>
+            <Menu className="h-5 w-5" />
+          </Button>
+
+          <h1
+            className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
+            onClick={() => router.push('/home')}
           >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{
-              flexGrow: 1,
-              cursor: 'pointer',
-              fontWeight: 600,
-              letterSpacing: '0.5px',
-              color: 'var(--text-primary)',
-            }}
-            onClick={() => router.push("/home")}
-          >
-            DRSS - RSS Reader
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <InputBase
+            DRSS
+          </h1>
+
+          <div className="flex-1" />
+
+          {/* Search */}
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
               placeholder="검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              sx={{
-                color: 'var(--text-primary)',
-                '& .MuiInputBase-input': {
-                  background: 'var(--input-bg)',
-                  backdropFilter: 'blur(10px)',
-                  borderRadius: 2,
-                  padding: '8px 12px',
-                  width: '200px',
-                  border: '1px solid var(--glass-border)',
-                  transition: 'all 0.2s ease',
-                  color: 'var(--text-primary)',
-                  '&:focus': {
-                    background: 'var(--glass-bg-hover)',
-                    borderColor: 'var(--accent-color)',
-                  },
-                  '&::placeholder': {
-                    color: 'var(--text-muted)',
-                  },
-                },
-              }}
-              startAdornment={<SearchIcon sx={{ mr: 1, color: 'var(--text-muted)' }} />}
+              className="w-64 pl-9 bg-muted/50"
             />
-            <Box
-              sx={{
-                display: { xs: 'none', md: 'flex' },
-                alignItems: 'center',
-                gap: 0.5,
-                background: 'var(--glass-bg)',
-                borderRadius: 2,
-                padding: '4px',
-              }}
+          </div>
+
+          {/* Filter Buttons */}
+          <div className="hidden lg:flex items-center">
+            <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as typeof filter)}>
+              <Tooltip content="전체">
+                <ToggleGroupItem value="all" aria-label="전체">
+                  <ListFilter className="h-4 w-4" />
+                </ToggleGroupItem>
+              </Tooltip>
+              <Tooltip content="읽지 않음">
+                <ToggleGroupItem value="unread" aria-label="읽지 않음">
+                  <Bookmark className="h-4 w-4" />
+                </ToggleGroupItem>
+              </Tooltip>
+              <Tooltip content="읽음">
+                <ToggleGroupItem value="read" aria-label="읽음">
+                  <BookmarkCheck className="h-4 w-4" />
+                </ToggleGroupItem>
+              </Tooltip>
+              <Tooltip content="즐겨찾기">
+                <ToggleGroupItem value="favorite" aria-label="즐겨찾기">
+                  <Heart className="h-4 w-4" />
+                </ToggleGroupItem>
+              </Tooltip>
+            </ToggleGroup>
+          </div>
+
+          {/* View Mode Toggle */}
+          <Tooltip content={viewMode === 'board' ? '피드 보기' : '보드 보기'}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode(viewMode === 'board' ? 'feed' : 'board')}
             >
-              <IconButton
-                size="small"
-                onClick={() => setFilter('all')}
-                sx={{
-                  color: 'var(--text-primary)',
-                  bgcolor: filter === 'all' ? 'var(--accent-light)' : 'transparent',
-                  borderRadius: 1.5,
-                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
-                }}
-                title="전체"
-              >
-                <ViewListIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => setFilter('unread')}
-                sx={{
-                  color: 'var(--text-primary)',
-                  bgcolor: filter === 'unread' ? 'var(--accent-light)' : 'transparent',
-                  borderRadius: 1.5,
-                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
-                }}
-                title="읽지 않음"
-              >
-                <BookmarkBorderIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => setFilter('read')}
-                sx={{
-                  color: 'var(--text-primary)',
-                  bgcolor: filter === 'read' ? 'var(--accent-light)' : 'transparent',
-                  borderRadius: 1.5,
-                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
-                }}
-                title="읽음"
-              >
-                <ViewModuleIcon fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => setFilter('favorite')}
-                sx={{
-                  color: 'var(--text-primary)',
-                  bgcolor: filter === 'favorite' ? 'var(--accent-light)' : 'transparent',
-                  borderRadius: 1.5,
-                  '&:hover': { bgcolor: 'var(--glass-bg-hover)' }
-                }}
-                title="즐겨찾기"
-              >
-                <FavoriteIcon fontSize="small" />
-              </IconButton>
-            </Box>
-            <IconButton
-              onClick={handleViewModeChange}
-              title={viewMode}
-              sx={{
-                color: 'var(--text-primary)',
-                background: 'var(--glass-bg)',
-                '&:hover': { background: 'var(--glass-bg-hover)' }
-              }}
-            >
-              {viewMode === 'board' ? <ViewModuleIcon /> : <ViewListIcon />}
-            </IconButton>
-            {/* Theme Switcher */}
-            <IconButton
-              onClick={handleThemeClick}
-              title="테마 변경"
-              sx={{
-                color: 'var(--text-primary)',
-                background: 'var(--glass-bg)',
-                '&:hover': { background: 'var(--glass-bg-hover)' }
-              }}
-            >
-              {getThemeIcon()}
-            </IconButton>
-            <Menu
-              anchorEl={themeAnchorEl}
-              open={Boolean(themeAnchorEl)}
-              onClose={handleThemeClose}
-              PaperProps={{
-                sx: {
-                  background: 'var(--dialog-bg)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 2,
-                  boxShadow: 'var(--glass-shadow)',
-                  '& .MuiMenuItem-root': {
-                    color: 'var(--text-primary)',
-                    gap: 1.5,
-                    '&:hover': {
-                      background: 'var(--glass-bg)',
-                    },
-                  },
-                },
-              }}
-            >
-              <MenuItem onClick={() => handleThemeChange('system')}>
-                <SettingsBrightnessIcon fontSize="small" />
-                시스템 설정
-                {themeMode === 'system' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
-              </MenuItem>
-              <MenuItem onClick={() => handleThemeChange('light')}>
-                <LightModeIcon fontSize="small" />
-                라이트 모드
-                {themeMode === 'light' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
-              </MenuItem>
-              <MenuItem onClick={() => handleThemeChange('dark')}>
-                <DarkModeIcon fontSize="small" />
-                다크 모드
-                {themeMode === 'dark' && <Box component="span" sx={{ ml: 'auto', color: 'var(--accent-color)' }}>✓</Box>}
-              </MenuItem>
-            </Menu>
-            <IconButton
-              onClick={handleSettingsClick}
-              sx={{
-                color: 'var(--text-primary)',
-                background: 'var(--glass-bg)',
-                '&:hover': { background: 'var(--glass-bg-hover)' }
-              }}
-            >
-              <SettingsIcon />
-            </IconButton>
-            <Menu
-              anchorEl={settingsAnchorEl}
-              open={Boolean(settingsAnchorEl)}
-              onClose={handleSettingsClose}
-              PaperProps={{
-                sx: {
-                  background: 'var(--dialog-bg)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: 2,
-                  boxShadow: 'var(--glass-shadow)',
-                  '& .MuiMenuItem-root': {
-                    color: 'var(--text-primary)',
-                    '&:hover': {
-                      background: 'var(--glass-bg)',
-                    },
-                  },
-                },
-              }}
-            >
-              <MenuItem onClick={handleSettingsClose}>설정</MenuItem>
-              <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-      <CategoryDrawer open={drawerOpen} pathname={pathname} variant={isSm ? 'temporary' : 'persistent'} onClose={toggleDrawer} />
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          mt: 8,
-          minHeight: 'calc(100vh - 64px)',
+              {viewMode === 'board' ? (
+                <LayoutGrid className="h-4 w-4" />
+              ) : (
+                <LayoutList className="h-4 w-4" />
+              )}
+            </Button>
+          </Tooltip>
+
+          {/* Theme Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                {getThemeIcon()}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>테마</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setThemeMode('system')}>
+                <Monitor className="mr-2 h-4 w-4" />
+                시스템
+                {themeMode === 'system' && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setThemeMode('light')}>
+                <Sun className="mr-2 h-4 w-4" />
+                라이트
+                {themeMode === 'light' && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setThemeMode('dark')}>
+                <Moon className="mr-2 h-4 w-4" />
+                다크
+                {themeMode === 'dark' && <span className="ml-auto text-primary">✓</span>}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Settings Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <Palette className="mr-2 h-4 w-4" />
+                설정
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                로그아웃
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+
+      {/* Sidebar */}
+      <CategoryDrawer
+        open={drawerOpen}
+        pathname={pathname}
+        variant={isMobile ? 'temporary' : 'persistent'}
+        onClose={toggleDrawer}
+      />
+
+      {/* Main Content */}
+      <main
+        className={cn(
+          "pt-14 min-h-screen transition-all duration-300"
+        )}
+        style={{
+          marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
         }}
       >
-        {children}
-      </Box>
-    </Box>
+        <div className="p-6">
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }
