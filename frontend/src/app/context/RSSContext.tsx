@@ -31,7 +31,7 @@ interface RSSContextType {
     deleteCategory: (id: number) => Promise<void>;
 
     // 피드 관련
-    createFeed: (categoryId: number, url: string, title: string, description?: string) => Promise<void>;
+    createFeed: (categoryId: number, url: string, title: string, description?: string, customHeaders?: any, refreshInterval?: number) => Promise<void>;
     deleteFeed: (id: number) => Promise<void>;
     selectCategory: (category: RSSCategory | null) => void;
     selectFeed: (feed: RSSFeed | null) => void;
@@ -89,9 +89,7 @@ export const RSSProvider: React.FC<RSSProviderProps> = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
+    }; useEffect(() => {
         if (user) {
             refreshData();
         } else {
@@ -132,9 +130,16 @@ export const RSSProvider: React.FC<RSSProviderProps> = ({ children }) => {
         }
     };
 
-    const createFeed = async (categoryId: number, url: string, title: string, description?: string) => {
+    const createFeed = async (categoryId: number, url: string, title: string, description?: string, customHeaders?: any, refreshInterval?: number) => {
         try {
-            await feedsRouterCreateFeed({ category_id: categoryId, url, title, description });
+            await feedsRouterCreateFeed({
+                category_id: categoryId,
+                url,
+                title,
+                description,
+                custom_headers: customHeaders,
+                refresh_interval: refreshInterval
+            });
             await refreshData();
         } catch (err: any) {
             throw new Error(err.response?.data?.detail || '피드 생성 실패');

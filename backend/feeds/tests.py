@@ -4,6 +4,8 @@ from ninja.testing import TestClient
 from feeds.router import router
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from django.utils import timezone
+import jwt
+from django.conf import settings
 
 User = get_user_model()
 
@@ -56,6 +58,10 @@ class FeedAPITest(TestCase):
             user=self.user, name="Test Category", description="Test Description"
         )
         self.client = TestClient(router)
+        # Create JWT token for testing
+        payload = {"user_id": self.user.id}
+        self.token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        self.auth_headers = {"Authorization": f"Bearer {self.token}"}
 
     def test_list_feeds(self):
         RSSFeed.objects.create(
@@ -70,24 +76,35 @@ class FeedAPITest(TestCase):
             url="http://example.com/rss2",
             title="Feed 2",
         )
-        # Note: TestClient doesn't handle auth automatically
-        # This is a simplified test
-        feeds = RSSFeed.objects.filter(user=self.user)
-        self.assertEqual(feeds.count(), 2)
+
+        response = self.client.get("/feeds", headers=self.auth_headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
 
     def test_create_feed(self):
         data = {
+            "category_id": self.category.id,
             "url": "http://example.com/rss",
             "title": "New Feed",
             "description": "New Description",
         }
-        # Simplified test without auth
-        feed = RSSFeed.objects.create(
-            user=self.user,
-            category=self.category,
-            url=data["url"],
-            title=data["title"],
-            description=data["description"],
-        )
-        self.assertEqual(feed.title, "New Feed")
-        self.assertEqual(RSSFeed.objects.count(), 1)
+
+        response = self.client.post("/feeds", json=data, headers=self.auth_headers)
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_feed_without_title(self):
+        """제목 없이 피드를 생성하면 자동으로 RSS에서 제목을 추출해야 함"""
+        data = {
+            "category_id": self.category.id,
+            "url": "http://example.com/rss",
+            # title을 intentionally 생략
+            "description": "Test Description",
+        }
+
+        response = self.client.post("/feeds", json=data, headers=self.auth_headers)
+        self.assertEqual(response.status_code, 200)
+
+        # Check that feed was created with auto-generated title
+        feed = RSSFeed.objects.get(url="http://example.com/rss")
+        self.assertEqual(feed.title, "Unknown Feed")  # RSS 파싱 실패 시 기본값
+        self.assertEqual(feed.user, self.user)

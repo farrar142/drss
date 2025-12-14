@@ -19,9 +19,14 @@ class RSSFeed(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
     url = models.URLField(unique=True)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True)
+    favicon_url = models.URLField(blank=True)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
+    custom_headers = models.JSONField(default=dict, blank=True)
+    refresh_interval = models.IntegerField(
+        default=60, help_text="자동 새로고침 주기 (분)"
+    )
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

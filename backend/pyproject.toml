@@ -11,4 +11,6 @@ dependencies = [
     "pyjwt>=2.10.1",
     "python-dotenv>=1.2.1",
     "django-cors-headers",
+    "feedparser>=6.0.12",
+    "requests>=2.32.5",
 ]

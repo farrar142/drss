@@ -10,13 +10,17 @@ export interface RSSFeed {
     category_id: number;
     url: string;
     title: string;
+    favicon_url?: string;
     description: string;
     visible: boolean;
+    custom_headers?: Record<string, any>;
+    refresh_interval?: number;
     last_updated: string;
 }
 
 export interface RSSItem {
     id: number;
+    feed_id: number;
     title: string;
     link: string;
     description: string;

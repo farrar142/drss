@@ -36,6 +36,20 @@ export interface ProtectedResponse {
   message: string;
 }
 
+export interface FeedValidationResponse {
+  title: string;
+  description: string;
+  items_count: number;
+  latest_item_date?: string;
+}
+
+export type FeedValidationRequestCustomHeaders = { [key: string]: unknown };
+
+export interface FeedValidationRequest {
+  url: string;
+  custom_headers?: FeedValidationRequestCustomHeaders;
+}
+
 export interface CategorySchema {
   id: number;
   name: string;
@@ -47,26 +61,36 @@ export interface CategoryCreateSchema {
   description?: string;
 }
 
+export type FeedSchemaCustomHeaders = { [key: string]: unknown };
+
 export interface FeedSchema {
   id: number;
   category_id: number;
   url: string;
   title: string;
+  favicon_url?: string;
   description: string;
   visible: boolean;
+  custom_headers?: FeedSchemaCustomHeaders;
+  refresh_interval?: number;
   last_updated: string;
 }
+
+export type FeedCreateSchemaCustomHeaders = { [key: string]: unknown };
 
 export interface FeedCreateSchema {
   category_id: number;
   url: string;
-  title: string;
+  title?: string;
   description?: string;
   visible?: boolean;
+  custom_headers?: FeedCreateSchemaCustomHeaders;
+  refresh_interval?: number;
 }
 
 export interface ItemSchema {
   id: number;
+  feed_id: number;
   title: string;
   link: string;
   description: string;
@@ -74,6 +98,12 @@ export interface ItemSchema {
   is_read: boolean;
   is_favorite: boolean;
 }
+
+export type FeedsRouterListAllItemsParams = {
+is_read?: boolean | null;
+is_favorite?: boolean | null;
+search?: string;
+};
 
 /**
  * @summary Login
@@ -123,6 +153,20 @@ export const usersRouterMe = (
  ) => {
       return axiosInstance<UserResponse>(
       {url: `/api/auth/me`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * @summary Validate Feed
+ */
+export const feedsRouterValidateFeed = (
+    feedValidationRequest: FeedValidationRequest,
+ ) => {
+      return axiosInstance<FeedValidationResponse>(
+      {url: `/api/feeds/feeds/validate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: feedValidationRequest
     },
       );
     }
@@ -254,10 +298,36 @@ export const feedsRouterToggleItemFavorite = (
       );
     }
   
+/**
+ * @summary List All Items
+ */
+export const feedsRouterListAllItems = (
+    params?: FeedsRouterListAllItemsParams,
+ ) => {
+      return axiosInstance<ItemSchema[]>(
+      {url: `/api/feeds/items`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * @summary Get Category Stats
+ */
+export const feedsRouterGetCategoryStats = (
+    categoryId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/categories/${categoryId}/stats`, method: 'GET'
+    },
+      );
+    }
+  
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
 export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
+export type FeedsRouterValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterValidateFeed>>>
 export type FeedsRouterListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListCategories>>>
 export type FeedsRouterCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateCategory>>>
 export type FeedsRouterUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateCategory>>>
@@ -268,3 +338,5 @@ export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof 
 export type FeedsRouterListFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeedItems>>>
 export type FeedsRouterMarkItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkItemRead>>>
 export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
+export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>
+export type FeedsRouterGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetCategoryStats>>>
