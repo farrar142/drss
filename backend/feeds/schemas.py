@@ -75,3 +75,9 @@ class ItemFilterSchema(Schema):
     is_read: Optional[bool] = None
     is_favorite: Optional[bool] = None
     search: str = ""
+
+
+class PaginatedResponse[T](Schema):
+    items: list[T]
+    has_next: bool
+    next_cursor: Optional[str] = None
