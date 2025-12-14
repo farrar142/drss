@@ -19,10 +19,17 @@ export const FeedItemViewer: FC<{
   else if (!isMd) columns = 2;
 
   const chunk = (arr: RSSItem[], size: number) =>
-    arr.reduce((acc, _, i) => (i % size ? acc : [...acc, arr.slice(i, i + size)]), [] as RSSItem[][]);
+    arr.reduce((acc, _, i) => {
+      const index = i % size;
+      if (!acc[index]) {
+        acc[index] = [];
+      }
+      acc[index].push(arr[i]);
+      return acc;
+    },
+      [] as RSSItem[][]);
 
   const chunkedItems = useMemo(() => chunk(items, columns), [items, columns]);
-
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState<string>('');
 
@@ -80,6 +87,7 @@ const renderDescription = (description: string, onImageClick: (url: string) => v
           <video
             {...domNode.attribs}
             muted
+            loop
             style={{ display: 'block', margin: '0 auto', maxWidth: '100%', height: 'auto' }}
             controls
             ref={(el) => el && onVideoMount(el)}
