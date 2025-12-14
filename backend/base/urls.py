@@ -18,11 +18,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from .api import api
-from users.router import router as auth_router
-from feeds.router import router as feeds_router
-
-api.add_router("/auth/", auth_router)
-api.add_router("/feeds/", feeds_router)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

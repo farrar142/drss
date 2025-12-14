@@ -1,6 +1,7 @@
 from ninja import Schema, Router
 from typing import List, Optional
 from django.shortcuts import get_object_or_404
+from django.db import models
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from base.authentications import JWTAuth
 import feedparser
@@ -148,7 +149,10 @@ def delete_category(request, category_id: int):
 @router.get("/feeds", response=List[FeedSchema], auth=JWTAuth())
 def list_feeds(request):
     from django.db.models import Count
-    feeds = RSSFeed.objects.filter(user=request.auth).annotate(item_count=Count('rssitem'))
+
+    feeds = RSSFeed.objects.filter(user=request.auth).annotate(
+        item_count=Count("rssitem", filter=models.Q(rssitem__is_read=False))
+    )
     return feeds
 
 
@@ -192,7 +196,12 @@ def create_feed(request, data: FeedCreateSchema):
     )
     # item_count 추가
     from django.db.models import Count
-    feed_with_count = RSSFeed.objects.filter(id=feed.id).annotate(item_count=Count('rssitem')).first()
+
+    feed_with_count = (
+        RSSFeed.objects.filter(id=feed.id)
+        .annotate(item_count=Count("rssitem", filter=models.Q(rssitem__is_read=False)))
+        .first()
+    )
     return feed_with_count
 
 
@@ -222,7 +231,12 @@ def update_feed(request, feed_id: int, data: FeedUpdateSchema):
     feed.save()
     # item_count 추가
     from django.db.models import Count
-    feed_with_count = RSSFeed.objects.filter(id=feed.id).annotate(item_count=Count('rssitem')).first()
+
+    feed_with_count = (
+        RSSFeed.objects.filter(id=feed.id)
+        .annotate(item_count=Count("rssitem", filter=models.Q(rssitem__is_read=False)))
+        .first()
+    )
     return feed_with_count
 
 
