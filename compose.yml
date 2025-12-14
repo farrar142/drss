@@ -47,24 +47,24 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     env_file:
       - .env
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - ./backend:/usr/src/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-      - redis
-    environment:
-      - DJANGO_SETTINGS_MODULE=base.settings
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    env_file:
-      - .env
+  # backend:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   command: python manage.py runserver 0.0.0.0:8000
+  #   volumes:
+  #     - ./backend:/usr/src/app
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - db
+  #     - redis
+  #   environment:
+  #     - DJANGO_SETTINGS_MODULE=base.settings
+  #     - CELERY_BROKER_URL=redis://redis:6379/0
+  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
+  #   env_file:
+  #     - .env
 
 volumes:
   postgres_data:

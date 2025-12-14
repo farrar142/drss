@@ -115,7 +115,9 @@ export const FeedItem: React.FC<FeedItemProps> = ({ feed, categoryId }) => {
                             <RssFeedIcon />
                         )}
                     </ListItemIcon>
-                    <ListItemText primary={feed.title} secondary={feed.description} />
+                    <ListItemText primary={feed.title}
+                    //  secondary={feed.description} 
+                    />
                 </ListItemButton>
                 <IconButton onClick={handleMenuClick}>
                     <MoreVertIcon />

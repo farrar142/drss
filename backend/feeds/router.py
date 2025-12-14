@@ -33,6 +33,7 @@ class FeedSchema(Schema):
     custom_headers: dict = {}
     refresh_interval: int = 60
     last_updated: datetime
+    item_count: int
 
 
 class FeedCreateSchema(Schema):
@@ -146,7 +147,8 @@ def delete_category(request, category_id: int):
 
 @router.get("/feeds", response=List[FeedSchema], auth=JWTAuth())
 def list_feeds(request):
-    feeds = RSSFeed.objects.filter(user=request.auth)
+    from django.db.models import Count
+    feeds = RSSFeed.objects.filter(user=request.auth).annotate(item_count=Count('rssitem'))
     return feeds
 
 
@@ -188,7 +190,10 @@ def create_feed(request, data: FeedCreateSchema):
         custom_headers=data.custom_headers,
         refresh_interval=data.refresh_interval,
     )
-    return feed
+    # item_count 추가
+    from django.db.models import Count
+    feed_with_count = RSSFeed.objects.filter(id=feed.id).annotate(item_count=Count('rssitem')).first()
+    return feed_with_count
 
 
 @router.put("/feeds/{feed_id}", response=FeedSchema, auth=JWTAuth())
@@ -215,7 +220,10 @@ def update_feed(request, feed_id: int, data: FeedUpdateSchema):
         feed.refresh_interval = data.refresh_interval
 
     feed.save()
-    return feed
+    # item_count 추가
+    from django.db.models import Count
+    feed_with_count = RSSFeed.objects.filter(id=feed.id).annotate(item_count=Count('rssitem')).first()
+    return feed_with_count
 
 
 @router.post("/feeds/{feed_id}/refresh", auth=JWTAuth())
