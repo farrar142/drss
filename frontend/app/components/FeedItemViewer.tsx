@@ -6,7 +6,15 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
-import { FeedItemRenderer } from "./FeedItemRenderer";
+import dynamic from 'next/dynamic';
+// Dynamically import FeedItemRenderer to reduce initial bundle size
+const FeedItemRenderer = dynamic(
+  () => import('./FeedItemRenderer').then((mod) => mod.FeedItemRenderer),
+  {
+    loading: () => <div className="h-24 animate-pulse bg-muted rounded" />,
+    ssr: false,
+  }
+);
 
 // Custom hook for media queries
 const useMediaQuery = (query: string): boolean => {
@@ -170,6 +178,23 @@ export const FeedItemViewer: FC<{
   else if (!isMd) columns = 2;
 
   const { columnItems, registerHeight } = useMasonryLayout(items, columns);
+  // Use fast, CSS-based masonry when possible to avoid heavy JS layout recalculations
+  // CSS columns have the side effect of filling top-to-bottom, left-to-right (different
+  // reading order), but it greatly improves scroll performance for long lists.
+  const useCSSColumns = true;
+  // For CSS columns mode, compute sentinel positions so each column gets a sentinel
+  // near its end. This allows loading more when any column reaches the viewport.
+  const columnSentinelIndexes = useMemo(() => {
+    if (!useCSSColumns) return [] as number[];
+    const n = items.length;
+    if (n === 0) return [] as number[];
+    const idxs: number[] = [];
+    for (let c = 1; c <= columns; c++) {
+      const pos = Math.max(0, Math.min(n - 1, Math.ceil((c * n) / columns) - 1));
+      idxs.push(pos);
+    }
+    return idxs;
+  }, [items.length, columns, useCSSColumns]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string } | null>(null);
@@ -246,29 +271,62 @@ export const FeedItemViewer: FC<{
           </div>
         ) : (
           // Masonry Mode - Multiple Columns
-          <div className={cn(
-            "grid gap-4",
-            columns === 1 && "grid-cols-1",
-            columns === 2 && "grid-cols-2",
-            columns === 3 && "grid-cols-3"
-          )}>
-            {columnItems.map((columnData, columnIndex) => (
-              <div key={columnIndex} className="space-y-4">
-                {columnData.map((item) => (
-                  <MeasuredItem
-                    key={item.id}
-                    item={item}
-                    onMediaClick={handleMediaClick}
-                    onHeightChange={registerHeight}
-                  />
-                ))}
-                {/* Sentinel element at the end of each column */}
-                {hasNext && (
-                  <div ref={setSentinelRef(columnIndex)} className="h-px w-full" />
+          // If useCSSColumns is true we'll render a CSS-column based masonry which
+          // avoids measuring, sorting and reflow caused by JS layout. This dramatically
+          // reduces main-thread work while scrolling.
+          useCSSColumns ? (
+            <>
+              <div
+                className={cn(
+                  "w-full",
+                  columns === 1 && "columns-1",
+                  columns === 2 && "md:columns-2",
+                  columns === 3 && "xl:columns-3",
+                  "gap-4"
                 )}
+              >
+                {items.map((item, idx) => (
+                  <div key={item.id} className="mb-4" style={{ breakInside: 'avoid' }}>
+                    <FeedItemRenderer item={item} onMediaClick={handleMediaClick} />
+                    {/* If this index matches one of the per-column sentinel indexes, render a sentinel
+                        that will be placed near the bottom of a column by the browser's column layout. */}
+                    {hasNext && columnSentinelIndexes.includes(idx) && (
+                      <div
+                        key={`sentinel-${idx}`}
+                        ref={setSentinelRef(columnSentinelIndexes.indexOf(idx))}
+                        className="h-px w-full"
+                        style={{ display: 'block', breakInside: 'avoid' }}
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <div className={cn(
+              "grid gap-4",
+              columns === 1 && "grid-cols-1",
+              columns === 2 && "grid-cols-2",
+              columns === 3 && "grid-cols-3"
+            )}>
+              {columnItems.map((columnData, columnIndex) => (
+                <div key={columnIndex} className="space-y-4">
+                  {columnData.map((item) => (
+                    <MeasuredItem
+                      key={item.id}
+                      item={item}
+                      onMediaClick={handleMediaClick}
+                      onHeightChange={registerHeight}
+                    />
+                  ))}
+                  {/* Sentinel element at the end of each column */}
+                  {hasNext && (
+                    <div ref={setSentinelRef(columnIndex)} className="h-px w-full" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 

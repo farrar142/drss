@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { RSSCategory } from '../types/rss';
+import { RSSCategory, RSSFeed } from '../types/rss';
 import { useRSSStore } from '../stores/rssStore';
 import { CategoryItem } from './CategoryItem';
 import {
@@ -72,59 +72,79 @@ export const CategoryDrawer: FC<{
     }
   };
 
-  const DrawerContent = () => (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1 py-2">
-        {/* Main Stream */}
-        <div className="px-2">
-          <button
-            onClick={() => router.push('/home')}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-              pathname === '/home' && 'bg-sidebar-primary text-sidebar-primary-foreground'
-            )}
+  // Move Drawer content into a stable component to avoid creating it during each render
+
+
+  type DrawerContentProps = {
+    pathname: string;
+    categories: RSSCategory[];
+    feeds: RSSFeed[];
+    onNavigateHome: () => void;
+    onOpenAdd: () => void;
+    onDeleteCategory: (category: RSSCategory) => Promise<void>;
+  };
+
+  const DrawerContent = ({ pathname, categories, feeds, onNavigateHome, onOpenAdd, onDeleteCategory }: DrawerContentProps) => {
+    return (
+      <div className="flex h-full flex-col">
+        <ScrollArea className="flex-1 py-2">
+          {/* Main Stream */}
+          <div className="px-2">
+            <button
+              onClick={onNavigateHome}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                pathname === '/home' && 'bg-sidebar-primary text-sidebar-primary-foreground'
+              )}
+            >
+              <Rss className="h-4 w-4" />
+              <span className="font-medium">메인 스트림</span>
+            </button>
+          </div>
+
+          {/* Categories */}
+          <div className="mt-2 space-y-1">
+            {categories.map((category) => (
+              <CategoryItem
+                feeds={feeds}
+                category={category}
+                pathname={pathname}
+                key={category.id}
+                deleteCategory={onDeleteCategory}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Add Category Button */}
+        <div className="border-t border-sidebar-border p-3">
+          <Button
+            onClick={onOpenAdd}
+            className="w-full"
+            size="sm"
           >
-            <Rss className="h-4 w-4" />
-            <span className="font-medium">메인 스트림</span>
-          </button>
+            <Plus className="mr-2 h-4 w-4" />
+            카테고리 추가
+          </Button>
         </div>
-
-        {/* Categories */}
-        <div className="mt-2 space-y-1">
-          {categories.map((category) => (
-            <CategoryItem
-              feeds={feeds}
-              category={category}
-              pathname={pathname}
-              key={category.id}
-              deleteCategory={handleDeleteCategory}
-            />
-          ))}
-        </div>
-      </ScrollArea>
-
-      {/* Add Category Button */}
-      <div className="border-t border-sidebar-border p-3">
-        <Button
-          onClick={() => setAddCategoryOpen(true)}
-          className="w-full"
-          size="sm"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          카테고리 추가
-        </Button>
       </div>
-    </div>
-  );
-
+    );
+  };
   // Temporary (mobile) drawer
   if (variant === 'temporary') {
     return (
       <>
         <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
           <SheetContent side="left" className="w-[240px] p-0 pt-14" onClose={onClose}>
-            <DrawerContent />
+            <DrawerContent
+              pathname={pathname}
+              categories={categories}
+              feeds={feeds}
+              onNavigateHome={() => router.push('/home')}
+              onOpenAdd={() => setAddCategoryOpen(true)}
+              onDeleteCategory={handleDeleteCategory}
+            />
           </SheetContent>
         </Sheet>
 
@@ -176,7 +196,14 @@ export const CategoryDrawer: FC<{
         )}
         style={{ width: DRAWER_WIDTH }}
       >
-        <DrawerContent />
+        <DrawerContent
+          pathname={pathname}
+          categories={categories}
+          feeds={feeds}
+          onNavigateHome={() => router.push('/home')}
+          onOpenAdd={() => setAddCategoryOpen(true)}
+          onDeleteCategory={handleDeleteCategory}
+        />
       </aside>
 
       {/* Add Category Dialog */}

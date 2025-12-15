@@ -66,7 +66,7 @@ const playwright = require('playwright');
     process.exit(0);
   } catch (e) {
     console.error('Error during browser check:', e);
-    try { await browser.close(); } catch {};
+    try { await browser.close(); } catch { };
     process.exit(1);
   }
 })();

@@ -308,3 +308,5 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
 });
 
 FeedItemRenderer.displayName = 'FeedItemRenderer';
+
+export default FeedItemRenderer;
