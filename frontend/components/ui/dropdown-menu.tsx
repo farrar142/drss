@@ -8,29 +8,20 @@ interface DropdownMenuProps {
   children: React.ReactNode;
 }
 
-interface Position {
-  top: number;
-  left: number;
-  right: number;
-}
-
 interface DropdownMenuContextType {
   open: boolean;
   setOpen: (open: boolean) => void;
-  triggerRef: React.MutableRefObject<HTMLElement | null>;
-  position: Position | null;
-  setPosition: (pos: Position | null) => void;
+  triggerRef: React.RefObject<HTMLElement | null>;
 }
 
 const DropdownMenuContext = React.createContext<DropdownMenuContextType | null>(null);
 
 const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
   const [open, setOpen] = React.useState(false);
-  const [position, setPosition] = React.useState<Position | null>(null);
   const triggerRef = React.useRef<HTMLElement | null>(null);
 
   return (
-    <DropdownMenuContext.Provider value={{ open, setOpen, triggerRef, position, setPosition }}>
+    <DropdownMenuContext.Provider value={{ open, setOpen, triggerRef }}>
       <div className="relative inline-block text-left">{children}</div>
     </DropdownMenuContext.Provider>
   );
@@ -47,35 +38,19 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
 }) => {
   const context = React.useContext(DropdownMenuContext);
   if (!context) throw new Error("DropdownMenuTrigger must be used within DropdownMenu");
-  const { setOpen, open, triggerRef, setPosition } = context;
+  const { setOpen, open, triggerRef } = context;
 
-  const handleClick = (e?: React.MouseEvent) => {
-    if (!open && triggerRef.current) {
-      // 열릴 때 위치 저장
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom,
-        left: rect.left,
-        right: rect.right,
-      });
-    }
-    setOpen(!open);
-  };
+  const handleClick = () => setOpen(!open);
 
   if (asChild && React.isValidElement(children)) {
-    return React.cloneElement(children as React.ReactElement<{ onClick?: () => void; ref?: any }>, {
+    return React.cloneElement(children as React.ReactElement<{ onClick?: () => void; ref?: React.Ref<HTMLElement> }>, {
       onClick: handleClick,
-      ref: (el: HTMLElement) => {
-        triggerRef.current = el;
-        const origRef: any = (children as any).ref;
-        if (typeof origRef === "function") origRef(el);
-        else if (origRef && typeof origRef === "object") (origRef as any).current = el;
-      },
+      ref: triggerRef as React.Ref<HTMLElement>,
     });
   }
 
   return (
-    <button type="button" onClick={handleClick} ref={(el) => { triggerRef.current = el }}>
+    <button type="button" onClick={handleClick} ref={triggerRef as React.Ref<HTMLButtonElement>}>
       {children}
     </button>
   );
@@ -84,58 +59,106 @@ const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({
 interface DropdownMenuContentProps extends React.HTMLAttributes<HTMLDivElement> {
   align?: "start" | "center" | "end";
   sideOffset?: number;
-  /** 스크롤 시 드롭다운을 닫을지 여부 (기본값: true) */
-  closeOnScroll?: boolean;
 }
 
 const DropdownMenuContent = React.forwardRef<HTMLDivElement, DropdownMenuContentProps>(
-  ({ className, align = "end", sideOffset = 4, closeOnScroll = true, children, ...props }, ref) => {
+  ({ className, align = "end", sideOffset = 4, children, ...props }, ref) => {
     const context = React.useContext(DropdownMenuContext);
     if (!context) throw new Error("DropdownMenuContent must be used within DropdownMenu");
 
-    const { open, setOpen, position } = context;
+    const { open, setOpen, triggerRef } = context;
+    const contentRef = React.useRef<HTMLDivElement>(null);
+    const [styles, setStyles] = React.useState<React.CSSProperties>({
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      visibility: 'hidden', // 위치 계산 전까지 숨김
+    });
+
+    // 위치 계산 함수
+    const updatePosition = React.useCallback(() => {
+      const trigger = triggerRef.current;
+      const content = contentRef.current;
+      if (!trigger || !content) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+
+      let top = triggerRect.bottom + sideOffset;
+      let left: number;
+
+      if (align === "start") {
+        left = triggerRect.left;
+      } else if (align === "center") {
+        left = triggerRect.left + (triggerRect.width - contentRect.width) / 2;
+      } else {
+        // end
+        left = triggerRect.right - contentRect.width;
+      }
+
+      // 화면 밖으로 나가지 않도록 조정
+      if (left < 0) left = 0;
+      if (left + contentRect.width > window.innerWidth) {
+        left = window.innerWidth - contentRect.width;
+      }
+      if (top + contentRect.height > window.innerHeight) {
+        // 위로 표시
+        top = triggerRect.top - contentRect.height - sideOffset;
+      }
+
+      setStyles({
+        position: 'fixed',
+        top,
+        left,
+        visibility: 'visible',
+      });
+    }, [triggerRef, align, sideOffset]);
+
+    // useLayoutEffect로 paint 전에 위치 계산
+    React.useLayoutEffect(() => {
+      if (!open) return;
+      updatePosition();
+    }, [open, updatePosition]);
+
+    // 스크롤 시 위치 업데이트 (useLayoutEffect + passive: false로 즉시 반영)
+    React.useLayoutEffect(() => {
+      if (!open) return;
+
+      const handleScroll = () => {
+        updatePosition();
+      };
+
+      // capture phase + passive false로 스크롤 이벤트 즉시 처리
+      window.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+      return () => window.removeEventListener("scroll", handleScroll, { capture: true });
+    }, [open, updatePosition]);
 
     // 클릭 외부 영역 클릭 시 닫기
     React.useEffect(() => {
-      const handleClickOutside = () => setOpen(false);
-      if (open) {
-        document.addEventListener("click", handleClickOutside);
-        return () => document.removeEventListener("click", handleClickOutside);
-      }
+      if (!open) return;
+      const handleClickOutside = (e: MouseEvent) => {
+        if (contentRef.current && !contentRef.current.contains(e.target as Node)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
     }, [open, setOpen]);
 
-    // 스크롤 시 드롭다운 닫기
-    React.useEffect(() => {
-      if (!open || !closeOnScroll) return;
+    if (!open) return null;
 
-      const handleScroll = () => {
-        setOpen(false);
-      };
-
-      // 모든 스크롤 이벤트 캡처 (capture phase로 모든 스크롤 감지)
-      window.addEventListener("scroll", handleScroll, true);
-      return () => window.removeEventListener("scroll", handleScroll, true);
-    }, [open, closeOnScroll, setOpen]);
-
-    // 열려있지 않거나 위치가 없으면 렌더링 안함
-    if (!open || !position) return null;
-
-    // 저장된 위치 사용 (클릭 시점의 위치)
-    const left = align === "start" ? position.left : align === "center" ? (position.left + position.right) / 2 : position.right;
-
-    // body에 portal하여 어떤 부모의 overflow나 z-index에도 영향받지 않음
     return ReactDOM.createPortal(
       <div
-        ref={ref}
+        ref={(node) => {
+          (contentRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+          if (typeof ref === 'function') ref(node);
+          else if (ref) ref.current = node;
+        }}
         className={cn(
-          "fixed z-[99999] min-w-[8rem] overflow-visible rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg",
+          "z-[99999] min-w-[8rem] rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg",
           className
         )}
-        style={{
-          top: position.top + sideOffset,
-          left: left,
-          transform: align === "end" ? "translateX(-100%)" : align === "center" ? "translateX(-50%)" : undefined,
-        }}
+        style={styles}
         onClick={(e) => e.stopPropagation()}
         {...props}
       >
