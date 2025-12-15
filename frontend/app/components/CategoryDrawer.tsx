@@ -24,6 +24,7 @@ import {
   feedsRoutersCategoryDeleteCategory,
   feedsRoutersCategoryListCategories,
   feedsRoutersFeedListFeeds,
+  FeedSchema,
 } from '../services/api';
 
 export const DRAWER_WIDTH = 240;
@@ -39,6 +40,7 @@ export const CategoryDrawer: FC<{
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
+  const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
 
   useEffect(() => {
     feedsRoutersFeedListFeeds().then(setFeeds);
@@ -82,9 +84,12 @@ export const CategoryDrawer: FC<{
     onNavigateHome: () => void;
     onOpenAdd: () => void;
     onDeleteCategory: (category: RSSCategory) => Promise<void>;
+    draggingFeed: FeedSchema | null;
+    onDragStart: (feed: FeedSchema) => void;
+    onDragEnd: () => void;
   };
 
-  const DrawerContent = ({ pathname, categories, feeds, onNavigateHome, onOpenAdd, onDeleteCategory }: DrawerContentProps) => {
+  const DrawerContent = ({ pathname, categories, feeds, onNavigateHome, onOpenAdd, onDeleteCategory, draggingFeed, onDragStart, onDragEnd }: DrawerContentProps) => {
     return (
       <div className="flex h-full flex-col">
         <ScrollArea className="flex-1 py-2">
@@ -112,6 +117,10 @@ export const CategoryDrawer: FC<{
                 pathname={pathname}
                 key={category.id}
                 deleteCategory={onDeleteCategory}
+                draggingFeed={draggingFeed}
+                onFeedMoved={() => onDragEnd()}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
               />
             ))}
           </div>
@@ -144,6 +153,9 @@ export const CategoryDrawer: FC<{
               onNavigateHome={() => router.push('/home')}
               onOpenAdd={() => setAddCategoryOpen(true)}
               onDeleteCategory={handleDeleteCategory}
+              draggingFeed={draggingFeed}
+              onDragStart={setDraggingFeed}
+              onDragEnd={() => setDraggingFeed(null)}
             />
           </SheetContent>
         </Sheet>
@@ -203,6 +215,9 @@ export const CategoryDrawer: FC<{
           onNavigateHome={() => router.push('/home')}
           onOpenAdd={() => setAddCategoryOpen(true)}
           onDeleteCategory={handleDeleteCategory}
+          draggingFeed={draggingFeed}
+          onDragStart={setDraggingFeed}
+          onDragEnd={() => setDraggingFeed(null)}
         />
       </aside>
 

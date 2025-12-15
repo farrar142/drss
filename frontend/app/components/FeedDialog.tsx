@@ -1,13 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { feedsRoutersFeedValidateFeed } from '../services/api';
+
+interface HeaderEntry {
+  key: string;
+  value: string;
+}
 
 interface FeedPayload {
   url: string;
@@ -18,6 +23,34 @@ interface FeedPayload {
   refresh_interval?: number;
   favicon_url?: string;
 }
+
+interface FeedDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initial?: Partial<FeedPayload>;
+  title?: string;
+  submitLabel?: string;
+  onSubmit: (payload: FeedPayload) => Promise<any>;
+}
+
+// Record를 HeaderEntry 배열로 변환
+const headersToEntries = (headers: Record<string, unknown> | undefined): HeaderEntry[] => {
+  if (!headers || typeof headers !== 'object') return [];
+  return Object.entries(headers).map(([key, value]) => ({
+    key,
+    value: String(value ?? ''),
+  }));
+};
+
+// HeaderEntry 배열을 Record로 변환
+const entriesToHeaders = (entries: HeaderEntry[]): Record<string, string> | undefined => {
+  const filtered = entries.filter(e => e.key.trim());
+  if (filtered.length === 0) return undefined;
+  return filtered.reduce((acc, { key, value }) => {
+    acc[key.trim()] = value;
+    return acc;
+  }, {} as Record<string, string>);
+};
 
 interface FeedDialogProps {
   open: boolean;
@@ -41,7 +74,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   const [description, setDescription] = useState(initial.description ?? '');
   const [faviconUrl, setFaviconUrl] = useState((initial as any).favicon_url ?? '');
   const [visible, setVisible] = useState(initial.visible ?? true);
-  const [customHeaders, setCustomHeaders] = useState(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
+  const [headerEntries, setHeaderEntries] = useState<HeaderEntry[]>(headersToEntries(initial.custom_headers));
   const [refreshInterval, setRefreshInterval] = useState(initial.refresh_interval ?? 5);
 
   const [validating, setValidating] = useState(false);
@@ -55,12 +88,26 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       setDescription(initial.description ?? '');
       setFaviconUrl((initial as any).favicon_url ?? '');
       setVisible(initial.visible ?? true);
-      setCustomHeaders(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
+      setHeaderEntries(headersToEntries(initial.custom_headers));
       setRefreshInterval(initial.refresh_interval ?? 5);
       setValidationResult(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const addHeaderEntry = () => {
+    setHeaderEntries([...headerEntries, { key: '', value: '' }]);
+  };
+
+  const updateHeaderEntry = (index: number, field: 'key' | 'value', value: string) => {
+    const newEntries = [...headerEntries];
+    newEntries[index][field] = value;
+    setHeaderEntries(newEntries);
+  };
+
+  const removeHeaderEntry = (index: number) => {
+    setHeaderEntries(headerEntries.filter((_, i) => i !== index));
+  };
 
   const handleValidate = async () => {
     if (!url.trim()) {
@@ -69,8 +116,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
     }
     setValidating(true);
     try {
-      let parsedHeaders: any | undefined = undefined;
-      if (customHeaders.trim()) parsedHeaders = JSON.parse(customHeaders);
+      const parsedHeaders = entriesToHeaders(headerEntries);
       const result = await feedsRoutersFeedValidateFeed({ url, custom_headers: parsedHeaders });
       setValidationResult(result);
       if (!feedTitle && result.title) setFeedTitle(result.title);
@@ -86,11 +132,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
 
   const handleSubmit = async () => {
     try {
-      let parsedHeaders: any | undefined = undefined;
-      if (customHeaders.trim()) {
-        try { parsedHeaders = JSON.parse(customHeaders); } catch (e) { alert('커스텀 헤더 JSON이 유효하지 않습니다.'); return; }
-      }
       setSubmitting(true);
+      const parsedHeaders = entriesToHeaders(headerEntries);
       const payload: FeedPayload = {
         url,
         title: feedTitle,
@@ -136,8 +179,44 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="feed-custom-headers">커스텀 헤더 (JSON)</Label>
-            <Textarea id="feed-custom-headers" value={customHeaders} onChange={(e) => setCustomHeaders(e.target.value)} placeholder='예: {"Authorization":"Bearer ..."}' />
+            <div className="flex items-center justify-between">
+              <Label>커스텀 헤더</Label>
+              <Button type="button" variant="outline" size="sm" onClick={addHeaderEntry} className="h-7 px-2">
+                <Plus className="w-3 h-3 mr-1" /> 추가
+              </Button>
+            </div>
+            {headerEntries.length > 0 ? (
+              <div className="space-y-2">
+                {headerEntries.map((entry, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Key"
+                      value={entry.key}
+                      onChange={(e) => updateHeaderEntry(index, 'key', e.target.value)}
+                      className="flex-1"
+                    />
+                    <span className="text-muted-foreground">:</span>
+                    <Input
+                      placeholder="Value"
+                      value={entry.value}
+                      onChange={(e) => updateHeaderEntry(index, 'value', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeHeaderEntry(index)}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">헤더가 없습니다. 추가 버튼을 눌러 헤더를 추가하세요.</p>
+            )}
           </div>
 
           {validationResult && (

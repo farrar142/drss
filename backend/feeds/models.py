@@ -12,6 +12,12 @@ class RSSCategory(models.Model):
     visible = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['user', 'visible']),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -31,6 +37,14 @@ class RSSFeed(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['category']),
+            models.Index(fields=['user', 'visible']),
+            models.Index(fields=['category', 'visible']),
+        ]
+
     def __str__(self):
         return self.title
 
@@ -49,6 +63,13 @@ class RSSItem(models.Model):
 
     class Meta:
         ordering = ["-published_at"]
+        indexes = [
+            models.Index(fields=['feed']),
+            models.Index(fields=['feed', 'is_read']),
+            models.Index(fields=['feed', 'is_favorite']),
+            models.Index(fields=['published_at']),
+            models.Index(fields=['feed', '-published_at']),
+        ]
 
     def __str__(self):
         return self.title
@@ -59,6 +80,11 @@ class CachedImage(models.Model):
     relative_path = models.CharField(max_length=500)  # relative to MEDIA_ROOT
     content_type = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['original_url']),
+        ]
 
     def url(self):
         from django.conf import settings

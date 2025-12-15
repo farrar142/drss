@@ -10,6 +10,7 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
+  GripVertical,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -34,9 +35,11 @@ import {
 interface RSSFeedListItemProps {
   feed: FeedSchema;
   categoryId: number;
+  onDragStart?: (feed: FeedSchema) => void;
+  onDragEnd?: () => void;
 }
 
-export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, categoryId }) => {
+export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd }) => {
   const router = useRouter();
   const { updateFeed, removeFeed } = useRSSStore();
 
@@ -95,12 +98,32 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
     }
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('application/json', JSON.stringify({ feedId: feed.id, fromCategoryId: categoryId }));
+    e.dataTransfer.effectAllowed = 'move';
+    onDragStart?.(feed);
+  };
+
+  const handleDragEnd = () => {
+    onDragEnd?.();
+  };
+
   return (
     <>
-      <div className={cn('flex items-center group', !feed.visible && 'opacity-50')}>
+      <div 
+        className={cn('flex items-center group', !feed.visible && 'opacity-50')}
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        {/* Drag Handle */}
+        <div className="cursor-grab opacity-0 group-hover:opacity-100 transition-opacity p-1">
+          <GripVertical className="w-3 h-3 text-muted-foreground" />
+        </div>
         {/* Feed Item Button */}
         <button
           onClick={() => router.push(`/category/${categoryId}/feed/${feed.id}`)}
+          draggable={false}
           className={cn(
             'flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md',
             'hover:bg-sidebar-accent/50 transition-colors',

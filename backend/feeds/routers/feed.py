@@ -60,6 +60,8 @@ def list_feeds(request):
 
 @router.post("/feeds", response=FeedSchema, auth=JWTAuth())
 def create_feed(request, data: FeedCreateSchema):
+    from feeds.tasks import update_feed_items
+    
     category = get_object_or_404(RSSCategory, id=data.category_id, user=request.auth)
 
     title = data.title
@@ -96,6 +98,14 @@ def create_feed(request, data: FeedCreateSchema):
         custom_headers=data.custom_headers,
         refresh_interval=data.refresh_interval,
     )
+    
+    # 피드 생성 후 즉시 아이템 가져오기 (동기적으로 대기)
+    try:
+        update_feed_items.delay(feed.pk).get(timeout=30)
+    except Exception as e:
+        # 타임아웃이나 에러 발생 시에도 피드는 생성됨
+        pass
+    
     # item_count 추가
     from django.db.models import Count
 

@@ -2,7 +2,7 @@
 
 import { ChevronDown, Eye, EyeOff, FolderOpen, MoreVertical, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useEffect, useMemo, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,6 +30,8 @@ import {
   feedsRoutersFeedCreateFeed,
   feedsRoutersCategoryUpdateCategory,
   feedsRoutersCategoryRefreshCategoryFeeds,
+  feedsRoutersFeedUpdateFeed,
+  FeedSchema,
 } from '../services/api';
 
 export const CategoryItem: FC<{
@@ -37,15 +39,20 @@ export const CategoryItem: FC<{
   pathname: string;
   deleteCategory: (category: RSSCategory) => Promise<void>;
   feeds: RSSFeed[];
-}> = ({ category, pathname, deleteCategory, feeds: _feeds }) => {
+  draggingFeed?: FeedSchema | null;
+  onFeedMoved?: (feedId: number, toCategoryId: number) => void;
+  onDragStart?: (feed: FeedSchema) => void;
+  onDragEnd?: () => void;
+}> = ({ category, pathname, deleteCategory, feeds: _feeds, draggingFeed, onFeedMoved, onDragStart, onDragEnd }) => {
   const router = useRouter();
-  const { addFeed, updateCategory } = useRSSStore();
+  const { addFeed, updateCategory, updateFeed } = useRSSStore();
   const [expanded, setExpanded] = useState(false);
   const [addFeedOpen, setAddFeedOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState(category.name);
   const [editDescription, setEditDescription] = useState(category.description);
   const [editVisible, setEditVisible] = useState(category.visible);
+  const [isDragOver, setIsDragOver] = useState(false);
   const feeds = useMemo(() => _feeds.filter((f) => f.category_id == category.id), [_feeds, category.id]);
   const categoryIdFromPath = pathname.startsWith('/category/') ? pathname.split('/')[2] : null;
 
@@ -111,14 +118,53 @@ export const CategoryItem: FC<{
     await deleteCategory(category);
   };
 
+  // Drag & Drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // 자식 요소로 이동할 때는 무시
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const { feedId, fromCategoryId } = data;
+      
+      // 같은 카테고리면 무시
+      if (fromCategoryId === category.id) return;
+      
+      // API 호출로 카테고리 변경
+      const updated = await feedsRoutersFeedUpdateFeed(feedId, { category_id: category.id });
+      updateFeed(updated);
+      onFeedMoved?.(feedId, category.id);
+    } catch (error) {
+      console.error('Failed to move feed:', error);
+    }
+  }, [category.id, updateFeed, onFeedMoved]);
+
   return (
     <>
-      <div className="w-full group">
+      <div 
+        className="w-full group"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <div
           className={cn(
             'flex items-center justify-between px-3 py-2 mx-1 rounded-lg cursor-pointer',
             'hover:bg-sidebar-accent/50 transition-colors',
-            !category.visible && 'opacity-50'
+            !category.visible && 'opacity-50',
+            isDragOver && draggingFeed && draggingFeed.category_id !== category.id && 'bg-primary/20 ring-2 ring-primary'
           )}
         >
           <div className="flex items-center gap-2 flex-1" onClick={handleSummaryClick}>
@@ -180,7 +226,13 @@ export const CategoryItem: FC<{
           <div className="px-2 pb-2">
             <div className="space-y-0.5">
               {feeds.map((feed) => (
-                <RSSFeedListItem feed={feed} key={feed.id} categoryId={category.id} />
+                <RSSFeedListItem 
+                  feed={feed} 
+                  key={feed.id} 
+                  categoryId={category.id}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                />
               ))}
             </div>
 
