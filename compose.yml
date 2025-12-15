@@ -6,9 +6,6 @@ x-django-config: &backend
   restart: always
   volumes:
     - ./backend:/usr/src/app
-  depends_on:
-    - db
-    - redis
   environment:
     - DJANGO_SETTINGS_MODULE=base.settings
     - CELERY_BROKER_URL=redis://redis:6379/0
@@ -17,22 +14,6 @@ x-django-config: &backend
     - .env
 
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: ${DATABASE_NAME}
-      POSTGRES_USER: ${DATABASE_USER}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
   django:
     <<: *backend
     entrypoint: uvicorn base.asgi:application --host 0.0.0.0 --port 8000 --workers 8
@@ -44,38 +25,6 @@ services:
   celery-beat:
     <<: *backend
     entrypoint: celery -A base beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-
-  real-browser:
-    profiles: [ "rss" ]
-    image: ghcr.io/hyoban/puppeteer-real-browser-hono
-    restart: always
-    ports:
-      - '3001:3000'
-    healthcheck:
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000' ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  browserless:
-    # marked
-    profiles: [ "rss" ] # marked
-    image: browserless/chrome # marked
-    restart: always # marked
-    ports:
-      - "3004:3000"
-    ulimits:
-      # marked
-      core:
-        # marked
-        hard: 0 # marked
-        soft: 0 # marked
-    healthcheck:
-      # marked
-      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/pressure' ] # marked
-      interval: 30s # marked
-      timeout: 10s # marked
-      retries: 3 # marked
 
 volumes:
   postgres_data:
