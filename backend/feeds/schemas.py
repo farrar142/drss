@@ -61,7 +61,7 @@ class FeedValidationResponse(Schema):
     title: str
     description: str
     items_count: int
-    latest_item_date: str = None
+    latest_item_date: Optional[str] = None
 
 
 class FeedValidationRequest(Schema):

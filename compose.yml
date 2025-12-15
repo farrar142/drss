@@ -8,15 +8,16 @@ x-django-config: &backend
     - ./backend:/usr/src/app
   environment:
     - DJANGO_SETTINGS_MODULE=base.settings
-    - CELERY_BROKER_URL=redis://redis:6379/0
-    - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    - TZ=Asia/Seoul
   env_file:
     - .env
 
 services:
   django:
     <<: *backend
-    entrypoint: uvicorn base.asgi:application --host 0.0.0.0 --port 8000 --workers 8
+    # Run collectstatic at container start so static files (including admin
+    # assets) are available to WhiteNoise before Uvicorn serves requests.
+    entrypoint: sh -c "python manage.py collectstatic --noinput && uvicorn base.asgi:application --host 0.0.0.0 --port 8000 --workers 8"
     ports:
       - "8000:8000"
   celery-worker:

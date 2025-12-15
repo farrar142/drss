@@ -11,6 +11,8 @@ import jwt
 from django.conf import settings
 from datetime import timedelta
 
+from feeds.tasks import update_feed_items
+
 User = get_user_model()
 
 

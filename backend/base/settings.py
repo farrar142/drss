@@ -68,6 +68,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serve static files with WhiteNoise when running under ASGI (uvicorn)
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -137,9 +139,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ko-kr"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
@@ -149,7 +151,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
+# Serve static files at /static/ and collect to STATIC_ROOT
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 # Media files (cached images)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -182,6 +186,12 @@ AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": os.getenv("AWS_S3_CACHE_CONTROL", "max-age=86400"),
 }
 
+# Use WhiteNoise's storage backend for compressed static files. This is
+# compatible with serving static files directly from the Django process
+# (e.g., when using uvicorn + WhiteNoise). In production you may prefer
+# serving from S3/MinIO and override this.
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -200,6 +210,14 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# Session and CSRF cookie settings for cross-origin / Docker scenarios
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+# Allow cookies over HTTP in development (set to True in production with HTTPS)
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 # Cache configuration - prefer explicit REDIS_CACHE_URL, fallback to broker URL
 # Cache configuration removed (image caching feature removed). Use Django's default cache.

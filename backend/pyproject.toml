@@ -24,4 +24,5 @@ dependencies = [
     "Pillow>=9.0.0",
     "boto3>=1.28.0",
     "django-storages>=1.13.2",
+    "whitenoise>=6.0",
 ]

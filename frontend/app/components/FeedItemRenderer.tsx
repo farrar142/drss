@@ -310,6 +310,19 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
 
   const description = useMemo(() => renderDescription(item.description, onMediaClick), [item.description, onMediaClick]);
 
+  const publishedAt = useMemo(() => {
+    try {
+      const d = new Date(item.published_at);
+      if (isNaN(d.getTime())) return null;
+      // Format like: Dec 15, 2025 · 17:26
+      const date = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      return `${date} · ${time}`;
+    } catch (e) {
+      return null;
+    }
+  }, [item.published_at]);
+
   // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
   // perceived performance. If the item's container is within ~1.5x viewport height on mount,
   // schedule caching for all images found in the description.
@@ -406,6 +419,11 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
           {/* Title */}
           <h3 className="flex-1 text-base font-semibold text-foreground leading-snug">
             {item.title}
+            {publishedAt && (
+              <div className="text-xs text-muted-foreground font-normal mt-1">
+                {publishedAt}
+              </div>
+            )}
           </h3>
         </div>
 
