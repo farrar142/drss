@@ -53,6 +53,8 @@ export type FeedUpdateSchemaUrl = string | null;
 
 export type FeedUpdateSchemaTitle = string | null;
 
+export type FeedUpdateSchemaFaviconUrl = string | null;
+
 export type FeedUpdateSchemaDescription = string | null;
 
 export type FeedUpdateSchemaVisible = boolean | null;
@@ -67,6 +69,7 @@ export interface FeedUpdateSchema {
   category_id?: FeedUpdateSchemaCategoryId;
   url?: FeedUpdateSchemaUrl;
   title?: FeedUpdateSchemaTitle;
+  favicon_url?: FeedUpdateSchemaFaviconUrl;
   description?: FeedUpdateSchemaDescription;
   visible?: FeedUpdateSchemaVisible;
   custom_headers?: FeedUpdateSchemaCustomHeaders;
@@ -77,11 +80,25 @@ export interface CategorySchema {
   id: number;
   name: string;
   description: string;
+  visible: boolean;
 }
 
 export interface CategoryCreateSchema {
   name: string;
   description?: string;
+  visible?: boolean;
+}
+
+export type CategoryUpdateSchemaName = string | null;
+
+export type CategoryUpdateSchemaDescription = string | null;
+
+export type CategoryUpdateSchemaVisible = boolean | null;
+
+export interface CategoryUpdateSchema {
+  name?: CategoryUpdateSchemaName;
+  description?: CategoryUpdateSchemaDescription;
+  visible?: CategoryUpdateSchemaVisible;
 }
 
 export interface ItemSchema {
@@ -315,12 +332,12 @@ export const feedsRoutersCategoryCreateCategory = (
  */
 export const feedsRoutersCategoryUpdateCategory = (
     categoryId: number,
-    categoryCreateSchema: CategoryCreateSchema,
+    categoryUpdateSchema: CategoryUpdateSchema,
  ) => {
       return axiosInstance<CategorySchema>(
       {url: `/api/categories/${categoryId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryCreateSchema
+      data: categoryUpdateSchema
     },
       );
     }

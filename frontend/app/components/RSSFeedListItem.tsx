@@ -8,6 +8,8 @@ import {
   RefreshCw,
   Trash2,
   CheckCircle,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,6 +18,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import FeedDialog from './FeedDialog';
@@ -81,9 +84,20 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
     }
   };
 
+  const handleToggleVisible = async () => {
+    try {
+      const updated = await feedsRoutersFeedUpdateFeed(feed.id, {
+        visible: !feed.visible,
+      });
+      updateFeed(updated);
+    } catch (error) {
+      console.error('Failed to toggle feed visibility', error);
+    }
+  };
+
   return (
     <>
-      <div className="flex items-center group">
+      <div className={cn('flex items-center group', !feed.visible && 'opacity-50')}>
         {/* Feed Item Button */}
         <button
           onClick={() => router.push(`/category/${categoryId}/feed/${feed.id}`)}
@@ -104,6 +118,8 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
             {feed.title}
           </span>
 
+          {!feed.visible && <EyeOff className="w-3 h-3 text-muted-foreground shrink-0" />}
+
           <span
             className={cn(
               'text-[10px] px-1.5 py-0.5 rounded',
@@ -120,16 +136,28 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
               <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuContent align="start" className="w-44">
             <DropdownMenuItem onClick={handleEdit}>
               <Pencil className="w-4 h-4 mr-2 text-primary" /> 수정
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleToggleVisible}>
+              {feed.visible ? (
+                <>
+                  <EyeOff className="w-4 h-4 mr-2 text-orange-500" /> 숨기기
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2 text-green-500" /> 표시하기
+                </>
+              )}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2 text-green-500" /> 새로고침
+              <RefreshCw className="w-4 h-4 mr-2 text-blue-500" /> 새로고침
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMarkAllRead}>
-              <CheckCircle className="w-4 h-4 mr-2 text-blue-500" /> 전체 읽음 처리
+              <CheckCircle className="w-4 h-4 mr-2 text-cyan-500" /> 전체 읽음 처리
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
               <Trash2 className="w-4 h-4 mr-2" /> 삭제
             </DropdownMenuItem>
@@ -147,6 +175,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
           title: feed.title,
           description: feed.description,
           favicon_url: feed.favicon_url,
+          visible: feed.visible,
           custom_headers: feed.custom_headers as any,
           refresh_interval: feed.refresh_interval,
         }}

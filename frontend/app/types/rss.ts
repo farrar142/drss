@@ -3,6 +3,7 @@ export interface RSSCategory {
     id: number;
     name: string;
     description: string;
+    visible: boolean;
 }
 
 export interface RSSFeed {

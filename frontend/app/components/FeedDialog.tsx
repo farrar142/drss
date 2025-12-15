@@ -6,12 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { feedsRoutersFeedValidateFeed } from '../services/api';
 
 interface FeedPayload {
   url: string;
   title?: string;
   description?: string;
+  visible?: boolean;
   custom_headers?: Record<string, unknown>;
   refresh_interval?: number;
   favicon_url?: string;
@@ -38,6 +40,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   const [feedTitle, setFeedTitle] = useState(initial.title ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
   const [faviconUrl, setFaviconUrl] = useState((initial as any).favicon_url ?? '');
+  const [visible, setVisible] = useState(initial.visible ?? true);
   const [customHeaders, setCustomHeaders] = useState(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
   const [refreshInterval, setRefreshInterval] = useState(initial.refresh_interval ?? 5);
 
@@ -51,6 +54,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       setFeedTitle(initial.title ?? '');
       setDescription(initial.description ?? '');
       setFaviconUrl((initial as any).favicon_url ?? '');
+      setVisible(initial.visible ?? true);
       setCustomHeaders(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
       setRefreshInterval(initial.refresh_interval ?? 5);
       setValidationResult(null);
@@ -92,6 +96,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
         title: feedTitle,
         favicon_url: faviconUrl || undefined,
         description,
+        visible,
         custom_headers: parsedHeaders,
         refresh_interval: refreshInterval,
       };
@@ -165,6 +170,20 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
           <div className="space-y-2">
             <Label htmlFor="feed-refresh">새로고침 간격 (분)</Label>
             <Input id="feed-refresh" type="number" min={1} value={refreshInterval} onChange={(e) => setRefreshInterval(Number(e.target.value))} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="feed-visible">표시</Label>
+              <p className="text-xs text-muted-foreground">
+                끄면 메인/카테고리 화면에서 글이 보이지 않습니다
+              </p>
+            </div>
+            <Switch
+              id="feed-visible"
+              checked={visible}
+              onCheckedChange={setVisible}
+            />
           </div>
         </div>
 
