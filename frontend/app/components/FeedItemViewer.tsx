@@ -394,14 +394,16 @@ export const FeedItemViewer: FC<{
   const nextMedia = useCallback(() => {
     const list = mediaListRef.current;
     if (!list || list.length <= 1 || currentMediaIndex == null) return;
-    const next = (currentMediaIndex + 1) % list.length;
+    const next = currentMediaIndex + 1;
+    if (next >= list.length) return; // do not wrap
     showMediaAt(next);
   }, [currentMediaIndex, showMediaAt]);
 
   const prevMedia = useCallback(() => {
     const list = mediaListRef.current;
     if (!list || list.length <= 1 || currentMediaIndex == null) return;
-    const prev = (currentMediaIndex - 1 + list.length) % list.length;
+    const prev = currentMediaIndex - 1;
+    if (prev < 0) return; // do not wrap
     showMediaAt(prev);
   }, [currentMediaIndex, showMediaAt]);
 
@@ -613,7 +615,23 @@ export const FeedItemViewer: FC<{
               "bg-card/90 rounded-2xl border border-border p-4",
               "shadow-2xl"
             )}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Only navigate when clicking the image itself and there's more than one media
+              if (!mediaListRef.current || mediaListRef.current.length <= 1) return;
+              try {
+                const img = e.currentTarget as HTMLImageElement;
+                const rect = img.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                if (clickX < rect.width / 2) {
+                  prevMedia();
+                } else {
+                  nextMedia();
+                }
+              } catch (err) {
+                // ignore
+              }
+            }}
             onPointerDown={(e) => {
               (e.currentTarget as any)._startX = e.clientX;
             }}
@@ -642,43 +660,53 @@ export const FeedItemViewer: FC<{
               />
             ) : null}
 
-            {/* Clickable left/right halves for previous/next */}
-            {mediaListRef.current.length > 1 && (
-              <>
-                <div
-                  role="button"
-                  aria-label="previous"
-                  onClick={(e) => { e.stopPropagation(); prevMedia(); }}
-                  className="absolute inset-y-0 left-0 w-1/2"
-                  style={{ cursor: 'pointer' }}
-                />
-                <div
-                  role="button"
-                  aria-label="next"
-                  onClick={(e) => { e.stopPropagation(); nextMedia(); }}
-                  className="absolute inset-y-0 right-0 w-1/2"
-                  style={{ cursor: 'pointer' }}
-                />
-              </>
-            )}
+            {/* NOTE: image click handles previous/next when clicking left/right halves of the image itself. */}
 
             {/* Prev / Next buttons */}
             {mediaListRef.current.length > 1 && (
               <>
-                <button
-                  onClick={(e) => { e.stopPropagation(); prevMedia(); }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 z-20"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); nextMedia(); }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 z-20"
-                >
-                  ›
-                </button>
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/90 bg-black/40 px-3 py-1 rounded-full z-20">
-                  {currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaListRef.current.length}` : null}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); showMediaAt(0); }}
+                    className={cn(
+                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
+                    )}
+                    aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
+                  >
+                    처음으로
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); prevMedia(); }}
+                    className={cn(
+                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
+                    )}
+                    aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
+                  >
+                    이전
+                  </button>
+                  <div className="text-xs text-white/90 bg-black/40 px-3 py-1 rounded">{currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaListRef.current.length}` : ''}</div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); nextMedia(); }}
+                    className={cn(
+                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      (currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1) && "opacity-40 pointer-events-none"
+                    )}
+                    aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1}
+                  >
+                    다음
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); showMediaAt(mediaListRef.current.length - 1); }}
+                    className={cn(
+                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      (currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1) && "opacity-40 pointer-events-none"
+                    )}
+                    aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1}
+                  >
+                    마지막으로
+                  </button>
                 </div>
               </>
             )}
