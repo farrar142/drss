@@ -13,8 +13,9 @@ import { RSSVideo } from "./RSSVideo";
 
 const renderDescription = (
   description: string,
-  onMediaClick: (url: string, type: 'image' | 'video') => void,
-  baseUrl?: string
+  onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
+  baseUrl?: string,
+  itemId?: number
 ) => {
   // Helper to check if a node contains an img or video
   const hasMediaChild = (node: any): boolean => {
@@ -76,7 +77,7 @@ const renderDescription = (
                 key={index}
                 src={resolved}
                 alt={alt}
-                onClick={() => onMediaClick(resolved, 'image')}
+                onClick={() => onMediaClick(resolved, 'image', itemId)}
               />
             );
           } else if (child.name === 'video') {
@@ -88,7 +89,7 @@ const renderDescription = (
               <RSSVideo
                 key={index}
                 src={resolved}
-                onClick={() => onMediaClick(resolved, 'video')}
+                onClick={() => onMediaClick(resolved, 'video', itemId)}
                 {...attribs}
               />
             );
@@ -109,17 +110,18 @@ const renderDescription = (
           <RSSImage
             src={resolved}
             alt={alt}
-            onClick={() => onMediaClick(resolved, 'image')}
+            onClick={() => onMediaClick(resolved, 'image', itemId)}
           />
         );
       }
       if (domNode.name === 'video') {
         const { class: _, src, ...attribs } = domNode.attribs;
         const videoSrc = src || attribs.source;
+        const resolved = videoSrc ? normalizeSrc(videoSrc) : videoSrc;
         return (
           <RSSVideo
-            src={videoSrc}
-            onClick={() => videoSrc && onMediaClick(videoSrc, 'video')}
+            src={resolved}
+            onClick={() => resolved && onMediaClick(resolved, 'video', itemId)}
             {...attribs}
           />
         );
@@ -131,7 +133,7 @@ const renderDescription = (
 
 export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   item: RSSItem,
-  onMediaClick: (url: string, type: 'image' | 'video') => void,
+  onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
   onCollapseChange?: (id: number, collapsed: boolean) => void
 }>(({ item, onMediaClick, onCollapseChange }, ref) => {
   const { viewMode } = useRSSStore()
@@ -140,7 +142,7 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
   const localRef = useRef<HTMLDivElement | null>(null);
 
-  const description = useMemo(() => renderDescription(item.description, onMediaClick, item.link), [item.description, onMediaClick, item.link]);
+  const description = useMemo(() => renderDescription(item.description, onMediaClick, item.link, item.id), [item.description, onMediaClick, item.link, item.id]);
 
   const publishedAt = useMemo(() => {
     try {

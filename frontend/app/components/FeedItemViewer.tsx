@@ -108,7 +108,7 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
 // Wrapper component to measure item height
 const MeasuredItem: FC<{
   item: RSSItem;
-  onMediaClick: (src: string, type: 'image' | 'video') => void;
+  onMediaClick: (src: string, type: 'image' | 'video', itemId?: number) => void;
   onHeightChange: (id: number, height: number) => void;
   isForcedVisible?: boolean;
   estimateHeight?: number;
@@ -218,7 +218,9 @@ export const FeedItemViewer: FC<{
   }, [items.length, columns, useCSSColumns]);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string } | null>(null);
+  const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string; itemId?: number } | null>(null);
+  const mediaListRef = useRef<Array<{ src: string; type: 'image' | 'video'; itemId: number }>>([]);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState<number | null>(null);
 
   // Multiple sentinel refs for each column
   const sentinelRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -328,15 +330,93 @@ export const FeedItemViewer: FC<{
     };
   }, [onLoadNew]);
 
-  const handleMediaClick = useCallback((src: string, type: 'image' | 'video' = 'image') => {
-    setModalMedia({ type, src });
+  const collectMediaForItem = useCallback((itemId: number) => {
+    const list: Array<{ src: string; type: 'image' | 'video'; itemId: number }> = [];
+    const imgRe = /<img[^>]+src=(?:"|')([^"']+)(?:"|')/gi;
+    const vidRe = /<video[^>]+src=(?:"|')([^"']+)(?:"|')/gi;
+
+    const normalize = (raw: string, baseUrl?: string) => {
+      if (!raw) return raw;
+      if (raw.startsWith('//')) return window.location.protocol + raw;
+      if (raw.startsWith('/')) {
+        try { const origin = baseUrl ? new URL(baseUrl).origin : window.location.origin; return origin + raw; } catch (e) { return raw; }
+      }
+      if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw) && baseUrl) {
+        try { return new URL(raw, baseUrl).toString(); } catch (e) { return raw; }
+      }
+      return raw;
+    };
+
+
+    const it = items.find(i => i.id === itemId);
+    if (!it) return list;
+
+    let m: RegExpExecArray | null;
+    while ((m = imgRe.exec(it.description))) {
+      if (m[1]) list.push({ src: normalize(m[1], it.link), type: 'image', itemId: it.id });
+    }
+    while ((m = vidRe.exec(it.description))) {
+      if (m[1]) list.push({ src: normalize(m[1], it.link), type: 'video', itemId: it.id });
+    }
+
+    return list;
+  }, [items]);
+
+  const handleMediaClick = useCallback((src: string, type: 'image' | 'video' = 'image', itemId?: number) => {
+    const clickedItem = items.find(it => it.id === itemId);
+    let list: Array<{ src: string; type: 'image' | 'video'; itemId: number }> = [];
+    if (itemId !== undefined && clickedItem) {
+      list = collectMediaForItem(itemId);
+    }
+    if (list.length === 0) list = [{ src, type, itemId: itemId ?? -1 }];
+
+    mediaListRef.current = list;
+    const idx = list.findIndex(it => it.src === src && it.type === type && (itemId == null || it.itemId === itemId));
+    setCurrentMediaIndex(idx >= 0 ? idx : 0);
+    setModalMedia({ type, src, itemId });
     setModalOpen(true);
-  }, []);
+  }, [collectMediaForItem, items]);
 
   const closeModal = () => {
     setModalOpen(false);
     setModalMedia(null);
+    setCurrentMediaIndex(null);
   };
+
+  const showMediaAt = useCallback((idx: number) => {
+    const list = mediaListRef.current;
+    if (!list || idx < 0 || idx >= list.length) return;
+    const m = list[idx];
+    setCurrentMediaIndex(idx);
+    setModalMedia({ src: m.src, type: m.type, itemId: m.itemId });
+  }, []);
+
+  const nextMedia = useCallback(() => {
+    const list = mediaListRef.current;
+    if (!list || list.length <= 1 || currentMediaIndex == null) return;
+    const next = (currentMediaIndex + 1) % list.length;
+    showMediaAt(next);
+  }, [currentMediaIndex, showMediaAt]);
+
+  const prevMedia = useCallback(() => {
+    const list = mediaListRef.current;
+    if (!list || list.length <= 1 || currentMediaIndex == null) return;
+    const prev = (currentMediaIndex - 1 + list.length) % list.length;
+    showMediaAt(prev);
+  }, [currentMediaIndex, showMediaAt]);
+
+  // Keyboard navigation when modal is open
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+      else if (e.key === 'ArrowLeft') prevMedia();
+      else if (e.key === 'ArrowRight') nextMedia();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalOpen, prevMedia, nextMedia]);
+
 
   // Track which items are expanded so we always render them and avoid layout jumps
   const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
@@ -534,6 +614,17 @@ export const FeedItemViewer: FC<{
               "shadow-2xl"
             )}
             onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              (e.currentTarget as any)._startX = e.clientX;
+            }}
+            onPointerUp={(e) => {
+              const startX = (e.currentTarget as any)._startX;
+              if (typeof startX !== 'number') return;
+              const dx = e.clientX - startX;
+              if (Math.abs(dx) > 30) {
+                if (dx > 0) prevMedia(); else nextMedia();
+              }
+            }}
           >
             {modalMedia?.type === 'video' ? (
               <video
@@ -550,6 +641,47 @@ export const FeedItemViewer: FC<{
                 className="max-w-full max-h-full object-contain rounded-lg"
               />
             ) : null}
+
+            {/* Clickable left/right halves for previous/next */}
+            {mediaListRef.current.length > 1 && (
+              <>
+                <div
+                  role="button"
+                  aria-label="previous"
+                  onClick={(e) => { e.stopPropagation(); prevMedia(); }}
+                  className="absolute inset-y-0 left-0 w-1/2"
+                  style={{ cursor: 'pointer' }}
+                />
+                <div
+                  role="button"
+                  aria-label="next"
+                  onClick={(e) => { e.stopPropagation(); nextMedia(); }}
+                  className="absolute inset-y-0 right-0 w-1/2"
+                  style={{ cursor: 'pointer' }}
+                />
+              </>
+            )}
+
+            {/* Prev / Next buttons */}
+            {mediaListRef.current.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); prevMedia(); }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 z-20"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); nextMedia(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 z-20"
+                >
+                  ›
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-white/90 bg-black/40 px-3 py-1 rounded-full z-20">
+                  {currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaListRef.current.length}` : null}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

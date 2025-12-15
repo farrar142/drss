@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { feedsRoutersFeedValidateFeed } from '../services/api';
+import { feedsRoutersFeedValidateFeed, FeedValidationResponse } from '../services/api';
 
 interface HeaderEntry {
   key: string;
@@ -78,7 +78,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   const [refreshInterval, setRefreshInterval] = useState(initial.refresh_interval ?? 5);
 
   const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<{ title: string; description: string; items_count: number; latest_item_date?: string } | null>(null);
+  const [validationResult, setValidationResult] = useState<FeedValidationResponse | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
