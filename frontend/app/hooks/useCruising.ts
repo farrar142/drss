@@ -34,24 +34,42 @@ export interface UseCruisingReturn {
 
 export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn {
   const {
-    minSpeed = 5,
-    maxSpeed = 300,
-    defaultSpeed = 80,
+    minSpeed = 10,      // 0%에서의 속도
+    maxSpeed = 300,    // 100%에서의 속도
+    defaultSpeed = 30, // 기본값
   } = options;
 
   const [isCruising, setIsCruising] = useState(false);
   const [speed, setSpeed] = useState(defaultSpeed);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const accumulatedScrollRef = useRef<number>(0); // 누적 스크롤 값
 
-  // Calculate percentage
-  const speedPercent = ((speed - minSpeed) / (maxSpeed - minSpeed)) * 100;
+  // 지수 함수를 사용한 속도 계산
+  // percent 0 → minSpeed, percent 100 → maxSpeed
+  // 낮은 구간에서 세밀하게, 높은 구간에서 빠르게 증가
+  const percentToSpeed = useCallback((percent: number): number => {
+    const t = percent / 100; // 0 ~ 1
+    // 지수 함수: speed = minSpeed + (maxSpeed - minSpeed) * t^2.5
+    // t^2.5는 낮은 구간에서 천천히, 높은 구간에서 빠르게 증가
+    return minSpeed + (maxSpeed - minSpeed) * Math.pow(t, 2.5);
+  }, [minSpeed, maxSpeed]);
+
+  const speedToPercent = useCallback((spd: number): number => {
+    // 역함수: t = ((speed - minSpeed) / (maxSpeed - minSpeed))^(1/2.5)
+    const normalized = (spd - minSpeed) / (maxSpeed - minSpeed);
+    const t = Math.pow(Math.max(0, Math.min(1, normalized)), 1 / 2.5);
+    return t * 100;
+  }, [minSpeed, maxSpeed]);
+
+  // Calculate percentage from current speed
+  const speedPercent = speedToPercent(speed);
 
   const setSpeedPercent = useCallback((percent: number) => {
     const clampedPercent = Math.max(0, Math.min(100, percent));
-    const newSpeed = minSpeed + (clampedPercent / 100) * (maxSpeed - minSpeed);
+    const newSpeed = percentToSpeed(clampedPercent);
     setSpeed(newSpeed);
-  }, [minSpeed, maxSpeed]);
+  }, [percentToSpeed]);
 
   const stopCruising = useCallback(() => {
     setIsCruising(false);
@@ -78,18 +96,27 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
   useEffect(() => {
     if (!isCruising) return;
 
+    // Reset accumulated scroll when starting
+    accumulatedScrollRef.current = 0;
+
     const animate = (currentTime: number) => {
       const deltaTime = currentTime - lastTimeRef.current;
       lastTimeRef.current = currentTime;
 
       // Calculate scroll amount based on speed (pixels per second)
-      const scrollAmount = (speed * deltaTime) / 1000;
-
-      // Smooth scroll
-      window.scrollBy({
-        top: scrollAmount,
-        behavior: 'instant', // We handle smoothness ourselves via RAF
-      });
+      // Accumulate fractional pixels to ensure smooth scrolling at low speeds
+      accumulatedScrollRef.current += (speed * deltaTime) / 1000;
+      
+      // Only scroll when we have at least 1 pixel accumulated
+      if (accumulatedScrollRef.current >= 1) {
+        const scrollAmount = Math.floor(accumulatedScrollRef.current);
+        accumulatedScrollRef.current -= scrollAmount;
+        
+        window.scrollBy({
+          top: scrollAmount,
+          behavior: 'instant',
+        });
+      }
 
       // Check if we've reached the bottom
       const scrollY = window.scrollY || window.pageYOffset;
