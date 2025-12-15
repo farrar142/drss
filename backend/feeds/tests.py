@@ -326,6 +326,79 @@ class FeedScheduleTest(TestCase):
 
         # create schedule
         setup_feed_schedule(feed)
+
+
+class FaviconHelpersTest(TestCase):
+    def test_find_favicon_from_html_absolute_and_relative(self):
+        base = "http://example.com/"
+        html_abs = '<html><head><link rel="icon" href="https://cdn.example.com/favicon.png"></head></html>'
+        html_rel = '<html><head><link rel="icon" href="/static/favicon.ico"></head></html>'
+
+        from feeds.management.commands.update_feed_favicons import (
+            find_favicon_from_html,
+        )
+
+        abs_res = find_favicon_from_html(base)(html_abs)
+        self.assertTrue(abs_res.is_success)
+        self.assertEqual(abs_res.unwrap(), "https://cdn.example.com/favicon.png")
+
+        rel_res = find_favicon_from_html(base)(html_rel)
+        self.assertTrue(rel_res.is_success)
+        self.assertEqual(rel_res.unwrap(), "http://example.com/static/favicon.ico")
+
+    def test_find_favicon_from_html_no_result(self):
+        base = "http://example.com/"
+        html = '<html><head></head><body>No icon here</body></html>'
+        from feeds.management.commands.update_feed_favicons import (
+            find_favicon_from_html,
+        )
+
+        res = find_favicon_from_html(base)(html)
+        self.assertTrue(res.is_failure)
+
+    def test_find_favicon_from_feed_xml_logo_and_icon(self):
+        base = "http://example.com/"
+        xml_logo = "<rss><channel><logo>http://example.com/logo.png</logo></channel></rss>"
+        xml_icon = "<rss><channel><icon>/images/icon.png</icon></channel></rss>"
+        from feeds.management.commands.update_feed_favicons import (
+            find_favicon_from_feed_xml,
+        )
+
+        logo_res = find_favicon_from_feed_xml(base)(xml_logo)
+        self.assertTrue(logo_res.is_success)
+        self.assertEqual(logo_res.unwrap(), "http://example.com/logo.png")
+
+        icon_res = find_favicon_from_feed_xml(base)(xml_icon)
+        self.assertTrue(icon_res.is_success)
+        self.assertEqual(icon_res.unwrap(), "http://example.com/images/icon.png")
+
+    def test_get_favicon_ico_success_and_failure(self):
+        from feeds.management.commands.update_feed_favicons import get_favicon_ico
+
+        class FakeResp:
+            def __init__(self, status_code, headers):
+                self.status_code = status_code
+                self.headers = headers
+
+        class FakeSession:
+            def __init__(self, resp):
+                self._resp = resp
+
+            def get(self, url, *args, **kwargs):
+                return self._resp
+
+        # success
+        resp = FakeResp(200, {"content-type": "image/x-icon"})
+        session = FakeSession(resp)
+        res = get_favicon_ico(session)("http://example.com/")
+        self.assertTrue(res.is_success)
+        self.assertEqual(res.unwrap(), "http://example.com/favicon.ico")
+
+        # failure (not image)
+        bad = FakeResp(200, {"content-type": "text/html"})
+        session2 = FakeSession(bad)
+        res2 = get_favicon_ico(session2)("http://example.com/")
+        self.assertTrue(res2.is_failure)
         args_payload = json.dumps([feed.pk])
         tasks = PeriodicTask.objects.filter(args=args_payload)
         self.assertEqual(tasks.count(), 1)

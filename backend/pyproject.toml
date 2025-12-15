@@ -20,4 +20,5 @@ dependencies = [
     "beautifulsoup4>=4.14.3",
     "uvicorn>=0.38.0",
     "returns>=0.26.0",
+    "cloudscraper>=1.2.71",
 ]
