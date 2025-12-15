@@ -2,11 +2,11 @@
 
 import { FC, useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { RSSItem } from "../types/rss";
 import { MeasuredItem } from "./MeasuredItem";
 import { MediaModal } from "./MediaModal";
 import { CruisingControls } from "./CruisingControls";
+import { PullToRefresh } from "./PullToRefresh";
 import { UseFeedViewerReturn } from "../hooks/useFeedViewer";
 import dynamic from 'next/dynamic';
 
@@ -147,18 +147,12 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   onLoadNew,
   hasNext,
   items,
+  handleLoadNew,
 }) => {
   return (
     <>
+      <PullToRefresh onRefresh={handleLoadNew}>
       <div className="w-full space-y-4">
-        {/* Load New Button */}
-        <Button
-          onClick={onLoadNew}
-          className="shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
-        >
-          새글 불러오기
-        </Button>
-
         {/* Content Grid */}
         {viewMode === 'board' ? (
           <div className="w-full space-y-3 px-1">
@@ -228,6 +222,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
           )
         )}
       </div>
+      </PullToRefresh>
 
       {/* Media Modal */}
       <MediaModal modal={mediaModal} />

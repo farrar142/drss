@@ -11,9 +11,13 @@ import { useCruising } from "./useCruising";
 export interface UseFeedViewerOptions {
   items: RSSItem[];
   onLoadMore?: () => void;
-  onLoadNew?: () => void;
+  onLoadNew?: () => void | Promise<void>;
   hasNext?: boolean;
   loading?: boolean;
+  /** 새 글 개수 (외부에서 계산해서 전달) */
+  newPostsCount?: number;
+  /** 자동 새로고침 간격 (ms), 기본 60초 */
+  autoRefreshInterval?: number;
 }
 
 export interface UseFeedViewerReturn {
@@ -45,10 +49,16 @@ export interface UseFeedViewerReturn {
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
 
   // Handlers
-  onLoadNew?: () => void;
+  onLoadNew?: () => void | Promise<void>;
   hasNext?: boolean;
   loading?: boolean;
   items: RSSItem[];
+
+  // Auto-refresh
+  refreshProgress: number;
+  newPostsCount: number;
+  isRefreshing: boolean;
+  handleLoadNew: () => void;
 }
 
 export function useFeedViewer({
@@ -57,6 +67,8 @@ export function useFeedViewer({
   onLoadNew,
   hasNext,
   loading,
+  newPostsCount: externalNewPostsCount = 0,
+  autoRefreshInterval = 60000,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
   const { viewMode } = useRSSStore();
   const isMd = useMediaQuery('(max-width: 768px)');
@@ -171,41 +183,95 @@ export function useFeedViewer({
     };
   }, [hasNext, loading, columns]);
 
-  // Auto-refresh every 60 seconds
+  // Auto-refresh state
+  const [refreshProgress, setRefreshProgress] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [newPostsCount, setNewPostsCount] = useState(externalNewPostsCount);
+
+  // Update newPostsCount when external value changes
   useEffect(() => {
-    if (!onLoadNew) return;
+    setNewPostsCount(externalNewPostsCount);
+  }, [externalNewPostsCount]);
 
-    let inFlight = false;
+  // Auto-refresh with progress
+  useEffect(() => {
+    if (!onLoadNew || autoRefreshInterval <= 0) return;
 
-    const doTick = async () => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      if (inFlight) return;
-      const cb = onLoadNewRef.current;
-      if (!cb) return;
-      try {
-        inFlight = true;
-        const res = cb();
-        const p = res as any;
-        if (p && typeof p.then === 'function') await p;
-      } catch (e) {
-        // ignore
-      } finally {
-        inFlight = false;
+    const startTime = Date.now();
+    let animationId: number;
+
+    const updateProgress = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        // 탭이 숨겨져 있으면 진행률 유지
+        animationId = requestAnimationFrame(updateProgress);
+        return;
+      }
+
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / autoRefreshInterval) * 100, 100);
+      setRefreshProgress(progress);
+
+      if (progress < 100) {
+        animationId = requestAnimationFrame(updateProgress);
       }
     };
 
-    const intervalId = window.setInterval(doTick, 60 * 1000);
+    animationId = requestAnimationFrame(updateProgress);
+
+    // 자동 새로고침 실행
+    const intervalId = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (isRefreshing) return;
+
+      try {
+        setIsRefreshing(true);
+        const cb = onLoadNewRef.current;
+        if (cb) {
+          const res = cb();
+          if (res && typeof (res as any).then === 'function') {
+            await res;
+          }
+        }
+      } finally {
+        setIsRefreshing(false);
+        setRefreshProgress(0);
+      }
+    }, autoRefreshInterval);
 
     const visibilityHandler = () => {
-      if (!document.hidden) doTick();
+      if (!document.hidden) {
+        // 탭이 다시 보이면 진행률 리셋
+        setRefreshProgress(0);
+      }
     };
     document.addEventListener('visibilitychange', visibilityHandler);
 
     return () => {
+      cancelAnimationFrame(animationId);
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', visibilityHandler);
     };
-  }, [onLoadNew]);
+  }, [onLoadNew, autoRefreshInterval, isRefreshing]);
+
+  // Handle manual load new
+  const handleLoadNew = useCallback(async () => {
+    if (isRefreshing) return;
+
+    try {
+      setIsRefreshing(true);
+      const cb = onLoadNewRef.current;
+      if (cb) {
+        const res = cb();
+        if (res && typeof (res as any).then === 'function') {
+          await res;
+        }
+      }
+      setNewPostsCount(0);
+    } finally {
+      setIsRefreshing(false);
+      setRefreshProgress(0);
+    }
+  }, [isRefreshing]);
 
   // Track expanded items
   const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
@@ -244,5 +310,9 @@ export function useFeedViewer({
     hasNext,
     loading,
     items,
+    refreshProgress,
+    newPostsCount,
+    isRefreshing,
+    handleLoadNew,
   };
 }
