@@ -32,14 +32,14 @@ import {
   feedsRoutersFeedUpdateFeed,
 } from '../services/api';
 
-interface RSSFeedListItemProps {
+interface FeedListItemProps {
   feed: FeedSchema;
   categoryId: number;
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
 }
 
-export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd }) => {
+export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd }) => {
   const router = useRouter();
   const { updateFeed, removeFeed } = useRSSStore();
 
@@ -208,4 +208,4 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
   );
 };
 
-export default RSSFeedListItem;
+export default FeedListItem;

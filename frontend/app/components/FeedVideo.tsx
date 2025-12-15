@@ -1,7 +1,7 @@
 import { FC, useRef, useEffect } from "react";
 
 // Custom Video component with intersection observer for autoplay
-export const RSSVideo: FC<{
+export const FeedVideo: FC<{
   src?: string;
   poster?: string;
   className?: string;

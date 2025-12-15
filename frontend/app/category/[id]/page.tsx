@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { FeedItemViewer } from '../../components/FeedItemViewer';
+import { FeedViewer } from '../../components/FeedViewer';
 import { useRSSStore } from '../../stores/rssStore';
 import { RSSItem } from '../../types/rss';
 import { feedsRoutersItemListItemsByCategory } from '../../services/api';
@@ -33,5 +33,5 @@ export default function CategoryPage() {
         filters
     );
 
-    return <FeedItemViewer items={items} onLoadMore={handleLoadMore} onLoadNew={handleLoadNew} hasNext={hasNext} loading={loading} />;
+    return <FeedViewer items={items} onLoadMore={handleLoadMore} onLoadNew={handleLoadNew} hasNext={hasNext} loading={loading} />;
 }

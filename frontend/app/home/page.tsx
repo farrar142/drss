@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { FeedItemViewer } from '../components/FeedItemViewer';
+import { FeedViewer } from '../components/FeedViewer';
 import { useRSSStore } from '../stores/rssStore';
 import { RSSItem } from '../types/rss';
 import { feedsRoutersItemListAllItems } from '../services/api';
@@ -31,7 +31,7 @@ export default function HomePage() {
   );
 
   return (
-    <FeedItemViewer
+    <FeedViewer
       items={items}
       onLoadMore={handleLoadMore}
       onLoadNew={handleLoadNew}

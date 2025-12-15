@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -20,6 +20,31 @@ const defaultColors: ThemeColors = {
   primary: '#6366f1', // Indigo
   secondary: '#8b5cf6', // Purple
 };
+
+// 쿠키 이름
+export const THEME_COOKIE_NAME = 'drss-theme';
+
+// 쿠키에서 테마 읽기 (서버/클라이언트 공용)
+export function getThemeFromCookie(cookieString?: string): { mode: ThemeMode; colors: ThemeColors } | null {
+  try {
+    const cookies = cookieString || (typeof document !== 'undefined' ? document.cookie : '');
+    const match = cookies.match(new RegExp(`${THEME_COOKIE_NAME}=([^;]+)`));
+    if (match) {
+      return JSON.parse(decodeURIComponent(match[1]));
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+// 쿠키에 테마 저장
+function setThemeCookie(state: { mode: ThemeMode; colors: ThemeColors }) {
+  if (typeof document === 'undefined') return;
+  const value = encodeURIComponent(JSON.stringify(state));
+  // 1년 유효
+  document.cookie = `${THEME_COOKIE_NAME}=${value};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
+}
 
 // HEX to HSL 변환
 export function hexToHsl(hex: string): string | null {
@@ -133,18 +158,35 @@ function hexToHSLObject(hex: string): { h: number; s: number; l: number } {
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       mode: 'system',
       colors: defaultColors,
-      setMode: (mode) => set({ mode }),
-      setColors: (colors) =>
+      setMode: (mode) => {
+        set({ mode });
+        // 쿠키에도 저장
+        setThemeCookie({ mode, colors: get().colors });
+      },
+      setColors: (colors) => {
         set((state) => ({
           colors: { ...state.colors, ...colors },
-        })),
-      resetColors: () => set({ colors: defaultColors }),
+        }));
+        // 쿠키에도 저장
+        const state = get();
+        setThemeCookie({ mode: state.mode, colors: state.colors });
+      },
+      resetColors: () => {
+        set({ colors: defaultColors });
+        setThemeCookie({ mode: get().mode, colors: defaultColors });
+      },
     }),
     {
       name: 'drss-theme-storage',
+      // localStorage 저장 후 쿠키에도 동기화
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          setThemeCookie({ mode: state.mode, colors: state.colors });
+        }
+      },
     }
   )
 );

@@ -1,7 +1,7 @@
 import { FC, useState, useRef, useEffect } from "react";
 import Image from 'next/image';
 
-export const RSSImage: FC<{
+export const FeedImage: FC<{
   src: string;
   alt?: string;
   onClick: () => void;

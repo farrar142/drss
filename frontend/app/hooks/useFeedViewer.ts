@@ -8,7 +8,7 @@ import { useMasonryLayout } from "./useMasonryLayout";
 import { useMediaModal } from "./useMediaModal";
 import { useCruising } from "./useCruising";
 
-export interface UseFeedItemViewerOptions {
+export interface UseFeedViewerOptions {
   items: RSSItem[];
   onLoadMore?: () => void;
   onLoadNew?: () => void;
@@ -16,7 +16,7 @@ export interface UseFeedItemViewerOptions {
   loading?: boolean;
 }
 
-export interface UseFeedItemViewerReturn {
+export interface UseFeedViewerReturn {
   // Store state
   viewMode: 'board' | 'feed';
   
@@ -51,13 +51,13 @@ export interface UseFeedItemViewerReturn {
   items: RSSItem[];
 }
 
-export function useFeedItemViewer({
+export function useFeedViewer({
   items,
   onLoadMore,
   onLoadNew,
   hasNext,
   loading,
-}: UseFeedItemViewerOptions): UseFeedItemViewerReturn {
+}: UseFeedViewerOptions): UseFeedViewerReturn {
   const { viewMode } = useRSSStore();
   const isMd = useMediaQuery('(max-width: 768px)');
   const isXl = useMediaQuery('(min-width: 1280px)');

@@ -5,10 +5,19 @@ import AppLayout from './components/AppLayout';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useEffect, useMemo } from 'react';
 
+type ThemeMode = 'system' | 'light' | 'dark';
+
+interface InitialTheme {
+  mode: ThemeMode;
+  colors: { primary: string; secondary: string };
+}
+
 export function ClientLayout({
   children,
+  initialTheme,
 }: {
   children: React.ReactNode;
+  initialTheme?: InitialTheme | null;
 }) {
   const { mode, colors } = useThemeStore();
 
@@ -49,11 +58,13 @@ export function ClientLayout({
       } else {
         document.documentElement.classList.remove('dark');
       }
+      // Re-apply colors when system theme changes (for sidebar border etc)
+      applyThemeColors(colors);
     };
 
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
-  }, [mode]);
+  }, [mode, colors]);
 
   return (
     <AuthProvider>

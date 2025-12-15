@@ -7,8 +7,8 @@ import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } fr
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
-import { RSSImage } from "./RSSImage";
-import { RSSVideo } from "./RSSVideo";
+import { FeedImage } from "./FeedImage";
+import { FeedVideo } from "./FeedVideo";
 
 
 const renderDescription = (
@@ -93,7 +93,7 @@ const renderDescription = (
           if (!src) return null;
           const resolved = normalizeSrc(src);
           return (
-            <RSSImage
+            <FeedImage
               key={index}
               src={resolved}
               alt={alt}
@@ -106,7 +106,7 @@ const renderDescription = (
           if (!videoSrc) return null;
           const resolved = normalizeSrc(videoSrc);
           return (
-            <RSSVideo
+            <FeedVideo
               key={index}
               src={resolved}
               onClick={() => onMediaClick(resolved, 'video', itemId)}
@@ -119,7 +119,7 @@ const renderDescription = (
     }
 
     // Convert <p> to <div> if it contains media (img/video) to avoid hydration errors
-    // HTML doesn't allow <div> inside <p>, and RSSImage/RSSVideo use <div>
+    // HTML doesn't allow <div> inside <p>, and FeedImage/FeedVideo use <div>
     if (domNode.name === 'p' && hasMediaChild(domNode)) {
       const { class: className, style: styleString, ...attribs } = domNode.attribs || {};
       const style = styleString ? parseStyleString(styleString) : undefined;
@@ -139,7 +139,7 @@ const renderDescription = (
 
       const resolved = normalizeSrc(src);
       return (
-        <RSSImage
+        <FeedImage
           src={resolved}
           alt={alt}
           onClick={() => onMediaClick(resolved, 'image', itemId)}
@@ -151,7 +151,7 @@ const renderDescription = (
       const videoSrc = src || attribs.source;
       const resolved = videoSrc ? normalizeSrc(videoSrc) : videoSrc;
       return (
-        <RSSVideo
+        <FeedVideo
           src={resolved}
           onClick={() => resolved && onMediaClick(resolved, 'video', itemId)}
           {...attribs}
@@ -164,7 +164,7 @@ const renderDescription = (
   return parse(description, { replace: replaceNode });
 }
 
-export const FeedItemRenderer = forwardRef<HTMLDivElement, {
+export const FeedItemCard = forwardRef<HTMLDivElement, {
   item: RSSItem,
   onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
   onCollapseChange?: (id: number, collapsed: boolean) => void
@@ -328,6 +328,6 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   )
 });
 
-FeedItemRenderer.displayName = 'FeedItemRenderer';
+FeedItemCard.displayName = 'FeedItemCard';
 
-export default FeedItemRenderer;
+export default FeedItemCard;

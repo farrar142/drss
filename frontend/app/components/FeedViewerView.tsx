@@ -7,19 +7,19 @@ import { RSSItem } from "../types/rss";
 import { MeasuredItem } from "./MeasuredItem";
 import { MediaModal } from "./MediaModal";
 import { CruisingControls } from "./CruisingControls";
-import { UseFeedItemViewerReturn } from "../hooks/useFeedItemViewer";
+import { UseFeedViewerReturn } from "../hooks/useFeedViewer";
 import dynamic from 'next/dynamic';
 
-// Dynamically import FeedItemRenderer to reduce initial bundle size
-const FeedItemRenderer = dynamic(
-  () => import('./FeedItemRenderer').then((mod) => mod.FeedItemRenderer),
+// Dynamically import FeedItemCard to reduce initial bundle size
+const FeedItemCard = dynamic(
+  () => import('./FeedItemCard').then((mod) => mod.FeedItemCard),
   {
     loading: () => <div className="h-24 animate-pulse bg-muted rounded" />,
     ssr: false,
   }
 );
 
-export interface FeedItemViewerViewProps extends UseFeedItemViewerReturn {}
+export interface FeedViewerViewProps extends UseFeedViewerReturn {}
 
 // ColumnVirtual component for virtualized columns
 function ColumnVirtual({
@@ -116,7 +116,7 @@ function ColumnVirtual({
                 isForcedVisible={expandedSet.has(item.id)}
                 estimateHeight={getItemHeight(item.id)}
                 onCollapseChange={handleCollapseChange}
-                Renderer={FeedItemRenderer}
+                Renderer={FeedItemCard}
               />
             </div>
           );
@@ -130,7 +130,7 @@ function ColumnVirtual({
   );
 }
 
-export const FeedItemViewerView: FC<FeedItemViewerViewProps> = ({
+export const FeedViewerView: FC<FeedViewerViewProps> = ({
   viewMode,
   columns,
   columnItems,
@@ -163,7 +163,7 @@ export const FeedItemViewerView: FC<FeedItemViewerViewProps> = ({
         {viewMode === 'board' ? (
           <div className="w-full space-y-3 px-1">
             {items.map((item) => (
-              <FeedItemRenderer key={item.id} item={item} onMediaClick={handleMediaClick} />
+              <FeedItemCard key={item.id} item={item} onMediaClick={handleMediaClick} />
             ))}
             {hasNext && (
               <div ref={setSentinelRef(0)} className="h-px w-full" />
@@ -189,7 +189,7 @@ export const FeedItemViewerView: FC<FeedItemViewerViewProps> = ({
                     isForcedVisible={expandedSet.has(item.id)}
                     estimateHeight={getItemHeight(item.id)}
                     onCollapseChange={handleCollapseChange}
-                    Renderer={FeedItemRenderer}
+                    Renderer={FeedItemCard}
                   />
                   {hasNext && columnSentinelIndexes.includes(idx) && (
                     <div

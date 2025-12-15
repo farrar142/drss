@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { FeedItemViewer } from "@/app/components/FeedItemViewer";
+import { FeedViewer } from "@/app/components/FeedViewer";
 
 type TestItem = {
   id: number;
@@ -50,7 +50,7 @@ export default function Page() {
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">LoadMore test page</h1>
       <div id="load-count">{loadCount}</div>
-      <FeedItemViewer items={items} onLoadMore={onLoadMore} hasNext={true} />
+      <FeedViewer items={items} onLoadMore={onLoadMore} hasNext={true} />
     </div>
   );
 }

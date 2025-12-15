@@ -24,7 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import FeedDialog from './FeedDialog';
 import { RSSCategory, RSSFeed } from '../types/rss';
-import { RSSFeedListItem } from './RSSFeedListItem';
+import { FeedListItem } from './FeedListItem';
 import { useRSSStore } from '../stores/rssStore';
 import {
   feedsRoutersFeedCreateFeed,
@@ -228,7 +228,7 @@ export const CategoryItem: FC<{
           <div className="px-2 pb-2">
             <div className="space-y-0.5">
               {feeds.map((feed) => (
-                <RSSFeedListItem
+                <FeedListItem
                   feed={feed}
                   key={feed.id}
                   categoryId={category.id}
