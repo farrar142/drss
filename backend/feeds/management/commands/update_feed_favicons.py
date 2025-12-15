@@ -184,7 +184,20 @@ class Command(BaseCommand):
                 # Fetch content (RSS/HTML) first so we can inspect feed metadata (channel link/logo)
                 try:
                     wait_for_host(feed.url)
-                    resp = session.get(feed.url, timeout=8, allow_redirects=True)
+                    headers_for_feed = (
+                        {**session.headers, **(feed.custom_headers or {})}
+                        if feed.custom_headers
+                        else session.headers
+                    )
+                    if feed.custom_headers:
+                        resp = session.get(
+                            feed.url,
+                            timeout=8,
+                            allow_redirects=True,
+                            headers=headers_for_feed,
+                        )
+                    else:
+                        resp = session.get(feed.url, timeout=8, allow_redirects=True)
                     # Detect upstream blocking (e.g., RSSHub or 429/503) and skip aggressive fallbacks
                     if resp is not None and resp.status_code in (429, 503):
                         body = (resp.text or "").lower()
@@ -296,18 +309,121 @@ class Command(BaseCommand):
                             ch_parsed = urlparse(channel_link)
                             channel_root = f"{ch_parsed.scheme or parsed.scheme}://{ch_parsed.netloc}"
                             channel_root_favicon = f"{channel_root}/favicon.ico"
+                            # Prefer parsing the channel page for a <link rel="icon"> first
+                            # (some sites don't expose icons at the root but include a link on the page)
+                            try:
+                                wait_for_host(channel_link)
+                                headers_for_feed = (
+                                    {**session.headers, **(feed.custom_headers or {})}
+                                    if feed.custom_headers
+                                    else session.headers
+                                )
+                                if feed.custom_headers:
+                                    rpage = session.get(
+                                        channel_link,
+                                        timeout=6,
+                                        allow_redirects=True,
+                                        headers=headers_for_feed,
+                                    )
+                                else:
+                                    rpage = session.get(
+                                        channel_link,
+                                        timeout=6,
+                                        allow_redirects=True,
+                                    )
+                                if handle_rate_limit(rpage):
+                                    wait_for_host(channel_link)
+                                    if feed.custom_headers:
+                                        rpage = session.get(
+                                            channel_link,
+                                            timeout=6,
+                                            allow_redirects=True,
+                                            headers=headers_for_feed,
+                                        )
+                                    else:
+                                        rpage = session.get(
+                                            channel_link,
+                                            timeout=6,
+                                            allow_redirects=True,
+                                        )
+                                if rpage and rpage.status_code == 200:
+                                    page_cand = find_favicon_from_html(rpage.url, rpage.text)
+                                    if page_cand:
+                                        # validate candidate
+                                        try:
+                                            wait_for_host(page_cand)
+                                            if feed.custom_headers:
+                                                vr = session.head(
+                                                    page_cand,
+                                                    timeout=5,
+                                                    allow_redirects=True,
+                                                    headers=headers_for_feed,
+                                                )
+                                            else:
+                                                vr = session.head(
+                                                    page_cand,
+                                                    timeout=5,
+                                                    allow_redirects=True,
+                                                )
+                                            if handle_rate_limit(vr):
+                                                wait_for_host(page_cand)
+                                                if feed.custom_headers:
+                                                    vr = session.head(
+                                                        page_cand,
+                                                        timeout=5,
+                                                        allow_redirects=True,
+                                                        headers=headers_for_feed,
+                                                    )
+                                                else:
+                                                    vr = session.head(
+                                                        page_cand,
+                                                        timeout=5,
+                                                        allow_redirects=True,
+                                                    )
+                                            if _is_image_response(vr):
+                                                feed.favicon_url = page_cand
+                                                feed.save()
+                                                updated += 1
+                                                self.stdout.write(
+                                                    f"Updated feed {feed.pk} -> {page_cand} (channel-page-icon)"
+                                                )
+                                                continue
+                                        except Exception:
+                                            pass
+                            except Exception:
+                                pass
+
+                            # If channel page parsing didn't yield an image, fall back to the channel root favicon
                             wait_for_host(channel_root_favicon)
-                            rch = session.head(
-                                channel_root_favicon, timeout=5, allow_redirects=True
-                            )
-                            if handle_rate_limit(rch):
-                                # refreshed server asked to retry, try once more
-                                wait_for_host(channel_root_favicon)
+                            if feed.custom_headers:
+                                rch = session.head(
+                                    channel_root_favicon,
+                                    timeout=5,
+                                    allow_redirects=True,
+                                    headers=headers_for_feed,
+                                )
+                            else:
                                 rch = session.head(
                                     channel_root_favicon,
                                     timeout=5,
                                     allow_redirects=True,
                                 )
+                            if handle_rate_limit(rch):
+                                # refreshed server asked to retry, try once more
+                                wait_for_host(channel_root_favicon)
+                                if feed.custom_headers:
+                                    rch = session.head(
+                                        channel_root_favicon,
+                                        timeout=5,
+                                        allow_redirects=True,
+                                        headers=headers_for_feed,
+                                    )
+                                else:
+                                    rch = session.head(
+                                        channel_root_favicon,
+                                        timeout=5,
+                                        allow_redirects=True,
+                                    )
                             if _is_image_response(rch):
                                 feed.favicon_url = channel_root_favicon
                                 feed.save()
@@ -316,52 +432,7 @@ class Command(BaseCommand):
                                     f"Updated feed {feed.pk} -> {channel_root_favicon} (channel-root)"
                                 )
                                 continue
-                            # If HEAD didn't indicate an image, try GET channel page and parse for <link rel="icon">
-                            if rch.status_code == 200 and not _is_image_response(rch):
-                                try:
-                                    wait_for_host(channel_link)
-                                    rpage = session.get(
-                                        channel_link, timeout=6, allow_redirects=True
-                                    )
-                                    if handle_rate_limit(rpage):
-                                        wait_for_host(channel_link)
-                                        rpage = session.get(
-                                            channel_link,
-                                            timeout=6,
-                                            allow_redirects=True,
-                                        )
-                                    if rpage and rpage.status_code == 200:
-                                        page_cand = find_favicon_from_html(
-                                            rpage.url, rpage.text
-                                        )
-                                        if page_cand:
-                                            # validate candidate
-                                            try:
-                                                wait_for_host(page_cand)
-                                                vr = session.head(
-                                                    page_cand,
-                                                    timeout=5,
-                                                    allow_redirects=True,
-                                                )
-                                                if handle_rate_limit(vr):
-                                                    wait_for_host(page_cand)
-                                                    vr = session.head(
-                                                        page_cand,
-                                                        timeout=5,
-                                                        allow_redirects=True,
-                                                    )
-                                                if _is_image_response(vr):
-                                                    feed.favicon_url = page_cand
-                                                    feed.save()
-                                                    updated += 1
-                                                    self.stdout.write(
-                                                        f"Updated feed {feed.pk} -> {page_cand} (channel-page-icon)"
-                                                    )
-                                                    continue
-                                            except Exception:
-                                                pass
-                                except Exception:
-                                    pass
+                            # end channel-link handling
                         except Exception:
                             pass
 
@@ -409,7 +480,15 @@ class Command(BaseCommand):
                     if cand:
                         # validate candidate
                         try:
-                            r2 = session.head(cand, timeout=5, allow_redirects=True)
+                            if feed.custom_headers:
+                                r2 = session.head(
+                                    cand,
+                                    timeout=5,
+                                    allow_redirects=True,
+                                    headers=headers_for_feed,
+                                )
+                            else:
+                                r2 = session.head(cand, timeout=5, allow_redirects=True)
                             if _is_image_response(r2):
                                 feed.favicon_url = cand
                                 feed.save()
@@ -421,7 +500,15 @@ class Command(BaseCommand):
                         except Exception:
                             # try GET as fallback
                             try:
-                                r2 = session.get(cand, timeout=6, stream=True)
+                                if feed.custom_headers:
+                                    r2 = session.get(
+                                        cand,
+                                        timeout=6,
+                                        stream=True,
+                                        headers=headers_for_feed,
+                                    )
+                                else:
+                                    r2 = session.get(cand, timeout=6, stream=True)
                                 if _is_image_response(r2):
                                     feed.favicon_url = cand
                                     feed.save()
@@ -435,9 +522,17 @@ class Command(BaseCommand):
 
                 # Fallback: try root favicon on feed.url domain (if not already found), then http/https switch
                 try:
-                    resp_root = session.head(
-                        root_favicon, timeout=5, allow_redirects=True
-                    )
+                    if feed.custom_headers:
+                        resp_root = session.head(
+                            root_favicon,
+                            timeout=5,
+                            allow_redirects=True,
+                            headers=headers_for_feed,
+                        )
+                    else:
+                        resp_root = session.head(
+                            root_favicon, timeout=5, allow_redirects=True
+                        )
                     if _is_image_response(resp_root):
                         feed.favicon_url = root_favicon
                         feed.save()
@@ -453,7 +548,15 @@ class Command(BaseCommand):
                 alt_scheme = "https" if parsed.scheme == "http" else "http"
                 alt_root = f"{alt_scheme}://{parsed.netloc}/favicon.ico"
                 try:
-                    r3 = session.head(alt_root, timeout=5, allow_redirects=True)
+                    if feed.custom_headers:
+                        r3 = session.head(
+                            alt_root,
+                            timeout=5,
+                            allow_redirects=True,
+                            headers=headers_for_feed,
+                        )
+                    else:
+                        r3 = session.head(alt_root, timeout=5, allow_redirects=True)
                     if _is_image_response(r3):
                         feed.favicon_url = alt_root
                         feed.save()
