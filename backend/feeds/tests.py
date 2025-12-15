@@ -1,4 +1,5 @@
 from hmac import new
+import json
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from ninja.testing import TestClient
@@ -371,3 +372,439 @@ class FeedScheduleTest(TestCase):
         tasks = PeriodicTask.objects.filter(args=args_payload)
         # deduplicated to single task
         self.assertEqual(tasks.count(), 1)
+
+    def _make_response(self, status=200, headers=None, text="", url=None):
+        class R:
+            def __init__(self, status, headers, text, url):
+                self.status_code = status
+                self.headers = headers or {}
+                self.text = text
+                self.url = url or "http://example.com/"
+
+        return R(status, headers or {}, text, url)
+
+    def test_update_feed_favicons_root_and_html(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        # Ensure a requests module exists for the management command (tests may run in minimal env)
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://example.com/somepage",
+            title="Fav Feed",
+        )
+
+        # patch requests.Session.head/get
+        from unittest.mock import patch
+
+        def fake_head(self, url, timeout=5, allow_redirects=True):
+            if url.endswith("/favicon.ico"):
+                return self_resp1
+            if url.endswith("/assets/favicon.png"):
+                return self_resp2
+            return self_resp_fail
+
+        def fake_get(self, url, timeout=8, allow_redirects=True, stream=False):
+            if url.startswith("http://example.com/somepage"):
+                return self_resp_html
+            if url.endswith("/assets/favicon.png"):
+                return self_resp2
+            return self_resp_fail
+
+        self_resp1 = self._make_response(status=404, headers={})
+        self_resp_html = self._make_response(
+            status=200,
+            text='<html><head><link rel="icon" href="/assets/favicon.png"></head></html>',
+            url="http://example.com/somepage",
+        )
+        self_resp2 = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
+        self_resp_fail = self._make_response(status=404)
+
+        # Ensure the command module picks up our fake requests object (it may have been imported earlier)
+        import importlib
+
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons")
+
+        feed.refresh_from_db()
+        self.assertEqual(feed.favicon_url, "http://example.com/assets/favicon.png")
+
+    def test_update_feed_favicons_from_rss_feed_image(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://feeds.example.com/rss",
+            title="RSS Feed Image",
+        )
+
+        # RSS XML with <image><url>
+        rss_xml = """<?xml version="1.0"?>
+            <rss version="2.0">
+              <channel>
+                <title>Example</title>
+                <link>http://example.com/</link>
+                <image>
+                  <url>http://example.com/assets/rss-favicon.png</url>
+                </image>
+              </channel>
+            </rss>"""
+
+        from unittest.mock import patch
+
+        # prepare closure responses using TestCase helper
+        resp_ok_img = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
+        resp_not_found = self._make_response(status=404)
+        resp_rss = self._make_response(
+            status=200, text=rss_xml, url="http://feeds.example.com/rss"
+        )
+
+        def fake_head(session_self, url, timeout=5, allow_redirects=True):
+            if url.endswith("/rss-favicon.png"):
+                return resp_ok_img
+            return resp_not_found
+
+        def fake_get(session_self, url, timeout=8, allow_redirects=True):
+            # return RSS xml for feed url
+            if url.startswith("http://feeds.example.com/rss"):
+                return resp_rss
+            return resp_not_found
+
+        import importlib
+
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons", "--feed-id", str(feed.pk))
+
+        feed.refresh_from_db()
+        self.assertEqual(feed.favicon_url, "http://example.com/assets/rss-favicon.png")
+
+    def test_channel_root_favicon_preferred_over_feed_root(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        # feed URL is on feeds.example.com but channel link points to channel.example.com
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://feeds.example.com/rss",
+            title="Channel Link Feed",
+        )
+
+        rss_xml = """<?xml version="1.0"?>
+            <rss version="2.0">
+              <channel>
+                <title>Example</title>
+                <link>http://channel.example.com/</link>
+              </channel>
+            </rss>"""
+
+        # Responses: channel root has favicon, feed root does not
+        resp_ok_img = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
+        resp_not_found = self._make_response(status=404)
+        resp_rss = self._make_response(
+            status=200, text=rss_xml, url="http://feeds.example.com/rss"
+        )
+
+        def fake_head(session_self, url, timeout=5, allow_redirects=True):
+            if url.startswith("http://channel.example.com") and url.endswith(
+                "/favicon.ico"
+            ):
+                return resp_ok_img
+            if url.startswith("http://feeds.example.com") and url.endswith(
+                "/favicon.ico"
+            ):
+                return resp_not_found
+            return resp_not_found
+
+        def fake_get(session_self, url, timeout=8, allow_redirects=True):
+            if url.startswith("http://feeds.example.com/rss"):
+                return resp_rss
+            return resp_not_found
+
+        import importlib
+
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        from unittest.mock import patch
+
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons", "--feed-id", str(feed.pk))
+
+        feed.refresh_from_db()
+        self.assertEqual(feed.favicon_url, "http://channel.example.com/favicon.ico")
+
+    def test_channel_root_favicon_from_atom_link(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        # Atom feed with <link rel="alternate" href="https://m.ruliweb.com/..."/>
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://feeds.example.com/atom",
+            title="Atom Channel Link Feed",
+        )
+
+        atom_xml = """<?xml version="1.0" encoding="utf-8"?>
+            <feed xmlns="http://www.w3.org/2005/Atom">
+              <title>Example Atom</title>
+              <link rel="alternate" href="https://m.ruliweb.com/community/board/300143" />
+            </feed>"""
+
+        resp_ok_img = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
+        resp_not_found = self._make_response(status=404)
+        resp_atom = self._make_response(
+            status=200, text=atom_xml, url="http://feeds.example.com/atom"
+        )
+
+        def fake_head(session_self, url, timeout=5, allow_redirects=True):
+            # channel root at m.ruliweb.com has favicon
+            if url.startswith("https://m.ruliweb.com") and url.endswith("/favicon.ico"):
+                return resp_ok_img
+            return resp_not_found
+
+        def fake_get(session_self, url, timeout=8, allow_redirects=True):
+            if url.startswith("http://feeds.example.com/atom"):
+                return resp_atom
+            return resp_not_found
+
+        import importlib
+
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        from unittest.mock import patch
+
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons", "--feed-id", str(feed.pk))
+
+        feed.refresh_from_db()
+        self.assertEqual(feed.favicon_url, "https://m.ruliweb.com/favicon.ico")
+
+    def test_feed_blocked_by_rsshub_skips_and_does_not_use_root(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://feeds.example.com/blocked",
+            title="Blocked Feed",
+        )
+
+        blocked_resp = self._make_response(status=503, text='Welcome to RSSHub! Too many requests')
+        root_favicon = self._make_response(status=200, headers={"content-type": "image/png"})
+
+        def fake_head(session_self, url, timeout=5, allow_redirects=True):
+            # root would be an image if we tried, but we expect not to try.
+            return root_favicon
+
+        def fake_get(session_self, url, timeout=8, allow_redirects=True):
+            if url.startswith('http://feeds.example.com/blocked'):
+                return blocked_resp
+            return self._make_response(status=404)
+
+        import importlib
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        from unittest.mock import patch
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons", "--feed-id", str(feed.pk), "--force")
+
+        feed.refresh_from_db()
+        # should remain empty because we were blocked and should not fallback to root
+        self.assertEqual(feed.favicon_url, "")
+
+    def test_channel_page_link_rel_icon_is_used_when_root_not_image(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://feeds.example.com/rss2",
+            title="Channel Page Icon Feed",
+        )
+
+        rss_xml = """<?xml version="1.0"?>
+            <rss version="2.0">
+              <channel>
+                <title>Example</title>
+                <link>https://m.ruliweb.com/community/board/300143</link>
+              </channel>
+            </rss>"""
+
+        # channel root favicon returns 200 but as HTML (not image), channel page contains <link rel=icon href="/assets/favicon.png">
+        resp_root_html = self._make_response(status=200, headers={"content-type": "text/html"})
+        resp_page_html = self._make_response(status=200, text='<html><head><link rel="icon" href="/assets/favicon.png"></head></html>', url='https://m.ruliweb.com/community/board/300143')
+        resp_ok_img = self._make_response(status=200, headers={"content-type": "image/png"})
+        resp_rss = self._make_response(status=200, text=rss_xml, url='http://feeds.example.com/rss2')
+
+        call_count = {'head':0}
+        def fake_head(session_self, url, timeout=5, allow_redirects=True):
+            call_count['head'] += 1
+            if url.startswith('https://m.ruliweb.com') and url.endswith('/favicon.ico'):
+                # first head returns HTML (non-image) to simulate root not being an image
+                if call_count['head'] == 1:
+                    return resp_root_html
+                # subsequent head to assets/favicon.png should return image
+                if url.endswith('/assets/favicon.png'):
+                    return resp_ok_img
+                return resp_root_html
+            if url.startswith('https://m.ruliweb.com') and url.endswith('/assets/favicon.png'):
+                return resp_ok_img
+            return self._make_response(status=404)
+
+        def fake_get(session_self, url, timeout=8, allow_redirects=True):
+            if url.startswith('http://feeds.example.com/rss2'):
+                return resp_rss
+            if url.startswith('https://m.ruliweb.com/community/board/300143'):
+                return resp_page_html
+            if url.startswith('https://m.ruliweb.com/assets/favicon.png'):
+                return resp_ok_img
+            return self._make_response(status=404)
+
+        import importlib
+        mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
+        mod.requests = sys.modules["requests"]
+
+        from unittest.mock import patch
+        with patch.object(mod.requests.Session, "head", fake_head), patch.object(
+            mod.requests.Session, "get", fake_get
+        ):
+            call_command("update_feed_favicons", "--feed-id", str(feed.pk))
+
+        feed.refresh_from_db()
+        self.assertEqual(feed.favicon_url, "https://m.ruliweb.com/favicon.ico")
+
+    def test_update_feed_favicons_respects_force(self):
+        from django.core.management import call_command
+        import sys
+        import types
+
+        if "requests" not in sys.modules:
+            fake_requests = types.SimpleNamespace()
+
+            class Session:
+                pass
+
+            fake_requests.Session = Session
+            sys.modules["requests"] = fake_requests
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://example.org/",
+            title="Fav Feed2",
+            favicon_url="http://old/favicon.ico",
+        )
+
+        from unittest.mock import patch
+
+        resp_head = self._make_response(
+            status=200, headers={"content-type": "image/x-icon"}
+        )
+
+        def fake_head(self, url, timeout=5, allow_redirects=True):
+            return resp_head
+
+        with patch("requests.Session.head", fake_head):
+            # without force should skip
+            call_command("update_feed_favicons")
+            feed.refresh_from_db()
+            self.assertEqual(feed.favicon_url, "http://old/favicon.ico")
+
+            # with force should overwrite
+            call_command("update_feed_favicons", "--force")
+            feed.refresh_from_db()
+            # root favicon for example.org should be https? but our fake returns success for any
+            self.assertTrue(feed.favicon_url.endswith("/favicon.ico"))

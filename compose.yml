@@ -47,24 +47,38 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
     env_file:
       - .env
-  # backend:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   command: python manage.py runserver 0.0.0.0:8000
-  #   volumes:
-  #     - ./backend:/usr/src/app
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - db
-  #     - redis
-  #   environment:
-  #     - DJANGO_SETTINGS_MODULE=base.settings
-  #     - CELERY_BROKER_URL=redis://redis:6379/0
-  #     - CELERY_RESULT_BACKEND=redis://redis:6379/0
-  #   env_file:
-  #     - .env
+
+  real-browser:
+    profiles: [ "rss" ]
+    image: ghcr.io/hyoban/puppeteer-real-browser-hono
+    restart: always
+    ports:
+      - '3001:3000'
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000' ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  browserless:
+    # marked
+    profiles: [ "rss" ] # marked
+    image: browserless/chrome # marked
+    restart: always # marked
+    ports:
+      - "3004:3000"
+    ulimits:
+      # marked
+      core:
+        # marked
+        hard: 0 # marked
+        soft: 0 # marked
+    healthcheck:
+      # marked
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/pressure' ] # marked
+      interval: 30s # marked
+      timeout: 10s # marked
+      retries: 3 # marked
 
 volumes:
   postgres_data:
