@@ -5,7 +5,7 @@ import parse from 'html-react-parser';
 import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersImageCacheImagePost, feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
-import { getCachedImageFromCache } from '@/lib/imageCache';
+import { getCachedImageFromCache, scheduleCachedImage } from '@/lib/imageCache';
 import { axiosInstance } from "../utils/axiosInstance";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
@@ -95,6 +95,9 @@ const RSSImage: FC<{
     tryUseCacheOrSchedule();
     return () => { mounted = false; };
   }, [isVisible, src]);
+
+  // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
+  // NOTE: scheduling of caching for nearby items is handled in the parent
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -328,8 +331,31 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
+  const localRef = useRef<HTMLDivElement | null>(null);
 
   const description = useMemo(() => renderDescription(item.description, onMediaClick), [item.description, onMediaClick]);
+
+  // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
+  // perceived performance. If the item's container is within ~1.5x viewport height on mount,
+  // schedule caching for all images found in the description.
+  useEffect(() => {
+    const el = localRef.current as HTMLDivElement | null;
+    if (!el) return;
+    try {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < (window.innerHeight * 1.5)) {
+        const urls: string[] = [];
+        const re = /<img[^>]+src=(?:"|')([^"']+)(?:"|')/gi;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(item.description))) {
+          if (m[1]) urls.push(m[1]);
+        }
+        urls.forEach(u => scheduleCachedImage(u));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [item.description]);
 
   const handleToggleFavorite = useCallback(async () => {
     try {
@@ -351,7 +377,11 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
 
   return (
     <div
-      ref={ref}
+      ref={(node) => {
+        localRef.current = node;
+        if (typeof ref === 'function') (ref as any)(node);
+        else if (ref && typeof ref === 'object') (ref as any).current = node;
+      }}
       key={item.id}
       className={cn(
         "glass-card p-4 cursor-pointer",

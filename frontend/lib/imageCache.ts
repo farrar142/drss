@@ -50,6 +50,20 @@ export async function getCachedImage(url: string): Promise<CachedImageData | nul
   return promise;
 }
 
+// Fire-and-forget schedule request to cache an image. If the POST returns an immediate
+// url, populate the in-memory cache so callers can pick it up.
+export async function scheduleCachedImage(url: string): Promise<void> {
+  try {
+    const postRes = await feedsRoutersImageCacheImagePost({ url }).catch(() => null) as any;
+    if (postRes && postRes.url) {
+      const d: CachedImageData = { url: postRes.url, width: postRes.width, height: postRes.height };
+      cache.set(url, { status: 'done', data: d });
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
 export function clearCachedImage(url: string) {
   cache.delete(url);
 }
