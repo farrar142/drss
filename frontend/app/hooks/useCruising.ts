@@ -106,12 +106,12 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
       // Calculate scroll amount based on speed (pixels per second)
       // Accumulate fractional pixels to ensure smooth scrolling at low speeds
       accumulatedScrollRef.current += (speed * deltaTime) / 1000;
-      
+
       // Only scroll when we have at least 1 pixel accumulated
       if (accumulatedScrollRef.current >= 1) {
         const scrollAmount = Math.floor(accumulatedScrollRef.current);
         accumulatedScrollRef.current -= scrollAmount;
-        
+
         window.scrollBy({
           top: scrollAmount,
           behavior: 'instant',

@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle, Heart } from "lucide-react";
-import parse, { DOMNode, Element } from 'html-react-parser';
+import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
@@ -17,12 +17,18 @@ const renderDescription = (
   baseUrl?: string,
   itemId?: number
 ) => {
-  // Helper to check if a node contains an img or video
+  // Helper to check if a node contains an img or video (directly or nested)
   const hasMediaChild = (node: any): boolean => {
     if (!node.children) return false;
     return node.children.some((child: any) =>
       child.name === 'img' || child.name === 'video' || hasMediaChild(child)
     );
+  };
+
+  // Helper to check if a node is inline (can be inside <p>)
+  const isBlockElement = (name: string): boolean => {
+    const blockElements = ['div', 'p', 'figure', 'blockquote', 'ul', 'ol', 'li', 'table', 'section', 'article', 'header', 'footer', 'nav', 'aside', 'main', 'form', 'fieldset', 'address', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'hr', 'noscript'];
+    return blockElements.includes(name);
   };
 
   const normalizeSrc = (raw: string) => {
@@ -55,80 +61,107 @@ const renderDescription = (
     return raw;
   };
 
-  return parse(description, {
-    replace: (domNode: DOMNode) => {
-      if (!(domNode instanceof Element)) return domNode;
-      if (domNode.attribs && domNode.attribs.class) {
-        domNode.attribs.className = domNode.attribs.class;
-        delete domNode.attribs.class;
+  // Convert CSS string to React style object
+  const parseStyleString = (styleString: string): React.CSSProperties => {
+    const style: Record<string, string> = {};
+    styleString.split(';').forEach(rule => {
+      const [property, value] = rule.split(':').map(s => s.trim());
+      if (property && value) {
+        // Convert kebab-case to camelCase (e.g., text-align -> textAlign)
+        const camelCaseProperty = property.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+        style[camelCaseProperty] = value;
       }
+    });
+    return style as React.CSSProperties;
+  };
 
-      // Handle <a> tags that wrap images - remove the link wrapper
-      if (domNode.name === 'a' && hasMediaChild(domNode)) {
-        // Return just the children without the <a> wrapper
-        return <>{domNode.children?.map((child: any, index: number) => {
-          if (child.name === 'img') {
-            const src = child.attribs?.src;
-            const alt = child.attribs?.alt || '';
-            if (!src) return null;
-            const resolved = normalizeSrc(src);
-            return (
-              <RSSImage
-                key={index}
-                src={resolved}
-                alt={alt}
-                onClick={() => onMediaClick(resolved, 'image', itemId)}
-              />
-            );
-          } else if (child.name === 'video') {
-            const { class: _, src, ...attribs } = child.attribs;
-            const videoSrc = src || attribs.source;
-            if (!videoSrc) return null;
-            const resolved = normalizeSrc(videoSrc);
-            return (
-              <RSSVideo
-                key={index}
-                src={resolved}
-                onClick={() => onMediaClick(resolved, 'video', itemId)}
-                {...attribs}
-              />
-            );
-          }
-          return domNode;
-        })}</>;
-      }
-
-      if (domNode.name === 'img') {
-        const src = domNode.attribs.src;
-        const alt = domNode.attribs.alt || '';
-
-        // Skip if no src
-        if (!src) return null;
-
-        const resolved = normalizeSrc(src);
-        return (
-          <RSSImage
-            src={resolved}
-            alt={alt}
-            onClick={() => onMediaClick(resolved, 'image', itemId)}
-          />
-        );
-      }
-      if (domNode.name === 'video') {
-        const { class: _, src, ...attribs } = domNode.attribs;
-        const videoSrc = src || attribs.source;
-        const resolved = videoSrc ? normalizeSrc(videoSrc) : videoSrc;
-        return (
-          <RSSVideo
-            src={resolved}
-            onClick={() => resolved && onMediaClick(resolved, 'video', itemId)}
-            {...attribs}
-          />
-        );
-      }
-      return domNode;
+  // Define replace function separately so it can be used recursively with domToReact
+  const replaceNode = (domNode: DOMNode): React.ReactElement | null | undefined => {
+    if (!(domNode instanceof Element)) return undefined; // Let default parsing handle
+    if (domNode.attribs && domNode.attribs.class) {
+      domNode.attribs.className = domNode.attribs.class;
+      delete domNode.attribs.class;
     }
-  });
+
+    // Handle <a> tags that wrap images - remove the link wrapper
+    if (domNode.name === 'a' && hasMediaChild(domNode)) {
+      // Return just the children without the <a> wrapper
+      return <>{domNode.children?.map((child: any, index: number) => {
+        if (child.name === 'img') {
+          const src = child.attribs?.src;
+          const alt = child.attribs?.alt || '';
+          if (!src) return null;
+          const resolved = normalizeSrc(src);
+          return (
+            <RSSImage
+              key={index}
+              src={resolved}
+              alt={alt}
+              onClick={() => onMediaClick(resolved, 'image', itemId)}
+            />
+          );
+        } else if (child.name === 'video') {
+          const { class: _, src, ...attribs } = child.attribs;
+          const videoSrc = src || attribs.source;
+          if (!videoSrc) return null;
+          const resolved = normalizeSrc(videoSrc);
+          return (
+            <RSSVideo
+              key={index}
+              src={resolved}
+              onClick={() => onMediaClick(resolved, 'video', itemId)}
+              {...attribs}
+            />
+          );
+        }
+        return null;
+      })}</>;
+    }
+
+    // Convert <p> to <div> if it contains media (img/video) to avoid hydration errors
+    // HTML doesn't allow <div> inside <p>, and RSSImage/RSSVideo use <div>
+    if (domNode.name === 'p' && hasMediaChild(domNode)) {
+      const { class: className, style: styleString, ...attribs } = domNode.attribs || {};
+      const style = styleString ? parseStyleString(styleString) : undefined;
+      return (
+        <div {...attribs} className={className} style={style}>
+          {domToReact(domNode.children as DOMNode[], { replace: replaceNode })}
+        </div>
+      );
+    }
+
+    if (domNode.name === 'img') {
+      const src = domNode.attribs.src;
+      const alt = domNode.attribs.alt || '';
+
+      // Skip if no src
+      if (!src) return null;
+
+      const resolved = normalizeSrc(src);
+      return (
+        <RSSImage
+          src={resolved}
+          alt={alt}
+          onClick={() => onMediaClick(resolved, 'image', itemId)}
+        />
+      );
+    }
+    if (domNode.name === 'video') {
+      const { class: _, src, ...attribs } = domNode.attribs;
+      const videoSrc = src || attribs.source;
+      const resolved = videoSrc ? normalizeSrc(videoSrc) : videoSrc;
+      return (
+        <RSSVideo
+          src={resolved}
+          onClick={() => resolved && onMediaClick(resolved, 'video', itemId)}
+          {...attribs}
+        />
+      );
+    }
+    return undefined; // Let default parsing handle other elements
+  };
+
+  return parse(description, { replace: replaceNode });
 }
 
 export const FeedItemRenderer = forwardRef<HTMLDivElement, {
