@@ -74,7 +74,7 @@ function applyThemeColorsSim(colors) {
   const sample = { primary: '#ff0000', secondary: '#00ff00' };
   applyThemeColorsSim(sample);
 
-  const vars = ['--sidebar-primary','--sidebar-accent','--sidebar-accent-50','--accent-50','--sidebar-primary-50'];
+  const vars = ['--sidebar-primary', '--sidebar-accent', '--sidebar-accent-50', '--accent-50', '--sidebar-primary-50'];
   console.log('Checking theme vars after applying', sample);
   vars.forEach(v => console.log(v, '=>', document.documentElement.style.getPropertyValue(v)));
 })();
