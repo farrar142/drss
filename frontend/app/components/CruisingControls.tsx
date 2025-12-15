@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState } from 'react';
-import { Play, Pause, Ship } from 'lucide-react';
+import { ChevronDown, Pause, Ship } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 
@@ -88,7 +88,7 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
           {isCruising ? (
             <Pause className="w-6 h-6" />
           ) : (
-            <Play className="w-6 h-6" />
+            <ChevronDown className="w-6 h-6" />
           )}
         </button>
       </div>
