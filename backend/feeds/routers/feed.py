@@ -129,6 +129,8 @@ def update_feed(request, feed_id: int, data: FeedUpdateSchema):
         feed.custom_headers = data.custom_headers
     if data.refresh_interval is not None:
         feed.refresh_interval = data.refresh_interval
+    if getattr(data, "favicon_url", None) is not None:
+        feed.favicon_url = data.favicon_url
 
     feed.save()
     # item_count 추가

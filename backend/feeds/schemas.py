@@ -42,6 +42,7 @@ class FeedUpdateSchema(Schema):
     category_id: Optional[int] = None
     url: Optional[str] = None
     title: Optional[str] = None
+    favicon_url: Optional[str] = None
     description: Optional[str] = None
     visible: Optional[bool] = None
     custom_headers: Optional[dict] = None

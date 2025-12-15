@@ -171,7 +171,7 @@ class Command(BaseCommand):
                 continue
 
             # Step 3: Build favicon URL from channel link's base
-            base_url = get_base_url(channel_link)
+            base_url = channel_link
             favicon_url = urljoin(base_url, "/favicon.ico")
 
             self.stdout.write(f"[Feed {feed.pk}] Trying {favicon_url}")
