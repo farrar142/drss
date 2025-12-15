@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle, Heart } from "lucide-react";
-import parse from 'html-react-parser';
+import parse, { DOMNode, Element } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
@@ -55,7 +55,8 @@ const renderDescription = (
   };
 
   return parse(description, {
-    replace: (domNode: any) => {
+    replace: (domNode: DOMNode) => {
+      if (!(domNode instanceof Element)) return domNode;
       if (domNode.attribs && domNode.attribs.class) {
         domNode.attribs.className = domNode.attribs.class;
         delete domNode.attribs.class;
@@ -78,8 +79,21 @@ const renderDescription = (
                 onClick={() => onMediaClick(resolved, 'image')}
               />
             );
+          } else if (child.name === 'video') {
+            const { class: _, src, ...attribs } = child.attribs;
+            const videoSrc = src || attribs.source;
+            if (!videoSrc) return null;
+            const resolved = normalizeSrc(videoSrc);
+            return (
+              <RSSVideo
+                key={index}
+                src={resolved}
+                onClick={() => onMediaClick(resolved, 'video')}
+                {...attribs}
+              />
+            );
           }
-          return null;
+          return domNode;
         })}</>;
       }
 
@@ -110,6 +124,7 @@ const renderDescription = (
           />
         );
       }
+      return domNode;
     }
   });
 }

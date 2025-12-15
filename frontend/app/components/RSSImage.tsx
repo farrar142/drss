@@ -6,7 +6,6 @@ export const RSSImage: FC<{
   alt?: string;
   onClick: () => void;
 }> = ({ src, alt = '', onClick }) => {
-  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -46,22 +45,6 @@ export const RSSImage: FC<{
     return () => obs.disconnect();
   }, [src, isVisible]);
 
-  useEffect(() => {
-    if (!isVisible) return;
-    let mounted = true;
-
-    const tryUseCacheOrSchedule = async () => {
-      try {
-        // No server-side image caching: just use the original image URL
-        if (mounted) setCurrentSrc(src);
-      } catch (e) {
-        if (mounted) setCurrentSrc(src);
-      }
-    };
-
-    tryUseCacheOrSchedule();
-    return () => { mounted = false; };
-  }, [isVisible, src]);
 
   // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
   // NOTE: scheduling of caching for nearby items is handled in the parent
@@ -101,64 +84,43 @@ export const RSSImage: FC<{
 
   return (
     <div ref={wrapperRef}>
-      {currentSrc ? (
-        <Image
-          src={currentSrc}
-          alt={alt}
-          width={naturalSize?.width || 800}
-          height={naturalSize?.height || 600}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          style={{
-            width: '100%',
-            height: 'auto',
-            cursor: 'pointer',
-            opacity: loaded ? 1 : 0,
-            transition: 'opacity 0.2s'
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClick();
-          }}
-          onLoad={handleLoad}
-          onError={() => setError(true)}
-          loading="lazy"
-          // For certain hosts that actively block server-side fetching (or cause connection resets),
-          // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
-          // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
-          unoptimized={currentSrc.startsWith('data:') || (() => {
-            try {
-              const url = new URL(currentSrc);
-              const host = url.hostname.toLowerCase();
-              const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
-              const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : ['cosplaytele.com'];
-              return unoptimizedHosts.includes(host);
-            } catch (e) {
-              return false;
-            }
-          })()}
-        />
-      ) : (
-        // Placeholder box to reserve layout before image becomes visible/loaded
-        <div
-          role="img"
-          aria-label={alt}
-          onClick={(e) => {
-            // clicking a placeholder should trigger loading and also propagate the click intent
-            e.preventDefault();
-            e.stopPropagation();
-            setIsVisible(true);
-            onClick();
-          }}
-          style={{
-            display: 'block',
-            width: '100%',
-            paddingTop: naturalSize ? `${(naturalSize.height / naturalSize.width) * 100}%` : '56.25%',
-            background: 'linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06))',
-            cursor: 'pointer'
-          }}
-        />
-      )}
+
+      <Image
+        src={src}
+        alt={alt}
+        width={naturalSize?.width || 800}
+        height={naturalSize?.height || 600}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        style={{
+          width: '100%',
+          height: 'auto',
+          cursor: 'pointer',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.2s'
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClick();
+        }}
+        onLoad={handleLoad}
+        onError={() => setError(true)}
+        loading="lazy"
+        // For certain hosts that actively block server-side fetching (or cause connection resets),
+        // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
+        // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
+        unoptimized={src.startsWith('data:') || (() => {
+          try {
+            const url = new URL(src);
+            const host = url.hostname.toLowerCase();
+            const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
+            const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+            return unoptimizedHosts.includes(host);
+          } catch (e) {
+            return false;
+          }
+        })()}
+      />
     </div>
   );
 };
