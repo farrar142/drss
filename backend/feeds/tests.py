@@ -302,6 +302,207 @@ class FeedAPITest(TestCase):
         self.assertIn("url", data)
 
 
+class CategoryVisibilityTest(TestCase):
+    """Category와 Feed의 visible 옵션 테스트"""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="visuser", password="vispass123"
+        )
+        # visible=True 카테고리
+        self.visible_category = RSSCategory.objects.create(
+            user=self.user,
+            name="Visible Category",
+            description="Visible",
+            visible=True,
+        )
+        # visible=False 카테고리
+        self.hidden_category = RSSCategory.objects.create(
+            user=self.user,
+            name="Hidden Category",
+            description="Hidden",
+            visible=False,
+        )
+        # visible 카테고리 내의 visible 피드
+        self.visible_feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.visible_category,
+            url="http://example.com/visible",
+            title="Visible Feed",
+            visible=True,
+        )
+        # visible 카테고리 내의 hidden 피드
+        self.hidden_feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.visible_category,
+            url="http://example.com/hidden",
+            title="Hidden Feed",
+            visible=False,
+        )
+        # hidden 카테고리 내의 visible 피드
+        self.hidden_category_feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.hidden_category,
+            url="http://example.com/hidden-cat",
+            title="Hidden Category Feed",
+            visible=True,
+        )
+
+        # 각 피드에 아이템 생성
+        self.visible_item = RSSItem.objects.create(
+            feed=self.visible_feed,
+            title="Visible Item",
+            link="http://example.com/v-item",
+            published_at=timezone.now(),
+            guid="visible-guid",
+        )
+        self.hidden_item = RSSItem.objects.create(
+            feed=self.hidden_feed,
+            title="Hidden Item",
+            link="http://example.com/h-item",
+            published_at=timezone.now() - timedelta(minutes=1),
+            guid="hidden-guid",
+        )
+        self.hidden_category_item = RSSItem.objects.create(
+            feed=self.hidden_category_feed,
+            title="Hidden Category Item",
+            link="http://example.com/hc-item",
+            published_at=timezone.now() - timedelta(minutes=2),
+            guid="hidden-cat-guid",
+        )
+
+        self.client = TestClient(item_router)
+        self.token = jwt.encode(
+            {"user_id": self.user.id}, settings.SECRET_KEY, algorithm="HS256"
+        )
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    def test_main_page_excludes_hidden_category_items(self):
+        """메인 화면: Category.visible=False인 카테고리의 아이템은 제외"""
+        response = self.client.get("/", headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        item_ids = [item["id"] for item in data["items"]]
+
+        # visible 피드의 아이템만 포함
+        self.assertIn(self.visible_item.id, item_ids)
+        # hidden 피드의 아이템은 제외
+        self.assertNotIn(self.hidden_item.id, item_ids)
+        # hidden 카테고리의 아이템은 제외
+        self.assertNotIn(self.hidden_category_item.id, item_ids)
+
+    def test_main_page_excludes_hidden_feed_items(self):
+        """메인 화면: Feed.visible=False인 피드의 아이템은 제외"""
+        response = self.client.get("/", headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        item_ids = [item["id"] for item in data["items"]]
+
+        self.assertNotIn(self.hidden_item.id, item_ids)
+
+    def test_category_page_excludes_hidden_feed_items(self):
+        """카테고리 화면: Feed.visible=False인 피드의 아이템은 제외"""
+        response = self.client.get(
+            f"/category/{self.visible_category.id}", headers=self.headers
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        item_ids = [item["id"] for item in data["items"]]
+
+        # visible 피드의 아이템만 포함
+        self.assertIn(self.visible_item.id, item_ids)
+        # hidden 피드의 아이템은 제외
+        self.assertNotIn(self.hidden_item.id, item_ids)
+
+    def test_category_page_shows_hidden_category_items(self):
+        """카테고리 화면: Category.visible=False여도 해당 카테고리 페이지에서는 visible 피드의 아이템 표시"""
+        response = self.client.get(
+            f"/category/{self.hidden_category.id}", headers=self.headers
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        item_ids = [item["id"] for item in data["items"]]
+
+        # hidden 카테고리 내의 visible 피드 아이템은 표시
+        self.assertIn(self.hidden_category_item.id, item_ids)
+
+    def test_feed_page_shows_all_items(self):
+        """피드 화면: visible 설정과 관계없이 해당 피드의 모든 아이템 표시"""
+        response = self.client.get(
+            f"/feed/{self.hidden_feed.id}", headers=self.headers
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        item_ids = [item["id"] for item in data["items"]]
+
+        # hidden 피드의 아이템도 피드 페이지에서는 표시
+        self.assertIn(self.hidden_item.id, item_ids)
+
+
+class CategoryUpdateTest(TestCase):
+    """Category 수정 API 테스트"""
+
+    def setUp(self):
+        from feeds.routers.category import router as category_router
+
+        self.user = User.objects.create_user(
+            username="catuser", password="catpass123"
+        )
+        self.category = RSSCategory.objects.create(
+            user=self.user,
+            name="Original Name",
+            description="Original Description",
+            visible=True,
+        )
+        self.client = TestClient(category_router)
+        self.token = jwt.encode(
+            {"user_id": self.user.id}, settings.SECRET_KEY, algorithm="HS256"
+        )
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    def test_update_category_name(self):
+        """카테고리 이름만 수정"""
+        response = self.client.put(
+            f"/{self.category.id}",
+            json={"name": "Updated Name"},
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["name"], "Updated Name")
+        self.assertEqual(data["description"], "Original Description")
+        self.assertTrue(data["visible"])
+
+    def test_update_category_visible(self):
+        """카테고리 visible만 수정"""
+        response = self.client.put(
+            f"/{self.category.id}",
+            json={"visible": False},
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["name"], "Original Name")
+        self.assertFalse(data["visible"])
+
+    def test_update_category_all_fields(self):
+        """카테고리 모든 필드 수정"""
+        response = self.client.put(
+            f"/{self.category.id}",
+            json={
+                "name": "New Name",
+                "description": "New Description",
+                "visible": False,
+            },
+            headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["name"], "New Name")
+        self.assertEqual(data["description"], "New Description")
+        self.assertFalse(data["visible"])
+
+
 class FeedScheduleTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(

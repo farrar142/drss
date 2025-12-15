@@ -86,7 +86,12 @@ def list_all_items(
     cursor: Optional[str] = None,
     direction: str = "before",  # "before" for older items, "after" for newer items
 ):
-    items = RSSItem.objects.filter(feed__user=request.auth)
+    # 메인 화면: Category.visible=False이거나 Feed.visible=False인 항목 제외
+    items = RSSItem.objects.filter(
+        feed__user=request.auth,
+        feed__visible=True,
+        feed__category__visible=True,
+    )
 
     if is_read is not None:
         items = items.filter(is_read=is_read)
@@ -116,8 +121,11 @@ def list_items_by_category(
     cursor: Optional[str] = None,
     direction: str = "before",
 ):
+    # 카테고리 화면: Feed.visible=False인 항목만 제외 (Category.visible은 무시)
     items = RSSItem.objects.filter(
-        feed__user=request.auth, feed__category_id=category_id
+        feed__user=request.auth,
+        feed__category_id=category_id,
+        feed__visible=True,
     )
 
     if is_read is not None:

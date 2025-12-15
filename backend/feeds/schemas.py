@@ -7,11 +7,19 @@ class CategorySchema(Schema):
     id: int
     name: str
     description: str
+    visible: bool
 
 
 class CategoryCreateSchema(Schema):
     name: str
     description: str = ""
+    visible: bool = True
+
+
+class CategoryUpdateSchema(Schema):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    visible: Optional[bool] = None
 
 
 class FeedSchema(Schema):

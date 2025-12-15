@@ -18,16 +18,23 @@ def list_categories(request):
 @router.post("/", response=CategorySchema, auth=JWTAuth())
 def create_category(request, data: CategoryCreateSchema):
     category = RSSCategory.objects.create(
-        user=request.auth, name=data.name, description=data.description
+        user=request.auth,
+        name=data.name,
+        description=data.description,
+        visible=data.visible,
     )
     return category
 
 
 @router.put("/{category_id}", response=CategorySchema, auth=JWTAuth())
-def update_category(request, category_id: int, data: CategoryCreateSchema):
+def update_category(request, category_id: int, data: CategoryUpdateSchema):
     category = get_object_or_404(RSSCategory, id=category_id, user=request.auth)
-    category.name = data.name
-    category.description = data.description
+    if data.name is not None:
+        category.name = data.name
+    if data.description is not None:
+        category.description = data.description
+    if data.visible is not None:
+        category.visible = data.visible
     category.save()
     return category
 
