@@ -12,7 +12,6 @@ interface SliderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'defaul
   onValueChange?: (value: number[]) => void
   disabled?: boolean
 }
-
 const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
   ({ className, value, defaultValue = [0], min = 0, max = 100, step = 1, onValueChange, disabled, ...props }, ref) => {
     const [internalValue, setInternalValue] = React.useState(defaultValue)
@@ -24,13 +23,13 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 
     const updateValue = React.useCallback((clientX: number) => {
       if (!trackRef.current || disabled) return
-      
+
       const rect = trackRef.current.getBoundingClientRect()
       const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
       const rawValue = min + percent * (max - min)
       const steppedValue = Math.round(rawValue / step) * step
       const clampedValue = Math.max(min, Math.min(max, steppedValue))
-      
+
       const newValue = [clampedValue]
       setInternalValue(newValue)
       onValueChange?.(newValue)
@@ -57,33 +56,42 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex w-full touch-none select-none items-center",
+          "relative flex w-full touch-none select-none items-center h-5",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}
         {...props}
       >
+        {/* Track */}
         <div
           ref={trackRef}
-          className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary cursor-pointer"
+          className="relative h-2 w-full grow rounded-full bg-secondary cursor-pointer"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         >
+          {/* Progress fill */}
           <div
-            className="absolute h-full bg-primary transition-all"
+            className="absolute h-full rounded-full bg-primary"
             style={{ width: `${percentage}%` }}
           />
-          <div
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-5 w-5 rounded-full border-2 border-primary bg-background",
-              "ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-              "shadow-md hover:scale-110 active:scale-95",
-              disabled && "pointer-events-none"
-            )}
-            style={{ left: `${percentage}%` }}
-          />
         </div>
+        {/* Thumb - outside track to avoid overflow:hidden */}
+        <div
+          className={cn(
+            "absolute h-5 w-5 rounded-full border-2 cursor-grab active:cursor-grabbing",
+            "shadow-md transition-transform hover:scale-110 active:scale-95",
+            "!bg-primary !border-primary-foreground",
+            disabled && "pointer-events-none"
+          )}
+          style={{
+            left: `${percentage}%`,
+            transform: 'translateX(-50%)'
+          }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        />
       </div>
     )
   }

@@ -38,7 +38,7 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
             <span className="text-xs text-muted-foreground whitespace-nowrap">느림</span>
             <Slider
               value={[speedPercent]}
-              onValueChange={([value]) => onSpeedChange(value)}
+              onValueChange={([value]: number[]) => onSpeedChange(value)}
               min={0}
               max={100}
               step={1}
