@@ -40,14 +40,14 @@ export const FeedItemViewer: FC<{
   else if (!isMd) columns = 2;
 
   const { columnItems, registerHeight, getItemHeight } = useMasonryLayout(items, columns);
-  
+
   // Use extracted hooks
   const mediaModal = useMediaModal({ items });
   const cruising = useCruising({ minSpeed: 20, maxSpeed: 300, defaultSpeed: 80 });
-  
+
   // Use fast, CSS-based masonry when possible
   const useCSSColumns = true;
-  
+
   // For CSS columns mode, compute sentinel positions
   const columnSentinelIndexes = useMemo(() => {
     if (!useCSSColumns) return [] as number[];
@@ -96,6 +96,8 @@ export const FeedItemViewer: FC<{
 
     // Fallback scroll handler
     let rafId: number | null = null;
+    let resizeTimeoutId: NodeJS.Timeout | null = null;
+
     const checkNearBottom = () => {
       if (!hasNext || loading) return;
       const scrollY = window.scrollY || window.pageYOffset;
@@ -118,11 +120,26 @@ export const FeedItemViewer: FC<{
       });
     };
 
+    // Debounced resize handler - only trigger after resize settles
+    const onResize = () => {
+      if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
+      resizeTimeoutId = setTimeout(() => {
+        checkNearBottom();
+        resizeTimeoutId = null;
+      }, 150);
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+    window.addEventListener('resize', onResize, { passive: true });
     checkNearBottom();
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onResize);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
+    };
   }, [hasNext, loading, columns]);
 
   // Auto-refresh every 60 seconds
@@ -172,10 +189,13 @@ export const FeedItemViewer: FC<{
     });
   }, []);
 
-  // Handle media click
+  // Handle media click - use ref to stabilize callback
+  const mediaModalRef = useRef(mediaModal);
+  mediaModalRef.current = mediaModal;
+
   const handleMediaClick = useCallback((src: string, type: 'image' | 'video' = 'image', itemId?: number) => {
-    mediaModal.openMedia(src, type, itemId);
-  }, [mediaModal]);
+    mediaModalRef.current.openMedia(src, type, itemId);
+  }, []);
 
   // ColumnVirtual component for virtualized columns
   function ColumnVirtual({ columnData, columnIndex }: { columnData: RSSItem[]; columnIndex: number }) {
@@ -192,7 +212,10 @@ export const FeedItemViewer: FC<{
     const [range, setRange] = useState({ start: 0, end: Math.min(columnData.length - 1, 10) });
 
     useEffect(() => {
-      const onScroll = () => {
+      let rafId: number | null = null;
+      let resizeTimeoutId: NodeJS.Timeout | null = null;
+
+      const calculateRange = () => {
         const scrollY = window.scrollY || window.pageYOffset;
         const vh = window.innerHeight;
         const margin = 500;
@@ -206,12 +229,31 @@ export const FeedItemViewer: FC<{
         setRange({ start, end });
       };
 
-      onScroll();
+      const onScroll = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          calculateRange();
+          rafId = null;
+        });
+      };
+
+      // Debounced resize handler
+      const onResize = () => {
+        if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
+        resizeTimeoutId = setTimeout(() => {
+          calculateRange();
+          resizeTimeoutId = null;
+        }, 150);
+      };
+
+      calculateRange();
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
+      window.addEventListener('resize', onResize, { passive: true });
       return () => {
         window.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
       };
     }, [columnData, offsets, getItemHeight]);
 

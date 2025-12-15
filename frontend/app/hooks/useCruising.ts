@@ -34,7 +34,7 @@ export interface UseCruisingReturn {
 
 export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn {
   const {
-    minSpeed = 20,
+    minSpeed = 5,
     maxSpeed = 300,
     defaultSpeed = 80,
   } = options;

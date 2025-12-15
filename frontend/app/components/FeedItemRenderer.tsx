@@ -142,7 +142,16 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
   const localRef = useRef<HTMLDivElement | null>(null);
 
-  const description = useMemo(() => renderDescription(item.description, onMediaClick, item.link, item.id), [item.description, onMediaClick, item.link, item.id]);
+  // Use ref for onMediaClick to avoid re-rendering description on callback change
+  const onMediaClickRef = useRef(onMediaClick);
+  onMediaClickRef.current = onMediaClick;
+
+  // Stable callback that uses the ref
+  const stableMediaClick = useCallback((url: string, type: 'image' | 'video', itemId?: number) => {
+    onMediaClickRef.current(url, type, itemId);
+  }, []);
+
+  const description = useMemo(() => renderDescription(item.description, stableMediaClick, item.link, item.id), [item.description, stableMediaClick, item.link, item.id]);
 
   const publishedAt = useMemo(() => {
     try {
