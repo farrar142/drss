@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import ReactDOM from "react-dom";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
@@ -11,9 +12,21 @@ interface DialogProps {
 }
 
 const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+  React.useEffect(() => {
+    if (open) {
+      // prevent body scroll when dialog is open
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev;
+      };
+    }
+    return;
+  }, [open]);
+
   if (!open) return null;
 
-  return (
+  const content = (
     <div className="fixed inset-0 z-50">
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -24,6 +37,8 @@ const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
       </div>
     </div>
   );
+
+  return typeof window !== "undefined" ? ReactDOM.createPortal(content, document.body) : null;
 };
 
 const DialogContent = React.forwardRef<

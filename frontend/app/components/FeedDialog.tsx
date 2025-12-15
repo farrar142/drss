@@ -14,6 +14,7 @@ interface FeedPayload {
   description?: string;
   custom_headers?: Record<string, unknown>;
   refresh_interval?: number;
+  favicon_url?: string;
 }
 
 interface FeedDialogProps {
@@ -36,6 +37,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   const [url, setUrl] = useState(initial.url ?? '');
   const [feedTitle, setFeedTitle] = useState(initial.title ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
+  const [faviconUrl, setFaviconUrl] = useState((initial as any).favicon_url ?? '');
   const [customHeaders, setCustomHeaders] = useState(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
   const [refreshInterval, setRefreshInterval] = useState(initial.refresh_interval ?? 5);
 
@@ -48,6 +50,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       setUrl(initial.url ?? '');
       setFeedTitle(initial.title ?? '');
       setDescription(initial.description ?? '');
+      setFaviconUrl((initial as any).favicon_url ?? '');
       setCustomHeaders(initial.custom_headers ? JSON.stringify(initial.custom_headers, null, 2) : '');
       setRefreshInterval(initial.refresh_interval ?? 5);
       setValidationResult(null);
@@ -87,6 +90,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       const payload: FeedPayload = {
         url,
         title: feedTitle,
+        favicon_url: faviconUrl || undefined,
         description,
         custom_headers: parsedHeaders,
         refresh_interval: refreshInterval,
@@ -151,6 +155,11 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
           <div className="space-y-2">
             <Label htmlFor="feed-description">설명</Label>
             <Input id="feed-description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="feed-favicon">Favicon URL</Label>
+            <Input id="feed-favicon" placeholder="https://example.com/favicon.ico" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} />
           </div>
 
           <div className="space-y-2">

@@ -120,7 +120,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
               <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuContent align="start" className="w-40">
             <DropdownMenuItem onClick={handleEdit}>
               <Pencil className="w-4 h-4 mr-2 text-primary" /> 수정
             </DropdownMenuItem>
@@ -146,6 +146,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
           url: feed.url,
           title: feed.title,
           description: feed.description,
+          favicon_url: feed.favicon_url,
           custom_headers: feed.custom_headers as any,
           refresh_interval: feed.refresh_interval,
         }}
