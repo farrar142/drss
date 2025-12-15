@@ -19,31 +19,31 @@ export interface UseFeedViewerOptions {
 export interface UseFeedViewerReturn {
   // Store state
   viewMode: 'board' | 'feed';
-  
+
   // Column layout
   columns: number;
   columnItems: RSSItem[][];
   useCSSColumns: boolean;
   columnSentinelIndexes: number[];
-  
+
   // Masonry helpers
   registerHeight: (id: number, height: number) => void;
   getItemHeight: (id: number) => number;
-  
+
   // Expanded items
   expandedSet: Set<number>;
   handleCollapseChange: (id: number, collapsed: boolean) => void;
-  
+
   // Media modal
   mediaModal: ReturnType<typeof useMediaModal>;
   handleMediaClick: (src: string, type?: 'image' | 'video', itemId?: number) => void;
-  
+
   // Cruising
   cruising: ReturnType<typeof useCruising>;
-  
+
   // Sentinel refs
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
-  
+
   // Handlers
   onLoadNew?: () => void;
   hasNext?: boolean;

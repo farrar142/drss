@@ -226,3 +226,26 @@ export function applyThemeColors(colors: ThemeColors) {
   root.style.setProperty('--accent-50', `hsl(${primary.h} ${primary.s}% ${primary.l}% / 0.5)`);
   root.style.setProperty('--sidebar-primary-50', `hsl(${primary.h} ${primary.s}% ${primary.l}% / 0.5)`);
 }
+
+// 서버에서 초기 테마 CSS 변수 문자열 생성 (플래시 방지용)
+export function getInitialThemeStyles(colors: ThemeColors, isDark: boolean): string {
+  const primary = hexToHSLObject(colors.primary);
+  const secondary = hexToHSLObject(colors.secondary);
+  const sidebarAccentL = Math.min(primary.l + 35, 95);
+  const sidebarBorderL = isDark ? Math.max(primary.l - 30, 8) : Math.min(primary.l + 60, 97);
+
+  return `
+    --primary: ${primary.h} ${primary.s}% ${primary.l}%;
+    --primary-foreground: ${primary.l > 50 ? '0 0% 0%' : '0 0% 100%'};
+    --secondary: ${secondary.h} ${secondary.s}% ${secondary.l}%;
+    --secondary-foreground: ${secondary.l > 50 ? '0 0% 0%' : '0 0% 100%'};
+    --accent: ${primary.h} ${primary.s}% ${primary.l}%;
+    --ring: ${primary.h} ${primary.s}% ${primary.l}%;
+    --sidebar-primary: ${primary.h} ${primary.s}% ${primary.l}%;
+    --sidebar-primary-foreground: ${primary.l > 50 ? '0 0% 0%' : '0 0% 100%'};
+    --sidebar-accent: ${primary.h} ${primary.s}% ${sidebarAccentL}%;
+    --sidebar-accent-foreground: ${sidebarAccentL > 50 ? '0 0% 0%' : '0 0% 100%'};
+    --sidebar-border: ${primary.h} ${Math.min(primary.s, 20)}% ${sidebarBorderL}%;
+    --sidebar-ring: ${primary.h} ${primary.s}% ${primary.l}%;
+  `.trim();
+}

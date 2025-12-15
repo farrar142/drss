@@ -19,7 +19,7 @@ const FeedItemCard = dynamic(
   }
 );
 
-export interface FeedViewerViewProps extends UseFeedViewerReturn {}
+export interface FeedViewerViewProps extends UseFeedViewerReturn { }
 
 // ColumnVirtual component for virtualized columns
 function ColumnVirtual({
