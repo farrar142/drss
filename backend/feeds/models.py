@@ -79,6 +79,8 @@ class CachedImage(models.Model):
     original_url = models.URLField(unique=True)
     relative_path = models.CharField(max_length=500)  # relative to MEDIA_ROOT
     content_type = models.CharField(max_length=100, blank=True)
+    width = models.IntegerField(null=True, blank=True)
+    height = models.IntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -87,9 +89,18 @@ class CachedImage(models.Model):
         ]
 
     def url(self):
-        from django.conf import settings
+        # Use Django's storage backend to generate a URL. This will return
+        # an S3 URL when DEFAULT_FILE_STORAGE is configured for S3, or a
+        # MEDIA_URL-based path when using the default FileSystemStorage.
+        from django.core.files.storage import default_storage
 
-        return f"{settings.MEDIA_URL}{self.relative_path}"
+        try:
+            return default_storage.url(self.relative_path)
+        except Exception:
+            # Fallback in case storage backend doesn't support url()
+            from django.conf import settings
+
+            return f"{settings.MEDIA_URL}{self.relative_path}"
 
     def __str__(self):
         return self.original_url

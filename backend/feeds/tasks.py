@@ -9,6 +9,10 @@ from feeds.utils import fetch_feed_data
 import hashlib
 import os
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from io import BytesIO
+from PIL import Image
 
 
 @shared_task
@@ -49,23 +53,68 @@ def cache_image_task(original_url):
 
         key = hashlib.sha256(original_url.encode("utf-8")).hexdigest()[:32]
         filename = f"{key}.{ext}"
-        rel_dir = os.path.join("cached_images")
-        full_dir = os.path.join(settings.MEDIA_ROOT, rel_dir)
-        os.makedirs(full_dir, exist_ok=True)
-        full_path = os.path.join(full_dir, filename)
+        rel_path = f"cached_images/{filename}"
 
-        # write file
-        with open(full_path, "wb") as fh:
-            for chunk in resp.iter_content(8192):
-                if chunk:
-                    fh.write(chunk)
+        # Save via Django's storage backend. This will use S3 if configured,
+        # otherwise the default FileSystemStorage (MEDIA_ROOT).
+        try:
+            if not default_storage.exists(rel_path):
+                # fetch content (small images should be fine to hold in memory)
+                content = b""
+                for chunk in resp.iter_content(8192):
+                    if chunk:
+                        content += chunk
 
-        # create record
-        rel_path = os.path.join(rel_dir, filename).replace("\\", "/")
-        ci = CachedImage.objects.create(
-            original_url=original_url, relative_path=rel_path, content_type=content_type
-        )
-        return rel_path
+                default_storage.save(rel_path, ContentFile(content))
+
+            # extract image size if possible
+            width = None
+            height = None
+            try:
+                img = Image.open(BytesIO(content))
+                width, height = img.size
+            except Exception:
+                width = None
+                height = None
+
+            # create record pointing to the storage path
+            ci = CachedImage.objects.create(
+                original_url=original_url,
+                relative_path=rel_path,
+                content_type=content_type,
+                width=width,
+                height=height,
+            )
+            return rel_path
+        except Exception:
+            # If storage backend fails for any reason, fallback to local write
+            rel_dir = os.path.join("cached_images")
+            full_dir = os.path.join(settings.MEDIA_ROOT, rel_dir)
+            os.makedirs(full_dir, exist_ok=True)
+            full_path = os.path.join(full_dir, filename)
+
+            # write file locally
+            with open(full_path, "wb") as fh:
+                for chunk in resp.iter_content(8192):
+                    if chunk:
+                        fh.write(chunk)
+
+            rel_path_fs = os.path.join(rel_dir, filename).replace("\\", "/")
+            # fallback filesystem save; try to extract size
+            width = None
+            height = None
+            try:
+                with open(full_path, "rb") as fh:
+                    img = Image.open(fh)
+                    width, height = img.size
+            except Exception:
+                width = None
+                height = None
+
+            ci = CachedImage.objects.create(
+                original_url=original_url, relative_path=rel_path_fs, content_type=content_type, width=width, height=height
+            )
+            return rel_path_fs
     except Exception:
         return None
 

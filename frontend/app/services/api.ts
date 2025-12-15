@@ -80,25 +80,11 @@ export interface CategorySchema {
   id: number;
   name: string;
   description: string;
-  visible: boolean;
 }
 
 export interface CategoryCreateSchema {
   name: string;
   description?: string;
-  visible?: boolean;
-}
-
-export type CategoryUpdateSchemaName = string | null;
-
-export type CategoryUpdateSchemaDescription = string | null;
-
-export type CategoryUpdateSchemaVisible = boolean | null;
-
-export interface CategoryUpdateSchema {
-  name?: CategoryUpdateSchemaName;
-  description?: CategoryUpdateSchemaDescription;
-  visible?: CategoryUpdateSchemaVisible;
 }
 
 export interface ItemSchema {
@@ -332,12 +318,12 @@ export const feedsRoutersCategoryCreateCategory = (
  */
 export const feedsRoutersCategoryUpdateCategory = (
     categoryId: number,
-    categoryUpdateSchema: CategoryUpdateSchema,
+    categoryCreateSchema: CategoryCreateSchema,
  ) => {
       return axiosInstance<CategorySchema>(
       {url: `/api/categories/${categoryId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryUpdateSchema
+      data: categoryCreateSchema
     },
       );
     }

@@ -110,7 +110,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
 
   return (
     <>
-      <div 
+      <div
         className={cn('flex items-center group', !feed.visible && 'opacity-50')}
         draggable
         onDragStart={handleDragStart}

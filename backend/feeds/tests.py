@@ -300,6 +300,9 @@ class FeedAPITest(TestCase):
         self.assertEqual(get_cached.status_code, 200)
         data = get_cached.json()
         self.assertIn("url", data)
+        # width/height should be present (may be None if unknown)
+        self.assertIn("width", data)
+        self.assertIn("height", data)
 
 
 class CategoryVisibilityTest(TestCase):

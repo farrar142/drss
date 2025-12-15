@@ -81,12 +81,12 @@ export const CategoryItem: FC<{
 
   const handleEditSave = async () => {
     try {
-      const updated = await feedsRoutersCategoryUpdateCategory(category.id, {
+      const updated = await feedsRoutersCategoryUpdateCategory(category.id, ({
         name: editName,
         description: editDescription,
         visible: editVisible,
-      });
-      updateCategory(updated);
+      } as any));
+      updateCategory({ ...(updated as any), visible: (updated as any).visible ?? true });
       setEditOpen(false);
     } catch (error) {
       console.error('Failed to update category', error);
@@ -95,10 +95,10 @@ export const CategoryItem: FC<{
 
   const handleToggleVisible = async () => {
     try {
-      const updated = await feedsRoutersCategoryUpdateCategory(category.id, {
+      const updated = await feedsRoutersCategoryUpdateCategory(category.id, ({
         visible: !category.visible,
-      });
-      updateCategory(updated);
+      } as any));
+      updateCategory({ ...(updated as any), visible: (updated as any).visible ?? true });
     } catch (error) {
       console.error('Failed to toggle category visibility', error);
     }
@@ -134,14 +134,14 @@ export const CategoryItem: FC<{
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     try {
       const data = JSON.parse(e.dataTransfer.getData('application/json'));
       const { feedId, fromCategoryId } = data;
-      
+
       // 같은 카테고리면 무시
       if (fromCategoryId === category.id) return;
-      
+
       // API 호출로 카테고리 변경
       const updated = await feedsRoutersFeedUpdateFeed(feedId, { category_id: category.id });
       updateFeed(updated);
@@ -153,7 +153,7 @@ export const CategoryItem: FC<{
 
   return (
     <>
-      <div 
+      <div
         className="w-full group"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -164,6 +164,8 @@ export const CategoryItem: FC<{
             'flex items-center justify-between px-3 py-2 mx-1 rounded-lg cursor-pointer',
             'hover:bg-sidebar-accent/50 transition-colors',
             !category.visible && 'opacity-50',
+            // Highlight when this category is the active route
+            categoryIdFromPath && parseInt(categoryIdFromPath) === category.id && 'bg-sidebar-primary text-sidebar-primary-foreground',
             isDragOver && draggingFeed && draggingFeed.category_id !== category.id && 'bg-primary/20 ring-2 ring-primary'
           )}
         >
@@ -226,9 +228,9 @@ export const CategoryItem: FC<{
           <div className="px-2 pb-2">
             <div className="space-y-0.5">
               {feeds.map((feed) => (
-                <RSSFeedListItem 
-                  feed={feed} 
-                  key={feed.id} 
+                <RSSFeedListItem
+                  feed={feed}
+                  key={feed.id}
                   categoryId={category.id}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}

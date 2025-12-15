@@ -47,7 +47,12 @@ export const CategoryDrawer: FC<{
   }, [setFeeds]);
 
   useEffect(() => {
-    feedsRoutersCategoryListCategories().then(setCategories);
+    // The backend OpenAPI/types may not always include the `visible` field
+    // (older specs). Ensure we normalize the response to `RSSCategory` by
+    // defaulting `visible` to `true` when absent.
+    feedsRoutersCategoryListCategories().then((cats) =>
+      setCategories((cats || []).map((c: any) => ({ ...c, visible: (c.visible ?? true) })))
+    );
   }, [setCategories]);
 
   const handleAddCategory = async () => {
@@ -56,7 +61,8 @@ export const CategoryDrawer: FC<{
         name: newCategoryName,
         description: newCategoryDescription,
       });
-      addCategory(newCategory);
+      // Ensure `visible` exists (older API specs may omit it)
+      addCategory({ ...(newCategory as any), visible: (newCategory as any).visible ?? true });
       setAddCategoryOpen(false);
       setNewCategoryName('');
       setNewCategoryDescription('');

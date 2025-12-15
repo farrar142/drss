@@ -1,3 +1,4 @@
+from typing import Optional
 from ninja import Router, Schema
 
 from ninja.responses import Response
@@ -15,6 +16,8 @@ class UrlParamSchema(Schema):
 
 class UrlResponse(Schema):
     url: str
+    width: Optional[int] = None
+    height: Optional[int] = None
 
 
 class ScheduledResponse(Schema):
@@ -38,7 +41,7 @@ def cache_image_get(request, url: str):
         return Response({"error": "not found"}, status=404)
 
     abs_url = request.build_absolute_uri(ci.url())
-    return {"url": abs_url}
+    return {"url": abs_url, "width": ci.width, "height": ci.height}
 
 
 @router.post("/", auth=None, response={200: UrlResponse, 202: ScheduledResponse})
@@ -54,7 +57,7 @@ def cache_image_post(request, data: UrlParamSchema):
 
     if ci:
         abs_url = request.build_absolute_uri(ci.url())
-        return {"url": abs_url}
+        return {"url": abs_url, "width": ci.width, "height": ci.height}
 
     cache_image_task.delay(url)
     headers = {"Location": request.build_absolute_uri(f"/api/feeds/cache-image?url={url}")}

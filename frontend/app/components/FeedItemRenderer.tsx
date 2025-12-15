@@ -32,15 +32,18 @@ const RSSImage: FC<{
 
     const tryGetCached = async () => {
       try {
-        const res = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string } | null;
+        const res = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string; width?: number; height?: number } | null;
         if (!mounted) return;
         if (res && res.url) {
           setCurrentSrc(res.url);
+          if (typeof res.width === 'number' && typeof res.height === 'number') {
+            setNaturalSize({ width: res.width, height: res.height });
+          }
           setPolling(false);
           return;
         }
 
-        // Poll via GET until a cached URL appears or retries exhausted
+        // Poll via POST until a cached URL appears or retries exhausted
         setPolling(true);
         intervalId = window.setInterval(async () => {
           try {
@@ -55,9 +58,12 @@ const RSSImage: FC<{
               setPolling(false);
               return;
             }
-            const p = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string } | null;
+            const p = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string; width?: number; height?: number } | null;
             if (p && p.url) {
               setCurrentSrc(p.url);
+              if (typeof p.width === 'number' && typeof p.height === 'number') {
+                setNaturalSize({ width: p.width, height: p.height });
+              }
               clear();
               setPolling(false);
             }
