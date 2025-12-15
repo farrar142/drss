@@ -270,3 +270,104 @@ class FeedAPITest(TestCase):
         feed = RSSFeed.objects.get(url="http://example.com/rss")
         self.assertEqual(feed.title, "Unknown Feed")  # RSS 파싱 실패 시 기본값
         self.assertEqual(feed.user, self.user)
+
+
+class FeedScheduleTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="scheduser", password="schedpass123"
+        )
+        self.category = RSSCategory.objects.create(
+            user=self.user, name="Sched Category", description="Sched"
+        )
+
+    def test_setup_feed_schedule_creates_and_updates(self):
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://example.com/rss",
+            title="Feed For Schedule",
+            refresh_interval=5,
+            visible=True,
+        )
+
+        from .management.commands.setup_feed_schedules import setup_feed_schedule
+        from django_celery_beat.models import PeriodicTask
+
+        # create schedule
+        setup_feed_schedule(feed)
+        args_payload = json.dumps([feed.pk])
+        tasks = PeriodicTask.objects.filter(args=args_payload)
+        self.assertEqual(tasks.count(), 1)
+        task = tasks.first()
+        self.assertIn(str(feed.pk), task.args)
+        self.assertEqual(task.name, f"Update RSS feed: {feed.title}")
+
+        # change title and run again -> should update name and not create duplicate
+        feed.title = "Feed For Schedule Renamed"
+        feed.save()
+        setup_feed_schedule(feed)
+        tasks = PeriodicTask.objects.filter(args=args_payload)
+        self.assertEqual(tasks.count(), 1)
+        task = tasks.first()
+        self.assertEqual(task.name, f"Update RSS feed: {feed.title}")
+
+    def test_setup_feed_schedule_deletes_on_inactive(self):
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://example.com/rss2",
+            title="Feed To Delete",
+            refresh_interval=5,
+            visible=True,
+        )
+        from .management.commands.setup_feed_schedules import setup_feed_schedule
+        from django_celery_beat.models import PeriodicTask
+
+        setup_feed_schedule(feed)
+        args_payload = json.dumps([feed.pk])
+        self.assertEqual(PeriodicTask.objects.filter(args=args_payload).count(), 1)
+
+        # mark invisible -> should remove periodic task
+        feed.visible = False
+        feed.save()
+        setup_feed_schedule(feed)
+        self.assertEqual(PeriodicTask.objects.filter(args=args_payload).count(), 0)
+
+    def test_setup_feed_schedule_deduplicates_existing(self):
+        from django_celery_beat.models import PeriodicTask, IntervalSchedule
+
+        feed = RSSFeed.objects.create(
+            user=self.user,
+            category=self.category,
+            url="http://example.com/rss3",
+            title="Feed With Dups",
+            refresh_interval=2,
+            visible=True,
+        )
+        schedule, _ = IntervalSchedule.objects.get_or_create(
+            every=2, period=IntervalSchedule.MINUTES
+        )
+        # create duplicate tasks with same args but different names
+        args_payload = json.dumps([feed.pk])
+        PeriodicTask.objects.create(
+            name="Old name 1",
+            task="feeds.tasks.update_feed_items",
+            interval=schedule,
+            args=args_payload,
+            enabled=True,
+        )
+        PeriodicTask.objects.create(
+            name="Old name 2",
+            task="feeds.tasks.update_feed_items",
+            interval=schedule,
+            args=args_payload,
+            enabled=True,
+        )
+
+        from .management.commands.setup_feed_schedules import setup_feed_schedule
+
+        setup_feed_schedule(feed)
+        tasks = PeriodicTask.objects.filter(args=args_payload)
+        # deduplicated to single task
+        self.assertEqual(tasks.count(), 1)

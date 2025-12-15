@@ -100,20 +100,37 @@ const useMasonryLayout = (items: RSSItem[], columns: number) => {
     return result;
   }, [items, columns, itemHeights]);
 
-  return { columnItems, registerHeight };
+  const getItemHeight = (id: number) => heightsRef.current.get(id) || 300;
+  return { columnItems, registerHeight, getItemHeight };
 };
+
 
 // Wrapper component to measure item height
 const MeasuredItem: FC<{
   item: RSSItem;
   onMediaClick: (src: string, type: 'image' | 'video') => void;
   onHeightChange: (id: number, height: number) => void;
-}> = ({ item, onMediaClick, onHeightChange }) => {
+  isForcedVisible?: boolean;
+  estimateHeight?: number;
+  onCollapseChange?: (id: number, collapsed: boolean) => void;
+}> = ({ item, onMediaClick, onHeightChange, isForcedVisible, estimateHeight, onCollapseChange }) => {
   const ref = useRef<HTMLDivElement>(null);
   const lastHeightRef = useRef<number>(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
+
+    // Lazy-render content only when in/near viewport to avoid loading images/video too early
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          setIsVisible(true);
+          obs.disconnect();
+        }
+      });
+    }, { rootMargin: '400px' });
+    obs.observe(ref.current);
 
     const measureHeight = () => {
       if (ref.current) {
@@ -156,8 +173,12 @@ const MeasuredItem: FC<{
   }, [item.id, onHeightChange]);
 
   return (
-    <div ref={ref}>
-      <FeedItemRenderer item={item} onMediaClick={onMediaClick} />
+    <div ref={ref} data-item-id={item.id}>
+      {isVisible || isForcedVisible ? (
+        <FeedItemRenderer item={item} onMediaClick={onMediaClick} onCollapseChange={onCollapseChange} />
+      ) : (
+        <div className="bg-muted animate-pulse rounded" style={{ height: estimateHeight || 144 }} />
+      )}
     </div>
   );
 };
@@ -177,7 +198,7 @@ export const FeedItemViewer: FC<{
   if (isXl) columns = 3;
   else if (!isMd) columns = 2;
 
-  const { columnItems, registerHeight } = useMasonryLayout(items, columns);
+  const { columnItems, registerHeight, getItemHeight } = useMasonryLayout(items, columns);
   // Use fast, CSS-based masonry when possible to avoid heavy JS layout recalculations
   // CSS columns have the side effect of filling top-to-bottom, left-to-right (different
   // reading order), but it greatly improves scroll performance for long lists.
@@ -233,6 +254,37 @@ export const FeedItemViewer: FC<{
       }
     });
 
+    // Fallback: also trigger load when user scrolls near the bottom of the page.
+    // This handles uneven CSS-column distributions where per-column sentinels
+    // may not be placed in a way that becomes visible.
+    let rafId: number | null = null;
+    const checkNearBottom = () => {
+      if (!hasNext || loading) return;
+      const scrollY = window.scrollY || window.pageYOffset;
+      const vh = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const threshold = 300; // px from bottom to trigger
+      if (scrollY + vh + threshold >= docHeight) {
+        if (onLoadMoreRef.current) {
+          onLoadMoreRef.current();
+          console.log('Loading more items (near-bottom fallback)...');
+        }
+      }
+    };
+
+    const onScroll = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        checkNearBottom();
+        rafId = null;
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    // initial check in case page is already near bottom
+    checkNearBottom();
+
     return () => observer.disconnect();
   }, [hasNext, loading, columns]);
 
@@ -245,6 +297,90 @@ export const FeedItemViewer: FC<{
     setModalOpen(false);
     setModalMedia(null);
   };
+
+  // Track which items are expanded so we always render them and avoid layout jumps
+  const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
+  const handleCollapseChange = useCallback((id: number, collapsed: boolean) => {
+    setExpandedSet(prev => {
+      const next = new Set(prev);
+      if (!collapsed) next.add(id); // expanded
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  // ColumnVirtual renders a virtualized column using @tanstack/react-virtual
+  function ColumnVirtual({ columnData, columnIndex }: { columnData: RSSItem[]; columnIndex: number }) {
+    const parentRef = useRef<HTMLDivElement | null>(null);
+
+    // Compute offsets and total height based on current item heights
+    const offsets = useMemo(() => {
+      const arr: number[] = [];
+      let acc = 0;
+      for (let i = 0; i < columnData.length; i++) {
+        arr.push(acc);
+        acc += getItemHeight(columnData[i].id);
+      }
+      return { offsets: arr, total: acc };
+    }, [columnData, getItemHeight]);
+
+    const [range, setRange] = useState({ start: 0, end: Math.min(columnData.length - 1, 10) });
+
+    useEffect(() => {
+      const onScroll = () => {
+        const scrollY = window.scrollY || window.pageYOffset;
+        const vh = window.innerHeight;
+        const margin = 500; // overscan
+
+        // find visible indices
+        let start = 0;
+        while (start < columnData.length && (offsets.offsets[start] + getItemHeight(columnData[start].id)) < (scrollY - margin)) start++;
+        let end = start;
+        while (end < columnData.length && offsets.offsets[end] < (scrollY + vh + margin)) end++;
+        start = Math.max(0, start - 3);
+        end = Math.min(columnData.length - 1, end + 3);
+        setRange({ start, end });
+      };
+
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      return () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      };
+    }, [columnData, offsets]);
+
+    return (
+      <div className="relative">
+        <div style={{ height: offsets.total, position: 'relative' }}>
+          {columnData.slice(range.start, range.end + 1).map((item, idx) => {
+            const i = range.start + idx;
+            const top = offsets.offsets[i];
+            return (
+              <div key={item.id} style={{ position: 'absolute', left: 0, right: 0, top }}>
+                <MeasuredItem
+                  item={item}
+                  onMediaClick={handleMediaClick}
+                  onHeightChange={(id, h) => {
+                    registerHeight(id, h);
+                  }}
+                  isForcedVisible={expandedSet.has(item.id)}
+                  estimateHeight={getItemHeight(item.id)}
+                  onCollapseChange={handleCollapseChange}
+                />
+              </div>
+            );
+          })}
+
+          {/* Sentinel element at the end of each column */}
+          {hasNext && (
+            <div ref={setSentinelRef(columnIndex)} className="h-px w-full" style={{ position: 'absolute', bottom: 0 }} />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -287,12 +423,20 @@ export const FeedItemViewer: FC<{
               >
                 {items.map((item, idx) => (
                   <div key={item.id} className="mb-4" style={{ breakInside: 'avoid' }}>
-                    <FeedItemRenderer item={item} onMediaClick={handleMediaClick} />
+                    <MeasuredItem
+                      item={item}
+                      onMediaClick={handleMediaClick}
+                      onHeightChange={registerHeight}
+                      isForcedVisible={expandedSet.has(item.id)}
+                      estimateHeight={getItemHeight(item.id)}
+                      onCollapseChange={handleCollapseChange}
+                    />
                     {/* If this index matches one of the per-column sentinel indexes, render a sentinel
                         that will be placed near the bottom of a column by the browser's column layout. */}
                     {hasNext && columnSentinelIndexes.includes(idx) && (
                       <div
                         key={`sentinel-${idx}`}
+                        data-sentinel-index={columnSentinelIndexes.indexOf(idx)}
                         ref={setSentinelRef(columnSentinelIndexes.indexOf(idx))}
                         className="h-px w-full"
                         style={{ display: 'block', breakInside: 'avoid' }}
@@ -310,20 +454,12 @@ export const FeedItemViewer: FC<{
               columns === 3 && "grid-cols-3"
             )}>
               {columnItems.map((columnData, columnIndex) => (
-                <div key={columnIndex} className="space-y-4">
-                  {columnData.map((item) => (
-                    <MeasuredItem
-                      key={item.id}
-                      item={item}
-                      onMediaClick={handleMediaClick}
-                      onHeightChange={registerHeight}
-                    />
-                  ))}
-                  {/* Sentinel element at the end of each column */}
-                  {hasNext && (
-                    <div ref={setSentinelRef(columnIndex)} className="h-px w-full" />
-                  )}
-                </div>
+                // ColumnVirtual handles virtualization for this column
+                <ColumnVirtual
+                  key={columnIndex}
+                  columnIndex={columnIndex}
+                  columnData={columnData}
+                />
               ))}
             </div>
           )

@@ -32,6 +32,10 @@ def remove_feed_schedule(sender, instance, **kwargs):
     logger.info(f"RSSFeed {instance.title} deleted.")
 
     # 해당 피드의 스케줄 제거
+    # 제목이 바뀌어 있을 수 있으니 args (feed.pk) 기준으로 삭제하고, 이름 기준으로도 한 번 더 시도
+    import json
+
+    PeriodicTask.objects.filter(args=json.dumps([instance.pk])).delete()
     PeriodicTask.objects.filter(name=f"Update RSS feed: {instance.title}").delete()
 
 

@@ -54,7 +54,7 @@ def login(request, data: LoginRequest):
 
     payload = {
         "user_id": user.pk,
-        "exp": timezone.now() + timedelta(hours=1),
+        "exp": timezone.now() + timedelta(days=365),
         "iat": timezone.now(),
     }
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
@@ -86,7 +86,7 @@ def signup(request, data: SignupRequest):
 
     payload = {
         "user_id": user.pk,
-        "exp": timezone.now() + timedelta(hours=1),
+        "exp": timezone.now() + timedelta(days=365),
         "iat": timezone.now(),
     }
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")

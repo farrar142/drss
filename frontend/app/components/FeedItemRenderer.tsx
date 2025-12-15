@@ -204,8 +204,9 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
 
 export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   item: RSSItem,
-  onMediaClick: (url: string, type: 'image' | 'video') => void
-}>(({ item, onMediaClick }, ref) => {
+  onMediaClick: (url: string, type: 'image' | 'video') => void,
+  onCollapseChange?: (id: number, collapsed: boolean) => void
+}>(({ item, onMediaClick, onCollapseChange }, ref) => {
   const { viewMode } = useRSSStore()
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
@@ -239,7 +240,11 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
         "glass-card p-4 cursor-pointer",
         viewMode === 'board' ? 'mb-3' : ''
       )}
-      onClick={() => setCollapsed(!collapsed)}
+      onClick={() => {
+        const newCollapsed = !collapsed;
+        setCollapsed(newCollapsed);
+        onCollapseChange && onCollapseChange(item.id, newCollapsed);
+      }}
     >
       {/* Header with actions and title */}
       <div className="flex justify-between items-start gap-4">
