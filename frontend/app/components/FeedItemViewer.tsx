@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { RSSItem } from "../types/rss";
@@ -510,12 +510,12 @@ export const FeedItemViewer: FC<{
                     title="처음으로"
                     aria-label="first"
                     className={cn(
-                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      "p-2 rounded bg-white/10 hover:bg-white/20",
                       (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
                     )}
                     aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
                   >
-                    ⏮️
+                    <SkipBack className="w-4 h-4" />
                     <span className="sr-only">처음으로</span>
                   </button>
                   <button
@@ -523,12 +523,12 @@ export const FeedItemViewer: FC<{
                     title="이전"
                     aria-label="previous"
                     className={cn(
-                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      "p-2 rounded bg-white/10 hover:bg-white/20",
                       (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
                     )}
                     aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
                   >
-                    ◀️
+                    <ChevronLeft className="w-4 h-4" />
                     <span className="sr-only">이전</span>
                   </button>
                   <div className="text-xs text-white/90 bg-black/40 px-3 py-1 rounded">{currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaListRef.current.length}` : ''}</div>
@@ -537,12 +537,12 @@ export const FeedItemViewer: FC<{
                     title="다음"
                     aria-label="next"
                     className={cn(
-                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      "p-2 rounded bg-white/10 hover:bg-white/20",
                       (currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1) && "opacity-40 pointer-events-none"
                     )}
                     aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1}
                   >
-                    ▶️
+                    <ChevronRight className="w-4 h-4" />
                     <span className="sr-only">다음</span>
                   </button>
                   <button
@@ -550,12 +550,12 @@ export const FeedItemViewer: FC<{
                     title="마지막으로"
                     aria-label="last"
                     className={cn(
-                      "px-2 py-1 rounded bg-white/10 hover:bg-white/20",
+                      "p-2 rounded bg-white/10 hover:bg-white/20",
                       (currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1) && "opacity-40 pointer-events-none"
                     )}
                     aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaListRef.current.length - 1}
                   >
-                    ⏭️
+                    <SkipForward className="w-4 h-4" />
                     <span className="sr-only">마지막으로</span>
                   </button>
                 </div>

@@ -1,7 +1,7 @@
-import React, { FC, JSX, useEffect, useRef, useState } from "react";
+import React, { ComponentType, FC, JSX, useEffect, useRef, useState } from "react";
 import FeedItemRenderer from "./FeedItemRenderer";
 
-type MeasuredItemRenderer<T extends { id: number }> = FC<{
+type MeasuredItemRenderer<T extends { id: number }> = ComponentType<{
   item: T;
   onMediaClick: (src: string, type: 'image' | 'video', itemId?: number) => void;
   onCollapseChange?: (id: number, collapsed: boolean) => void;
