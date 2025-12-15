@@ -238,7 +238,7 @@ export const CategoryItem: FC<{
               ))}
             </div>
 
-            <Button variant="outline" size="sm" className="w-full mt-2 gap-2 text-muted-foreground hover:text-foreground" onClick={() => setAddFeedOpen(true)}>
+            <Button variant="ghost" size="sm" className="w-full mt-2 gap-2 text-muted-foreground hover:text-foreground border border-sidebar-border" onClick={() => setAddFeedOpen(true)}>
               <Plus className="w-4 h-4" /> RSS 피드 추가
             </Button>
           </div>

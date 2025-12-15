@@ -173,8 +173,10 @@ export function applyThemeColors(colors: ThemeColors) {
   root.style.setProperty('--sidebar-accent', `${primary.h} ${primary.s}% ${sidebarAccentL}%`);
   root.style.setProperty('--sidebar-accent-foreground', sidebarAccentL > 50 ? '0 0% 0%' : '0 0% 100%');
 
-  // Sidebar border and ring
-  root.style.setProperty('--sidebar-border', `${primary.h} ${Math.min(primary.s, 20)}% ${Math.min(primary.l + 60, 97)}%`);
+  // Sidebar border and ring - adjust based on dark/light mode
+  const isDark = root.classList.contains('dark');
+  const sidebarBorderL = isDark ? Math.max(primary.l - 30, 8) : Math.min(primary.l + 60, 97);
+  root.style.setProperty('--sidebar-border', `${primary.h} ${Math.min(primary.s, 20)}% ${sidebarBorderL}%`);
   root.style.setProperty('--sidebar-ring', `${primary.h} ${primary.s}% ${primary.l}%`);
 
   // Provide alpha variants for convenience (used by utility classes like /50)
