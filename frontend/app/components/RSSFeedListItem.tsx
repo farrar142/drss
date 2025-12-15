@@ -109,7 +109,8 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
           className={cn(
             "flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md",
             "hover:bg-sidebar-accent/50 transition-colors",
-            "text-left"
+            "text-left",
+            "min-w-0" // allow child truncation to work inside flex
           )}
         >
           {/* Feed Icon */}
@@ -124,7 +125,7 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
           )}
 
           {/* Feed Title */}
-          <span className="text-xs text-sidebar-foreground truncate flex-1">
+          <span title={feed.title} className="text-xs text-sidebar-foreground truncate flex-1 min-w-0">
             {feed.title}
           </span>
 
@@ -143,7 +144,8 @@ export const RSSFeedListItem: React.FC<RSSFeedListItemProps> = ({ feed, category
             <button className={cn(
               "p-1 rounded opacity-0 group-hover:opacity-100",
               "hover:bg-sidebar-accent transition-all",
-              "focus:opacity-100"
+              "focus:opacity-100",
+              "shrink-0 ml-2" // prevent shrinking and add a little separation
             )}>
               <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>

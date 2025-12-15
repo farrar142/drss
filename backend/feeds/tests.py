@@ -668,23 +668,29 @@ class FeedScheduleTest(TestCase):
             title="Blocked Feed",
         )
 
-        blocked_resp = self._make_response(status=503, text='Welcome to RSSHub! Too many requests')
-        root_favicon = self._make_response(status=200, headers={"content-type": "image/png"})
+        blocked_resp = self._make_response(
+            status=503, text="Welcome to RSSHub! Too many requests"
+        )
+        root_favicon = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
 
         def fake_head(session_self, url, timeout=5, allow_redirects=True):
             # root would be an image if we tried, but we expect not to try.
             return root_favicon
 
         def fake_get(session_self, url, timeout=8, allow_redirects=True):
-            if url.startswith('http://feeds.example.com/blocked'):
+            if url.startswith("http://feeds.example.com/blocked"):
                 return blocked_resp
             return self._make_response(status=404)
 
         import importlib
+
         mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
         mod.requests = sys.modules["requests"]
 
         from unittest.mock import patch
+
         with patch.object(mod.requests.Session, "head", fake_head), patch.object(
             mod.requests.Session, "get", fake_get
         ):
@@ -724,40 +730,55 @@ class FeedScheduleTest(TestCase):
             </rss>"""
 
         # channel root favicon returns 200 but as HTML (not image), channel page contains <link rel=icon href="/assets/favicon.png">
-        resp_root_html = self._make_response(status=200, headers={"content-type": "text/html"})
-        resp_page_html = self._make_response(status=200, text='<html><head><link rel="icon" href="/assets/favicon.png"></head></html>', url='https://m.ruliweb.com/community/board/300143')
-        resp_ok_img = self._make_response(status=200, headers={"content-type": "image/png"})
-        resp_rss = self._make_response(status=200, text=rss_xml, url='http://feeds.example.com/rss2')
+        resp_root_html = self._make_response(
+            status=200, headers={"content-type": "text/html"}
+        )
+        resp_page_html = self._make_response(
+            status=200,
+            text='<html><head><link rel="icon" href="/assets/favicon.png"></head></html>',
+            url="https://m.ruliweb.com/community/board/300143",
+        )
+        resp_ok_img = self._make_response(
+            status=200, headers={"content-type": "image/png"}
+        )
+        resp_rss = self._make_response(
+            status=200, text=rss_xml, url="http://feeds.example.com/rss2"
+        )
 
-        call_count = {'head':0}
+        call_count = {"head": 0}
+
         def fake_head(session_self, url, timeout=5, allow_redirects=True):
-            call_count['head'] += 1
-            if url.startswith('https://m.ruliweb.com') and url.endswith('/favicon.ico'):
+            call_count["head"] += 1
+            if url.startswith("https://m.ruliweb.com") and url.endswith("/favicon.ico"):
                 # first head returns HTML (non-image) to simulate root not being an image
-                if call_count['head'] == 1:
+                if call_count["head"] == 1:
                     return resp_root_html
                 # subsequent head to assets/favicon.png should return image
-                if url.endswith('/assets/favicon.png'):
+                if url.endswith("/assets/favicon.png"):
                     return resp_ok_img
                 return resp_root_html
-            if url.startswith('https://m.ruliweb.com') and url.endswith('/assets/favicon.png'):
+            if url.startswith("https://m.ruliweb.com") and url.endswith(
+                "/assets/favicon.png"
+            ):
                 return resp_ok_img
             return self._make_response(status=404)
 
         def fake_get(session_self, url, timeout=8, allow_redirects=True):
-            if url.startswith('http://feeds.example.com/rss2'):
+            if url.startswith("http://feeds.example.com/rss2"):
                 return resp_rss
-            if url.startswith('https://m.ruliweb.com/community/board/300143'):
+            if url.startswith("https://m.ruliweb.com/community/board/300143"):
                 return resp_page_html
-            if url.startswith('https://m.ruliweb.com/assets/favicon.png'):
+            if url.startswith("https://m.ruliweb.com/assets/favicon.png"):
                 return resp_ok_img
             return self._make_response(status=404)
 
         import importlib
+
         mod = importlib.import_module("feeds.management.commands.update_feed_favicons")
         mod.requests = sys.modules["requests"]
 
         from unittest.mock import patch
+
         with patch.object(mod.requests.Session, "head", fake_head), patch.object(
             mod.requests.Session, "get", fake_get
         ):

@@ -188,7 +188,11 @@ class Command(BaseCommand):
                     # Detect upstream blocking (e.g., RSSHub or 429/503) and skip aggressive fallbacks
                     if resp is not None and resp.status_code in (429, 503):
                         body = (resp.text or "").lower()
-                        if "rsshub" in body or "too many requests" in body or resp.status_code in (429, 503):
+                        if (
+                            "rsshub" in body
+                            or "too many requests" in body
+                            or resp.status_code in (429, 503)
+                        ):
                             self.stdout.write(
                                 f"Blocked or rate-limited fetching feed {feed.pk} (status {resp.status_code}); skipping and will not fall back to root favicon"
                             )
@@ -215,25 +219,42 @@ class Command(BaseCommand):
                                 # Also inspect 'links' list (Atom or feedparser normalized structure)
                                 if not channel_link and pf.feed.get("links"):
                                     for l in pf.feed.get("links", []):
-                                        href = l.get("href") if isinstance(l, dict) else None
-                                        rel = l.get("rel") if isinstance(l, dict) else None
+                                        href = (
+                                            l.get("href")
+                                            if isinstance(l, dict)
+                                            else None
+                                        )
+                                        rel = (
+                                            l.get("rel")
+                                            if isinstance(l, dict)
+                                            else None
+                                        )
                                         if href and rel == "alternate":
                                             channel_link = href
                                             break
                                     if not channel_link and pf.feed.get("links"):
                                         # fallback to first link with href
-                                        first = next((l.get("href") for l in pf.feed.get("links") if isinstance(l, dict) and l.get("href")), None)
+                                        first = next(
+                                            (
+                                                l.get("href")
+                                                for l in pf.feed.get("links")
+                                                if isinstance(l, dict) and l.get("href")
+                                            ),
+                                            None,
+                                        )
                                         if first:
                                             channel_link = first
                                 # debug output
                                 if not channel_link:
-                                    self.stdout.write(f"feedparser.feed keys: {list(pf.feed.keys())}")
+                                    self.stdout.write(
+                                        f"feedparser.feed keys: {list(pf.feed.keys())}"
+                                    )
                             else:
                                 channel_link = None
                     except Exception:
                         channel_link = None
 
-                    # XML fallback for channel link
+                        # XML fallback for channel link
                         if not channel_link and resp.text:
                             try:
                                 import xml.etree.ElementTree as ET
@@ -248,13 +269,18 @@ class Command(BaseCommand):
                                     # Atom-style: <link href="..." rel="alternate" /> under feed
                                     # search for any link with href, prefer rel='alternate'
                                     candidates = []
-                                    for link in root.findall('.//{*}link') + root.findall('.//link'):
-                                        href = link.get('href')
+                                    for link in root.findall(
+                                        ".//{*}link"
+                                    ) + root.findall(".//link"):
+                                        href = link.get("href")
                                         if href:
-                                            rel = link.get('rel')
-                                            candidates.append((rel or '', href))
+                                            rel = link.get("rel")
+                                            candidates.append((rel or "", href))
                                     # prefer rel='alternate'
-                                    alt = next((h for r, h in candidates if r == 'alternate'), None)
+                                    alt = next(
+                                        (h for r, h in candidates if r == "alternate"),
+                                        None,
+                                    )
                                     if alt:
                                         channel_link = alt
                                     elif candidates:
@@ -263,7 +289,9 @@ class Command(BaseCommand):
                                 channel_link = None
 
                     if channel_link:
-                        self.stdout.write(f"Channel link found for feed {feed.pk}: {channel_link}")
+                        self.stdout.write(
+                            f"Channel link found for feed {feed.pk}: {channel_link}"
+                        )
                         try:
                             ch_parsed = urlparse(channel_link)
                             channel_root = f"{ch_parsed.scheme or parsed.scheme}://{ch_parsed.netloc}"
@@ -275,7 +303,11 @@ class Command(BaseCommand):
                             if handle_rate_limit(rch):
                                 # refreshed server asked to retry, try once more
                                 wait_for_host(channel_root_favicon)
-                                rch = session.head(channel_root_favicon, timeout=5, allow_redirects=True)
+                                rch = session.head(
+                                    channel_root_favicon,
+                                    timeout=5,
+                                    allow_redirects=True,
+                                )
                             if _is_image_response(rch):
                                 feed.favicon_url = channel_root_favicon
                                 feed.save()
@@ -288,20 +320,36 @@ class Command(BaseCommand):
                             if rch.status_code == 200 and not _is_image_response(rch):
                                 try:
                                     wait_for_host(channel_link)
-                                    rpage = session.get(channel_link, timeout=6, allow_redirects=True)
+                                    rpage = session.get(
+                                        channel_link, timeout=6, allow_redirects=True
+                                    )
                                     if handle_rate_limit(rpage):
                                         wait_for_host(channel_link)
-                                        rpage = session.get(channel_link, timeout=6, allow_redirects=True)
+                                        rpage = session.get(
+                                            channel_link,
+                                            timeout=6,
+                                            allow_redirects=True,
+                                        )
                                     if rpage and rpage.status_code == 200:
-                                        page_cand = find_favicon_from_html(rpage.url, rpage.text)
+                                        page_cand = find_favicon_from_html(
+                                            rpage.url, rpage.text
+                                        )
                                         if page_cand:
                                             # validate candidate
                                             try:
                                                 wait_for_host(page_cand)
-                                                vr = session.head(page_cand, timeout=5, allow_redirects=True)
+                                                vr = session.head(
+                                                    page_cand,
+                                                    timeout=5,
+                                                    allow_redirects=True,
+                                                )
                                                 if handle_rate_limit(vr):
                                                     wait_for_host(page_cand)
-                                                    vr = session.head(page_cand, timeout=5, allow_redirects=True)
+                                                    vr = session.head(
+                                                        page_cand,
+                                                        timeout=5,
+                                                        allow_redirects=True,
+                                                    )
                                                 if _is_image_response(vr):
                                                     feed.favicon_url = page_cand
                                                     feed.save()

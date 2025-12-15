@@ -71,7 +71,7 @@ const RSSImage: FC<{
       onLoad={handleLoad}
       onError={() => setError(true)}
       loading="lazy"
-      unoptimized={src.startsWith('data:')} // Data URLs should not be optimized
+      unoptimized={true} // Data URLs should not be optimized
     />
   );
 };
