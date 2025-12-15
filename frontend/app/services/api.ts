@@ -134,6 +134,22 @@ export interface ProtectedResponse {
   message: string;
 }
 
+export interface UrlResponse {
+  url: string;
+}
+
+export interface ErrorResponse {
+  error: string;
+}
+
+export interface ScheduledResponse {
+  status: string;
+}
+
+export interface UrlParamSchema {
+  url: string;
+}
+
 export type FeedsRoutersItemListAllItemsParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
@@ -159,6 +175,10 @@ search?: string;
 limit?: number;
 cursor?: string | null;
 direction?: string;
+};
+
+export type FeedsRoutersImageCacheImageGetParams = {
+url: string;
 };
 
 /**
@@ -458,6 +478,35 @@ export const usersRouterMe = (
       );
     }
   
+/**
+ * GET: return cached image URL if available; do NOT schedule on GET.
+ * @summary Cache Image Get
+ */
+export const feedsRoutersImageCacheImageGet = (
+    params: FeedsRoutersImageCacheImageGetParams,
+ ) => {
+      return axiosInstance<UrlResponse>(
+      {url: `/api/images/`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * POST: schedule caching if not present; return 200 with url if already cached, or 202 if scheduled.
+ * @summary Cache Image Post
+ */
+export const feedsRoutersImageCacheImagePost = (
+    urlParamSchema: UrlParamSchema,
+ ) => {
+      return axiosInstance<UrlResponse | ScheduledResponse>(
+      {url: `/api/images/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: urlParamSchema
+    },
+      );
+    }
+  
 export type FeedsRoutersFeedValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedValidateFeed>>>
 export type FeedsRoutersFeedListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedListFeeds>>>
 export type FeedsRoutersFeedCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedCreateFeed>>>
@@ -481,3 +530,5 @@ export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof users
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
 export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
+export type FeedsRoutersImageCacheImageGetResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersImageCacheImageGet>>>
+export type FeedsRoutersImageCacheImagePostResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersImageCacheImagePost>>>

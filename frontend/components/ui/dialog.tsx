@@ -33,7 +33,8 @@ const DialogContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "relative w-full max-w-lg bg-card border border-border rounded-lg shadow-lg p-6 animate-fade-in",
+      // Make dialog wider by default and provide responsive max widths
+      "relative w-full min-w-[420px] max-w-lg sm:max-w-xl md:max-w-2xl bg-card border border-border rounded-lg shadow-lg p-6 animate-fade-in",
       className
     )}
     {...props}

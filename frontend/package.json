@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "get-api": "curl -o ./openapi.json http://localhost:8000/api/openapi.json",
-    "generate-api": "orval"
+    "generate-api": "orval",
+    "api": "npm run get-api && npm run generate-api"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",

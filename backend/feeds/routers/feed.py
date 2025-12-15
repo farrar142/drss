@@ -1,6 +1,7 @@
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db import models
+from pydantic import HttpUrl
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from base.authentications import JWTAuth
 from feeds.utils import fetch_feed_data, extract_favicon_url
@@ -8,6 +9,7 @@ from feeds.utils import fetch_feed_data, extract_favicon_url
 from ..schemas import *
 
 router = Router()
+
 
 
 @router.post("/validate", response=FeedValidationResponse, auth=JWTAuth())

@@ -6,6 +6,68 @@ from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.utils import timezone as django_timezone
 from feeds.utils import fetch_feed_data
+import hashlib
+import os
+from django.conf import settings
+
+
+@shared_task
+def cache_image_task(original_url):
+    """Download an image and store it under MEDIA_ROOT/cached_images/ with a hash-based filename."""
+    CachedImage = apps.get_model("feeds", "CachedImage")
+
+    # check existing
+    try:
+        ci = CachedImage.objects.filter(original_url=original_url).first()
+        if ci:
+            return ci.relative_path
+    except Exception:
+        pass
+
+    try:
+        resp = requests.get(original_url, stream=True, timeout=10)
+        if resp.status_code != 200:
+            return None
+
+        content_type = resp.headers.get("content-type", "").split(";")[0]
+
+        # determine extension
+        ext_map = {
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp",
+            "image/x-icon": "ico",
+            "image/vnd.microsoft.icon": "ico",
+            "image/svg+xml": "svg",
+            "image/gif": "gif",
+        }
+        ext = ext_map.get(content_type)
+        if not ext:
+            # fallback to url path extension
+            path_ext = os.path.splitext(original_url)[1].lstrip(".")
+            ext = path_ext or "bin"
+
+        key = hashlib.sha256(original_url.encode("utf-8")).hexdigest()[:32]
+        filename = f"{key}.{ext}"
+        rel_dir = os.path.join("cached_images")
+        full_dir = os.path.join(settings.MEDIA_ROOT, rel_dir)
+        os.makedirs(full_dir, exist_ok=True)
+        full_path = os.path.join(full_dir, filename)
+
+        # write file
+        with open(full_path, "wb") as fh:
+            for chunk in resp.iter_content(8192):
+                if chunk:
+                    fh.write(chunk)
+
+        # create record
+        rel_path = os.path.join(rel_dir, filename).replace("\\", "/")
+        ci = CachedImage.objects.create(
+            original_url=original_url, relative_path=rel_path, content_type=content_type
+        )
+        return rel_path
+    except Exception:
+        return None
 
 
 @shared_task

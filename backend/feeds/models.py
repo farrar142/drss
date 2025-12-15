@@ -51,3 +51,18 @@ class RSSItem(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class CachedImage(models.Model):
+    original_url = models.URLField(unique=True)
+    relative_path = models.CharField(max_length=500)  # relative to MEDIA_ROOT
+    content_type = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def url(self):
+        from django.conf import settings
+
+        return f"{settings.MEDIA_URL}{self.relative_path}"
+
+    def __str__(self):
+        return self.original_url

@@ -4,17 +4,88 @@ import { CheckCircle, Heart } from "lucide-react";
 import parse from 'html-react-parser';
 import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
+import { feedsRoutersImageCacheImagePost, feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
+import { axiosInstance } from "../utils/axiosInstance";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
-import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 
-// Custom Image component for RSS content
 const RSSImage: FC<{
   src: string;
   alt?: string;
   onClick: () => void;
 }> = ({ src, alt = '', onClick }) => {
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [polling, setPolling] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    let retries = 0;
+    let intervalId: number | null = null;
+
+    const clear = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const tryGetCached = async () => {
+      try {
+        const res = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string } | null;
+        if (!mounted) return;
+        if (res && res.url) {
+          setCurrentSrc(res.url);
+          setPolling(false);
+          return;
+        }
+
+        // Poll via GET until a cached URL appears or retries exhausted
+        setPolling(true);
+        intervalId = window.setInterval(async () => {
+          try {
+            retries += 1;
+            if (!mounted) {
+              clear();
+              setPolling(false);
+              return;
+            }
+            if (retries > 12) {
+              clear();
+              setPolling(false);
+              return;
+            }
+            const p = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string } | null;
+            if (p && p.url) {
+              setCurrentSrc(p.url);
+              clear();
+              setPolling(false);
+            }
+          } catch (e) {
+            // ignore polling errors and continue
+          }
+        }, 1500);
+      } catch (err) {
+        // ignore; keep using original src
+        setPolling(false);
+      }
+    };
+
+    // Only attempt for absolute http(s) urls
+    try {
+      const u = new URL(src);
+      if (u.protocol.startsWith('http')) {
+        tryGetCached();
+      }
+    } catch (e) {
+      // not a url
+    }
+
+    return () => {
+      mounted = false;
+      clear();
+    };
+  }, [src]);
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -51,7 +122,7 @@ const RSSImage: FC<{
 
   return (
     <Image
-      src={src}
+      src={currentSrc}
       alt={alt}
       width={naturalSize?.width || 800}
       height={naturalSize?.height || 600}
@@ -71,7 +142,20 @@ const RSSImage: FC<{
       onLoad={handleLoad}
       onError={() => setError(true)}
       loading="lazy"
-      unoptimized={true} // Data URLs should not be optimized
+      // For certain hosts that actively block server-side fetching (or cause connection resets),
+      // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
+      // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
+      unoptimized={currentSrc.startsWith('data:') || (() => {
+        try {
+          const url = new URL(currentSrc);
+          const host = url.hostname.toLowerCase();
+          const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
+          const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : ['cosplaytele.com'];
+          return unoptimizedHosts.includes(host);
+        } catch (e) {
+          return false;
+        }
+      })()}
     />
   );
 };

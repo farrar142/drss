@@ -131,7 +131,7 @@ class Command(BaseCommand):
         failed = 0
 
         session = requests.Session()
-        session.headers.update({"User-Agent": "drss-favicon-fetcher/1.0"})
+        session.headers.update({"User-Agent": "drss-favicon-fetcher/1.1"})
 
         throttle = options.get("throttle") or 5
         last_request_time = {}

@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from ninja.testing import TestClient
 from feeds.routers.item import router as item_router
 from feeds.routers.feed import router as feed_router
+from feeds.routers.image import router as image_router
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from django.utils import timezone
 import jwt
@@ -271,6 +272,34 @@ class FeedAPITest(TestCase):
         feed = RSSFeed.objects.get(url="http://example.com/rss")
         self.assertEqual(feed.title, "Unknown Feed")  # RSS 파싱 실패 시 기본값
         self.assertEqual(feed.user, self.user)
+
+    def test_cache_image_get_endpoint_allows_get_and_schedules(self):
+        # GET should return 404 when not cached; POST schedules caching and returns 202; GET returns 200 when cached
+        client = TestClient(image_router)
+
+        # GET not found (router mounted at / for image_router)
+        response = client.get("/?url=http://example.com/image.jpg")
+        self.assertEqual(response.status_code, 404)
+
+        # POST schedules caching
+        post_resp = client.post("/", json={"url": "http://example.com/image.jpg"})
+        self.assertEqual(post_resp.status_code, 202)
+        self.assertEqual(post_resp.json().get("status"), "scheduled")
+        self.assertIn("Location", post_resp.headers)
+
+        # Create a cached image and then GET should return the url
+        from feeds.models import CachedImage
+
+        ci = CachedImage.objects.create(
+            original_url="http://example.com/image.jpg",
+            relative_path="cached_images/image.jpg",
+            content_type="image/jpeg",
+        )
+
+        get_cached = client.get("/?url=http://example.com/image.jpg")
+        self.assertEqual(get_cached.status_code, 200)
+        data = get_cached.json()
+        self.assertIn("url", data)
 
 
 class FeedScheduleTest(TestCase):
@@ -645,7 +674,8 @@ class FeedScheduleTest(TestCase):
             call_command("update_feed_favicons", "--feed-id", str(feed.pk))
 
         feed.refresh_from_db()
-        self.assertEqual(feed.favicon_url, "https://m.ruliweb.com/favicon.ico")
+        # channel page <link rel=icon> should be used when root is not an image
+        self.assertEqual(feed.favicon_url, "https://m.ruliweb.com/favicon.png")
 
     def test_feed_blocked_by_rsshub_skips_and_does_not_use_root(self):
         from django.core.management import call_command
