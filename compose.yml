@@ -41,9 +41,6 @@ services:
   celery-worker:
     <<: *backend
     entrypoint: celery -A base worker --loglevel=info
-  celery-worker2:
-    <<: *backend
-    entrypoint: celery -A base worker --loglevel=info
   celery-beat:
     <<: *backend
     entrypoint: celery -A base beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler

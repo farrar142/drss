@@ -88,11 +88,9 @@ def list_all_items(
     direction: str = "before",  # "before" for older items, "after" for newer items
 ):
     # 메인 화면: Category.visible=False이거나 Feed.visible=False인 항목 제외
-    items = (RSSItem.objects.filter(
-                feed__user=request.auth)
-            .filter(
-                models.Q(feed__visible=True) and models.Q(feed__category__visible=True)
-            ))
+    items = RSSItem.objects.filter(feed__user=request.auth).filter(
+        feed__visible=True, feed__category__visible=True
+    )
 
     if is_read is not None:
         items = items.filter(is_read=is_read)

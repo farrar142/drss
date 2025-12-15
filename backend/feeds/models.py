@@ -14,8 +14,8 @@ class RSSCategory(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['user', 'visible']),
+            models.Index(fields=["user"]),
+            models.Index(fields=["user", "visible"]),
         ]
 
     def __str__(self):
@@ -39,10 +39,10 @@ class RSSFeed(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['category']),
-            models.Index(fields=['user', 'visible']),
-            models.Index(fields=['category', 'visible']),
+            models.Index(fields=["user"]),
+            models.Index(fields=["category"]),
+            models.Index(fields=["user", "visible"]),
+            models.Index(fields=["category", "visible"]),
         ]
 
     def __str__(self):
@@ -64,11 +64,11 @@ class RSSItem(models.Model):
     class Meta:
         ordering = ["-published_at"]
         indexes = [
-            models.Index(fields=['feed']),
-            models.Index(fields=['feed', 'is_read']),
-            models.Index(fields=['feed', 'is_favorite']),
-            models.Index(fields=['published_at']),
-            models.Index(fields=['feed', '-published_at']),
+            models.Index(fields=["feed"]),
+            models.Index(fields=["feed", "is_read"]),
+            models.Index(fields=["feed", "is_favorite"]),
+            models.Index(fields=["published_at"]),
+            models.Index(fields=["feed", "-published_at"]),
         ]
 
     def __str__(self):
@@ -85,19 +85,22 @@ class CachedImage(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['original_url']),
+            models.Index(fields=["original_url"]),
         ]
 
     def url(self):
-        # Use Django's storage backend to generate a URL. This will return
-        # an S3 URL when DEFAULT_FILE_STORAGE is configured for S3, or a
-        # MEDIA_URL-based path when using the default FileSystemStorage.
-        from django.core.files.storage import default_storage
+        # Dynamically instantiate the configured storage backend and use
+        # it to generate a URL. This ensures MinIO-backed storage is used
+        # even if a FileSystemStorage was previously initialized.
+        from django.conf import settings as django_settings
+        from django.utils.module_loading import import_string
 
         try:
-            return default_storage.url(self.relative_path)
+            StorageClass = import_string(django_settings.DEFAULT_FILE_STORAGE)
+            storage = StorageClass()
+            return storage.url(self.relative_path)
         except Exception:
-            # Fallback in case storage backend doesn't support url()
+            # Fallback in case the storage backend fails
             from django.conf import settings
 
             return f"{settings.MEDIA_URL}{self.relative_path}"

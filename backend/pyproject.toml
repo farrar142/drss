@@ -22,4 +22,6 @@ dependencies = [
     "returns>=0.26.0",
     "cloudscraper>=1.2.71",
     "Pillow>=9.0.0",
+    "boto3>=1.28.0",
+    "django-storages>=1.13.2",
 ]

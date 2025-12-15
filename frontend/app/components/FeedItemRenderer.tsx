@@ -5,6 +5,7 @@ import parse from 'html-react-parser';
 import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersImageCacheImagePost, feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
+import { getCachedImageFromCache } from '@/lib/imageCache';
 import { axiosInstance } from "../utils/axiosInstance";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
@@ -15,83 +16,85 @@ const RSSImage: FC<{
   alt?: string;
   onClick: () => void;
 }> = ({ src, alt = '', onClick }) => {
-  const [currentSrc, setCurrentSrc] = useState(src);
-  const [polling, setPolling] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+  // Start loading only when element is visible (or when src is not an http(s) url)
+  useEffect(() => {
+    // If src is not an absolute http(s) url, load immediately
+    try {
+      const u = new URL(src);
+      if (!u.protocol.startsWith('http')) {
+        setIsVisible(true);
+        return;
+      }
+    } catch (e) {
+      // not a url - load immediately
+      setIsVisible(true);
+      return;
+    }
+
+    if (isVisible) return; // already visible
+
+    const el = wrapperRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          obs.disconnect();
+        }
+      });
+    }, { threshold: 0.01 });
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [src, isVisible]);
 
   useEffect(() => {
+    if (!isVisible) return;
     let mounted = true;
-    let retries = 0;
-    let intervalId: number | null = null;
 
-    const clear = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-    };
-
-    const tryGetCached = async () => {
+    const tryUseCacheOrSchedule = async () => {
       try {
-        const res = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string; width?: number; height?: number } | null;
-        if (!mounted) return;
-        if (res && res.url) {
-          setCurrentSrc(res.url);
-          if (typeof res.width === 'number' && typeof res.height === 'number') {
-            setNaturalSize({ width: res.width, height: res.height });
+        // Prefer quick in-memory cache check first (no polling)
+        const immediate = getCachedImageFromCache(src);
+        if (immediate && immediate.url) {
+          if (!mounted) return;
+          setCurrentSrc(immediate.url);
+          if (typeof immediate.width === 'number' && typeof immediate.height === 'number') {
+            setNaturalSize({ width: immediate.width, height: immediate.height });
           }
-          setPolling(false);
           return;
         }
 
-        // Poll via POST until a cached URL appears or retries exhausted
-        setPolling(true);
-        intervalId = window.setInterval(async () => {
-          try {
-            retries += 1;
-            if (!mounted) {
-              clear();
-              setPolling(false);
-              return;
-            }
-            if (retries > 12) {
-              clear();
-              setPolling(false);
-              return;
-            }
-            const p = (await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null)) as { url?: string; width?: number; height?: number } | null;
-            if (p && p.url) {
-              setCurrentSrc(p.url);
-              if (typeof p.width === 'number' && typeof p.height === 'number') {
-                setNaturalSize({ width: p.width, height: p.height });
-              }
-              clear();
-              setPolling(false);
-            }
-          } catch (e) {
-            // ignore polling errors and continue
+        // If no immediate cache, fire-and-forget a POST to schedule caching.
+        // If the POST returns a url immediately, use it, otherwise keep the original src.
+        const postRes = await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null) as any;
+        if (!mounted) return;
+        if (postRes && postRes.url) {
+          setCurrentSrc(postRes.url);
+          if (typeof postRes.width === 'number' && typeof postRes.height === 'number') {
+            setNaturalSize({ width: postRes.width, height: postRes.height });
           }
-        }, 1500);
-      } catch (err) {
-        // ignore; keep using original src
-        setPolling(false);
+          return;
+        }
+
+        // No cached URL; use original src
+        if (mounted) setCurrentSrc(src);
+      } catch (e) {
+        if (mounted) setCurrentSrc(src);
       }
     };
 
-    // Only attempt for absolute http(s) urls
-    try {
-      const u = new URL(src);
-      if (u.protocol.startsWith('http')) {
-        tryGetCached();
-      }
-    } catch (e) {
-      // not a url
-    }
-
-    return () => {
-      mounted = false;
-      clear();
-    };
-  }, [src]);
+    tryUseCacheOrSchedule();
+    return () => { mounted = false; };
+  }, [isVisible, src]);
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -127,8 +130,10 @@ const RSSImage: FC<{
   }
 
   return (
-    <Image
-      src={currentSrc}
+    <div ref={wrapperRef}>
+      {currentSrc ? (
+        <Image
+          src={currentSrc}
       alt={alt}
       width={naturalSize?.width || 800}
       height={naturalSize?.height || 600}
@@ -163,6 +168,28 @@ const RSSImage: FC<{
         }
       })()}
     />
+      ) : (
+        // Placeholder box to reserve layout before image becomes visible/loaded
+        <div
+          role="img"
+          aria-label={alt}
+          onClick={(e) => {
+            // clicking a placeholder should trigger loading and also propagate the click intent
+            e.preventDefault();
+            e.stopPropagation();
+            setIsVisible(true);
+            onClick();
+          }}
+          style={{
+            display: 'block',
+            width: '100%',
+            paddingTop: naturalSize ? `${(naturalSize.height / naturalSize.width) * 100}%` : '56.25%',
+            background: 'linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06))',
+            cursor: 'pointer'
+          }}
+        />
+      )}
+    </div>
   );
 };
 
