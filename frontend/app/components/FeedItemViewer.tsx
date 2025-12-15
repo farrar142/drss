@@ -58,6 +58,9 @@ export const FeedItemViewer: FC<{
   const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string; itemId?: number } | null>(null);
   const mediaListRef = useRef<Array<{ src: string; type: 'image' | 'video'; itemId: number }>>([]);
   const [currentMediaIndex, setCurrentMediaIndex] = useState<number | null>(null);
+  // Keep a ref in sync with currentMediaIndex so click handlers always read the latest value
+  const currentMediaIndexRef = useRef<number | null>(null);
+  useEffect(() => { currentMediaIndexRef.current = currentMediaIndex; }, [currentMediaIndex]);
 
   // Multiple sentinel refs for each column
   const sentinelRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -255,6 +258,23 @@ export const FeedItemViewer: FC<{
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [modalOpen, prevMedia, nextMedia]);
+
+  // When handling clicks vs double-clicks we debounce single-click actions so
+  // that a double-click won't cause two single-click navigations before the
+  // double-click handler runs and (optionally) closes the modal at boundaries.
+  const clickTimeoutRef = useRef<number | null>(null);
+  const CLICK_STATE_WINDOW = 400; // ms window to consider dblclick closing
+  const clickStateRef = useRef<{ startIndex: number | null; isLeft: boolean; time: number } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        window.clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
+      clickStateRef.current = null;
+    };
+  }, []);
 
 
   // Track which items are expanded so we always render them and avoid layout jumps
@@ -455,21 +475,8 @@ export const FeedItemViewer: FC<{
               "shadow-2xl"
             )}
             onClick={(e) => {
+              // Consume clicks on the media container so backdrop doesn't close the modal.
               e.stopPropagation();
-              // Only navigate when clicking the image itself and there's more than one media
-              if (!mediaListRef.current || mediaListRef.current.length <= 1) return;
-              try {
-                const img = e.currentTarget as HTMLImageElement;
-                const rect = img.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                if (clickX < rect.width / 2) {
-                  prevMedia();
-                } else {
-                  nextMedia();
-                }
-              } catch (err) {
-                // ignore
-              }
             }}
             onPointerDown={(e) => {
               (e.currentTarget as any)._startX = e.clientX;
@@ -496,6 +503,61 @@ export const FeedItemViewer: FC<{
                 src={modalMedia.src}
                 alt="Enlarged"
                 className="max-w-full max-h-full object-contain rounded-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const idx = currentMediaIndexRef.current;
+                  if (!mediaListRef.current || mediaListRef.current.length <= 1 || idx == null) return;
+
+                  try {
+                    const img = e.currentTarget as HTMLImageElement;
+                    const rect = img.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const isLeft = clickX < rect.width / 2;
+
+                    // Only record on FIRST click. If clickStateRef exists and is recent, this is
+                    // the second click of a double-click — don't overwrite startIndex.
+                    const now = Date.now();
+                    if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+                      clickStateRef.current = { startIndex: idx, isLeft, time: now };
+                    }
+                    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = window.setTimeout(() => {
+                      clickTimeoutRef.current = null;
+                      clickStateRef.current = null;
+                    }, CLICK_STATE_WINDOW) as unknown as number;
+                    // Navigate immediately.
+                    if (isLeft) prevMedia(); else nextMedia();
+                  } catch (err) {
+                    // ignore
+                  }
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  // Only close if the FIRST click of the double-click was at a boundary.
+                  // startIndex recorded the index BEFORE navigation happened.
+                  const s = clickStateRef.current;
+                  if (clickTimeoutRef.current) {
+                    window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = null;
+                  }
+                  clickStateRef.current = null;
+                  if (!mediaListRef.current || mediaListRef.current.length <= 1) return;
+                  if (!s) return; // no recorded first click
+                  try {
+                    const img = e.currentTarget as HTMLImageElement;
+                    const rect = img.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const isLeftDbl = clickX < rect.width / 2;
+                    // Close only if first click was at boundary AND same side
+                    if (isLeftDbl && s.isLeft && s.startIndex === 0) {
+                      closeModal();
+                    } else if (!isLeftDbl && !s.isLeft && s.startIndex === mediaListRef.current.length - 1) {
+                      closeModal();
+                    }
+                  } catch (err) {
+                    // ignore
+                  }
+                }}
               />
             ) : null}
 
@@ -506,7 +568,8 @@ export const FeedItemViewer: FC<{
               <>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
                   <button
-                    onClick={(e) => { e.stopPropagation(); showMediaAt(0); }}
+                    onClick={(e) => { e.stopPropagation(); const idx = currentMediaIndexRef.current; const now = Date.now(); if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) { clickStateRef.current = { startIndex: idx, isLeft: true, time: now }; } if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = window.setTimeout(() => { clickTimeoutRef.current = null; clickStateRef.current = null; }, CLICK_STATE_WINDOW) as unknown as number; showMediaAt(0); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); const s = clickStateRef.current; if (clickTimeoutRef.current) { window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = null; } clickStateRef.current = null; if (s && s.isLeft && s.startIndex === 0) closeModal(); }}
                     title="처음으로"
                     aria-label="first"
                     className={cn(
@@ -519,7 +582,8 @@ export const FeedItemViewer: FC<{
                     <span className="sr-only">처음으로</span>
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); prevMedia(); }}
+                    onClick={(e) => { e.stopPropagation(); const idx = currentMediaIndexRef.current; const now = Date.now(); if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) { clickStateRef.current = { startIndex: idx, isLeft: true, time: now }; } if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = window.setTimeout(() => { clickTimeoutRef.current = null; clickStateRef.current = null; }, CLICK_STATE_WINDOW) as unknown as number; prevMedia(); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); const s = clickStateRef.current; if (clickTimeoutRef.current) { window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = null; } clickStateRef.current = null; if (s && s.isLeft && s.startIndex === 0) closeModal(); }}
                     title="이전"
                     aria-label="previous"
                     className={cn(
@@ -533,7 +597,8 @@ export const FeedItemViewer: FC<{
                   </button>
                   <div className="text-xs text-white/90 bg-black/40 px-3 py-1 rounded">{currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaListRef.current.length}` : ''}</div>
                   <button
-                    onClick={(e) => { e.stopPropagation(); nextMedia(); }}
+                    onClick={(e) => { e.stopPropagation(); const idx = currentMediaIndexRef.current; const now = Date.now(); if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) { clickStateRef.current = { startIndex: idx, isLeft: false, time: now }; } if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = window.setTimeout(() => { clickTimeoutRef.current = null; clickStateRef.current = null; }, CLICK_STATE_WINDOW) as unknown as number; nextMedia(); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); const s = clickStateRef.current; if (clickTimeoutRef.current) { window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = null; } clickStateRef.current = null; if (s && !s.isLeft && s.startIndex === mediaListRef.current.length - 1) closeModal(); }}
                     title="다음"
                     aria-label="next"
                     className={cn(
@@ -546,7 +611,8 @@ export const FeedItemViewer: FC<{
                     <span className="sr-only">다음</span>
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); showMediaAt(mediaListRef.current.length - 1); }}
+                    onClick={(e) => { e.stopPropagation(); const idx = currentMediaIndexRef.current; const now = Date.now(); if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) { clickStateRef.current = { startIndex: idx, isLeft: false, time: now }; } if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = window.setTimeout(() => { clickTimeoutRef.current = null; clickStateRef.current = null; }, CLICK_STATE_WINDOW) as unknown as number; showMediaAt(mediaListRef.current.length - 1); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); const s = clickStateRef.current; if (clickTimeoutRef.current) { window.clearTimeout(clickTimeoutRef.current); clickTimeoutRef.current = null; } clickStateRef.current = null; if (s && !s.isLeft && s.startIndex === mediaListRef.current.length - 1) closeModal(); }}
                     title="마지막으로"
                     aria-label="last"
                     className={cn(
