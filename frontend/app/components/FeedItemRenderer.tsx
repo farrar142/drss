@@ -4,9 +4,7 @@ import { CheckCircle, Heart } from "lucide-react";
 import parse from 'html-react-parser';
 import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
-import { feedsRoutersImageCacheImagePost, feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
-import { getCachedImageFromCache, scheduleCachedImage } from '@/lib/imageCache';
-import { axiosInstance } from "../utils/axiosInstance";
+import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
@@ -62,30 +60,7 @@ const RSSImage: FC<{
 
     const tryUseCacheOrSchedule = async () => {
       try {
-        // Prefer quick in-memory cache check first (no polling)
-        const immediate = getCachedImageFromCache(src);
-        if (immediate && immediate.url) {
-          if (!mounted) return;
-          setCurrentSrc(immediate.url);
-          if (typeof immediate.width === 'number' && typeof immediate.height === 'number') {
-            setNaturalSize({ width: immediate.width, height: immediate.height });
-          }
-          return;
-        }
-
-        // If no immediate cache, fire-and-forget a POST to schedule caching.
-        // If the POST returns a url immediately, use it, otherwise keep the original src.
-        const postRes = await feedsRoutersImageCacheImagePost({ url: src }).catch(() => null) as any;
-        if (!mounted) return;
-        if (postRes && postRes.url) {
-          setCurrentSrc(postRes.url);
-          if (typeof postRes.width === 'number' && typeof postRes.height === 'number') {
-            setNaturalSize({ width: postRes.width, height: postRes.height });
-          }
-          return;
-        }
-
-        // No cached URL; use original src
+        // No server-side image caching: just use the original image URL
         if (mounted) setCurrentSrc(src);
       } catch (e) {
         if (mounted) setCurrentSrc(src);
@@ -137,40 +112,40 @@ const RSSImage: FC<{
       {currentSrc ? (
         <Image
           src={currentSrc}
-      alt={alt}
-      width={naturalSize?.width || 800}
-      height={naturalSize?.height || 600}
-      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-      style={{
-        width: '100%',
-        height: 'auto',
-        cursor: 'pointer',
-        opacity: loaded ? 1 : 0,
-        transition: 'opacity 0.2s'
-      }}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick();
-      }}
-      onLoad={handleLoad}
-      onError={() => setError(true)}
-      loading="lazy"
-      // For certain hosts that actively block server-side fetching (or cause connection resets),
-      // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
-      // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
-      unoptimized={currentSrc.startsWith('data:') || (() => {
-        try {
-          const url = new URL(currentSrc);
-          const host = url.hostname.toLowerCase();
-          const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
-          const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : ['cosplaytele.com'];
-          return unoptimizedHosts.includes(host);
-        } catch (e) {
-          return false;
-        }
-      })()}
-    />
+          alt={alt}
+          width={naturalSize?.width || 800}
+          height={naturalSize?.height || 600}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          style={{
+            width: '100%',
+            height: 'auto',
+            cursor: 'pointer',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.2s'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick();
+          }}
+          onLoad={handleLoad}
+          onError={() => setError(true)}
+          loading="lazy"
+          // For certain hosts that actively block server-side fetching (or cause connection resets),
+          // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
+          // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
+          unoptimized={currentSrc.startsWith('data:') || (() => {
+            try {
+              const url = new URL(currentSrc);
+              const host = url.hostname.toLowerCase();
+              const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
+              const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : ['cosplaytele.com'];
+              return unoptimizedHosts.includes(host);
+            } catch (e) {
+              return false;
+            }
+          })()}
+        />
       ) : (
         // Placeholder box to reserve layout before image becomes visible/loaded
         <div
@@ -350,7 +325,7 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
         while ((m = re.exec(item.description))) {
           if (m[1]) urls.push(m[1]);
         }
-        urls.forEach(u => scheduleCachedImage(u));
+        // No-op: server-side image caching was removed. Rely on browser cache.
       }
     } catch (e) {
       // ignore

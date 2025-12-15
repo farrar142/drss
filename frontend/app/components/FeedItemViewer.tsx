@@ -226,6 +226,8 @@ export const FeedItemViewer: FC<{
   // Use ref to always have access to latest callback
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
+  const onLoadNewRef = useRef(onLoadNew);
+  onLoadNewRef.current = onLoadNew;
 
   // Callback ref setter for sentinel elements
   const setSentinelRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
@@ -287,6 +289,44 @@ export const FeedItemViewer: FC<{
 
     return () => observer.disconnect();
   }, [hasNext, loading, columns]);
+
+  // Auto-refresh: call `onLoadNew` every 60 seconds when the page is visible.
+  // Avoid overlapping calls by tracking an in-flight flag.
+  useEffect(() => {
+    if (!onLoadNew) return;
+
+    let inFlight = false;
+
+    const doTick = async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (inFlight) return;
+      const cb = onLoadNewRef.current;
+      if (!cb) return;
+      try {
+        inFlight = true;
+        const res = cb();
+        const p = res as any;
+        if (p && typeof p.then === 'function') await p;
+      } catch (e) {
+        // ignore errors from user-provided callback
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const intervalId = window.setInterval(doTick, 60 * 1000);
+
+    // When the page becomes visible, trigger an immediate refresh
+    const visibilityHandler = () => {
+      if (!document.hidden) doTick();
+    };
+    document.addEventListener('visibilitychange', visibilityHandler);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', visibilityHandler);
+    };
+  }, [onLoadNew]);
 
   const handleMediaClick = useCallback((src: string, type: 'image' | 'video' = 'image') => {
     setModalMedia({ type, src });

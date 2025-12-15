@@ -161,6 +161,10 @@ AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
 # Use the canonical Django setting name so other code can import it
 
 STORAGES = {"default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"}}
+# Ensure staticfiles storage is defined (helps system checks during tests)
+STORAGES.setdefault(
+    "staticfiles", {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
+)
 
 AWS_ACCESS_KEY_ID = os.getenv("MINIO_ACCESS_KEY")
 AWS_SECRET_ACCESS_KEY = os.getenv("MINIO_SECRET_KEY")
@@ -196,3 +200,6 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Cache configuration - prefer explicit REDIS_CACHE_URL, fallback to broker URL
+# Cache configuration removed (image caching feature removed). Use Django's default cache.

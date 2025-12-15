@@ -5,7 +5,6 @@ from django.contrib.auth import get_user_model
 from ninja.testing import TestClient
 from feeds.routers.item import router as item_router
 from feeds.routers.feed import router as feed_router
-from feeds.routers.image import router as image_router
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from django.utils import timezone
 import jwt
@@ -273,45 +272,12 @@ class FeedAPITest(TestCase):
         self.assertEqual(feed.title, "Unknown Feed")  # RSS 파싱 실패 시 기본값
         self.assertEqual(feed.user, self.user)
 
-    def test_cache_image_get_endpoint_allows_get_and_schedules(self):
-        # GET should return 404 when not cached; POST schedules caching and returns 202; GET returns 200 when cached
-        client = TestClient(image_router)
-
-        # GET not found (router mounted at / for image_router)
-        response = client.get("/?url=http://example.com/image.jpg")
-        self.assertEqual(response.status_code, 404)
-
-        # POST schedules caching
-        post_resp = client.post("/", json={"url": "http://example.com/image.jpg"})
-        self.assertEqual(post_resp.status_code, 202)
-        self.assertEqual(post_resp.json().get("status"), "scheduled")
-        self.assertIn("Location", post_resp.headers)
-
-        # Create a cached image and then GET should return the url
-        from feeds.models import CachedImage
-
-        ci = CachedImage.objects.create(
-            original_url="http://example.com/image.jpg",
-            relative_path="cached_images/image.jpg",
-            content_type="image/jpeg",
-        )
-
-        get_cached = client.get("/?url=http://example.com/image.jpg")
-        self.assertEqual(get_cached.status_code, 200)
-        data = get_cached.json()
-        self.assertIn("url", data)
-        # width/height should be present (may be None if unknown)
-        self.assertIn("width", data)
-        self.assertIn("height", data)
-
 
 class CategoryVisibilityTest(TestCase):
     """Category와 Feed의 visible 옵션 테스트"""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="visuser", password="vispass123"
-        )
+        self.user = User.objects.create_user(username="visuser", password="vispass123")
         # visible=True 카테고리
         self.visible_category = RSSCategory.objects.create(
             user=self.user,
@@ -431,9 +397,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_feed_page_shows_all_items(self):
         """피드 화면: visible 설정과 관계없이 해당 피드의 모든 아이템 표시"""
-        response = self.client.get(
-            f"/feed/{self.hidden_feed.id}", headers=self.headers
-        )
+        response = self.client.get(f"/feed/{self.hidden_feed.id}", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_ids = [item["id"] for item in data["items"]]
@@ -448,9 +412,7 @@ class CategoryUpdateTest(TestCase):
     def setUp(self):
         from feeds.routers.category import router as category_router
 
-        self.user = User.objects.create_user(
-            username="catuser", password="catpass123"
-        )
+        self.user = User.objects.create_user(username="catuser", password="catpass123")
         self.category = RSSCategory.objects.create(
             user=self.user,
             name="Original Name",
@@ -530,4 +492,3 @@ class FeedScheduleTest(TestCase):
 
         # create schedule
         setup_feed_schedule(feed)
-
