@@ -2,241 +2,56 @@
 
 import { CheckCircle, Heart } from "lucide-react";
 import parse from 'html-react-parser';
-import Image from 'next/image';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
 import { RSSItem } from "../types/rss";
+import { RSSImage } from "./RSSImage";
+import { RSSVideo } from "./RSSVideo";
 
-const RSSImage: FC<{
-  src: string;
-  alt?: string;
-  onClick: () => void;
-}> = ({ src, alt = '', onClick }) => {
-  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Start loading only when element is visible (or when src is not an http(s) url)
-  useEffect(() => {
-    // If src is not an absolute http(s) url, load immediately
-    try {
-      const u = new URL(src);
-      if (!u.protocol.startsWith('http')) {
-        setIsVisible(true);
-        return;
-      }
-    } catch (e) {
-      // not a url - load immediately
-      setIsVisible(true);
-      return;
-    }
-
-    if (isVisible) return; // already visible
-
-    const el = wrapperRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setIsVisible(true);
-      return;
-    }
-
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          obs.disconnect();
-        }
-      });
-    }, { threshold: 0.01 });
-
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [src, isVisible]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    let mounted = true;
-
-    const tryUseCacheOrSchedule = async () => {
-      try {
-        // No server-side image caching: just use the original image URL
-        if (mounted) setCurrentSrc(src);
-      } catch (e) {
-        if (mounted) setCurrentSrc(src);
-      }
-    };
-
-    tryUseCacheOrSchedule();
-    return () => { mounted = false; };
-  }, [isVisible, src]);
-
-  // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
-  // NOTE: scheduling of caching for nearby items is handled in the parent
-  const [error, setError] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
-
-  // Calculate aspect ratio based height when image loads
-  const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-    setLoaded(true);
-  };
-
-  // For images without known dimensions, use regular img tag for proper aspect ratio
-  if (error) {
-    // Fallback to regular img tag if Next.js Image fails
-    return (
-      <img
-        src={src}
-        alt={alt}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onClick();
-        }}
-        loading="lazy"
-        style={{
-          display: 'block',
-          width: '100%',
-          height: 'auto',
-          cursor: 'pointer'
-        }}
-      />
-    );
-  }
-
-  return (
-    <div ref={wrapperRef}>
-      {currentSrc ? (
-        <Image
-          src={currentSrc}
-          alt={alt}
-          width={naturalSize?.width || 800}
-          height={naturalSize?.height || 600}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          style={{
-            width: '100%',
-            height: 'auto',
-            cursor: 'pointer',
-            opacity: loaded ? 1 : 0,
-            transition: 'opacity 0.2s'
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClick();
-          }}
-          onLoad={handleLoad}
-          onError={() => setError(true)}
-          loading="lazy"
-          // For certain hosts that actively block server-side fetching (or cause connection resets),
-          // prefer letting the browser fetch the asset directly by disabling Next.js optimization.
-          // This avoids proxying via Next's /_next/image which can cause 500/ECONNRESET when the origin blocks server requests.
-          unoptimized={currentSrc.startsWith('data:') || (() => {
-            try {
-              const url = new URL(currentSrc);
-              const host = url.hostname.toLowerCase();
-              const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
-              const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : ['cosplaytele.com'];
-              return unoptimizedHosts.includes(host);
-            } catch (e) {
-              return false;
-            }
-          })()}
-        />
-      ) : (
-        // Placeholder box to reserve layout before image becomes visible/loaded
-        <div
-          role="img"
-          aria-label={alt}
-          onClick={(e) => {
-            // clicking a placeholder should trigger loading and also propagate the click intent
-            e.preventDefault();
-            e.stopPropagation();
-            setIsVisible(true);
-            onClick();
-          }}
-          style={{
-            display: 'block',
-            width: '100%',
-            paddingTop: naturalSize ? `${(naturalSize.height / naturalSize.width) * 100}%` : '56.25%',
-            background: 'linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.06))',
-            cursor: 'pointer'
-          }}
-        />
-      )}
-    </div>
-  );
-};
-
-// Custom Video component with intersection observer for autoplay
-const RSSVideo: FC<{
-  src?: string;
-  poster?: string;
-  className?: string;
-  onClick?: () => void;
-  [key: string]: any;
-}> = ({ src, poster, className, onClick, ...props }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            video.play().catch(() => { });
-          } else {
-            video.pause();
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(video);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <video
-      ref={videoRef}
-      src={src}
-      poster={poster}
-      className={className}
-      muted
-      loop
-      playsInline
-      controls
-      preload="metadata"
-      style={{
-        display: 'block',
-        width: '100%',
-        height: 'auto',
-        cursor: onClick ? 'pointer' : undefined
-      }}
-      onClick={(e) => {
-        if (onClick) {
-          e.stopPropagation();
-          onClick();
-        }
-      }}
-      {...props}
-    />
-  );
-};
-
-const renderDescription = (description: string, onMediaClick: (url: string, type: 'image' | 'video') => void) => {
+const renderDescription = (
+  description: string,
+  onMediaClick: (url: string, type: 'image' | 'video') => void,
+  baseUrl?: string
+) => {
   // Helper to check if a node contains an img or video
   const hasMediaChild = (node: any): boolean => {
     if (!node.children) return false;
     return node.children.some((child: any) =>
       child.name === 'img' || child.name === 'video' || hasMediaChild(child)
     );
+  };
+
+  const normalizeSrc = (raw: string) => {
+    if (!raw) return raw;
+    // Protocol-relative (//example.com/path)
+    if (raw.startsWith('//')) {
+      try {
+        return window.location.protocol + raw;
+      } catch (e) {
+        return raw;
+      }
+    }
+    // Root-relative (/path) -> resolve against article/feed origin if provided
+    if (raw.startsWith('/')) {
+      try {
+        const origin = baseUrl ? new URL(baseUrl).origin : window.location.origin;
+        return origin + raw;
+      } catch (e) {
+        return raw;
+      }
+    }
+    // If it's not an absolute URL (no scheme) and we have a baseUrl, resolve relative paths
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw) && baseUrl) {
+      try {
+        return new URL(raw, baseUrl).toString();
+      } catch (e) {
+        return raw;
+      }
+    }
+    return raw;
   };
 
   return parse(description, {
@@ -254,12 +69,13 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
             const src = child.attribs?.src;
             const alt = child.attribs?.alt || '';
             if (!src) return null;
+            const resolved = normalizeSrc(src);
             return (
               <RSSImage
                 key={index}
-                src={src}
+                src={resolved}
                 alt={alt}
-                onClick={() => onMediaClick(src, 'image')}
+                onClick={() => onMediaClick(resolved, 'image')}
               />
             );
           }
@@ -274,11 +90,12 @@ const renderDescription = (description: string, onMediaClick: (url: string, type
         // Skip if no src
         if (!src) return null;
 
+        const resolved = normalizeSrc(src);
         return (
           <RSSImage
-            src={src}
+            src={resolved}
             alt={alt}
-            onClick={() => onMediaClick(src, 'image')}
+            onClick={() => onMediaClick(resolved, 'image')}
           />
         );
       }
@@ -308,7 +125,7 @@ export const FeedItemRenderer = forwardRef<HTMLDivElement, {
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
   const localRef = useRef<HTMLDivElement | null>(null);
 
-  const description = useMemo(() => renderDescription(item.description, onMediaClick), [item.description, onMediaClick]);
+  const description = useMemo(() => renderDescription(item.description, onMediaClick, item.link), [item.description, onMediaClick, item.link]);
 
   const publishedAt = useMemo(() => {
     try {
