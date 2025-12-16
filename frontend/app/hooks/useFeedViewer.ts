@@ -53,7 +53,7 @@ export interface UseFeedViewerReturn {
   newPostsCount: number;
   isRefreshing: boolean;
   handleLoadNew: () => void;
-  
+
   // Queue info
   queueLength: number;
   resetDistributor: () => void;
@@ -78,11 +78,11 @@ export function useFeedViewer({
   else if (!isMd) columns = 2;
 
   // Use column distributor instead of masonry layout
-  const { 
-    columnItems, 
-    setSentinelRef, 
+  const {
+    columnItems,
+    setSentinelRef,
     queueLength,
-    reset: resetDistributor 
+    reset: resetDistributor
   } = useColumnDistributor({
     items,
     columns,

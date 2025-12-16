@@ -35,33 +35,33 @@ export function useColumnDistributor<T extends { id: number }>({
   initialDelay = 50,
 }: UseColumnDistributorOptions<T>): UseColumnDistributorReturn<T> {
   // 각 컬럼에 배분된 아이템
-  const [columnItems, setColumnItems] = useState<T[][]>(() => 
+  const [columnItems, setColumnItems] = useState<T[][]>(() =>
     Array.from({ length: columns }, () => [])
   );
-  
+
   // 대기열 (아직 컬럼에 배분되지 않은 아이템)
   const queueRef = useRef<T[]>([]);
   const [queueLength, setQueueLength] = useState(0);
-  
+
   // 이미 배분된 아이템 ID 추적
   const distributedIdsRef = useRef<Set<number>>(new Set());
-  
+
   // sentinel refs
   const sentinelRefs = useRef<(HTMLDivElement | null)[]>([]);
-  
+
   // 초기 배분 진행 중 여부
   const isInitialDistributingRef = useRef(false);
-  
+
   // 컬럼 수 변경 감지
   const prevColumnsRef = useRef(columns);
-  
+
   // 현재 뷰포트에 보이는 sentinel 추적
   const visibleSentinelsRef = useRef<Set<number>>(new Set());
 
   // onLoadMore ref
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
-  
+
   // hasNext, loading refs
   const hasNextRef = useRef(hasNext);
   hasNextRef.current = hasNext;
@@ -71,7 +71,7 @@ export function useColumnDistributor<T extends { id: number }>({
   // 컬럼에 아이템 추가
   const addItemToColumn = useCallback((columnIndex: number): boolean => {
     if (queueRef.current.length === 0) return false;
-    
+
     const item = queueRef.current.shift()!;
     setColumnItems(prev => {
       const next = prev.map(col => [...col]);
@@ -79,12 +79,12 @@ export function useColumnDistributor<T extends { id: number }>({
       return next;
     });
     setQueueLength(queueRef.current.length);
-    
+
     // 대기열이 임계값 이하면 다음 페이지 로드
     if (queueRef.current.length <= queueThreshold && hasNextRef.current && !loadingRef.current) {
       onLoadMoreRef.current?.();
     }
-    
+
     return true;
   }, [queueThreshold]);
 
@@ -92,23 +92,23 @@ export function useColumnDistributor<T extends { id: number }>({
   const fillVisibleSentinels = useCallback(() => {
     if (queueRef.current.length === 0) return;
     if (isInitialDistributingRef.current) return;
-    
+
     // 각 sentinel을 체크해서 뷰포트에 있으면 아이템 추가
     let addedAny = false;
-    
+
     for (let i = 0; i < columns; i++) {
       const sentinel = sentinelRefs.current[i];
       if (!sentinel) continue;
-      
+
       const rect = sentinel.getBoundingClientRect();
       const isInViewport = rect.top < window.innerHeight + 300 && rect.bottom > -300;
-      
+
       if (isInViewport && queueRef.current.length > 0) {
         addItemToColumn(i);
         addedAny = true;
       }
     }
-    
+
     // 아이템이 추가되었고 아직 대기열에 남아있으면, 다음 프레임에 다시 체크
     if (addedAny && queueRef.current.length > 0) {
       requestAnimationFrame(() => {
@@ -121,11 +121,11 @@ export function useColumnDistributor<T extends { id: number }>({
   const distributeInitial = useCallback(() => {
     if (isInitialDistributingRef.current) return;
     if (queueRef.current.length === 0) return;
-    
+
     isInitialDistributingRef.current = true;
-    
+
     let currentColumn = 0;
-    
+
     const distributeOne = () => {
       if (queueRef.current.length === 0 || currentColumn >= columns) {
         isInitialDistributingRef.current = false;
@@ -133,10 +133,10 @@ export function useColumnDistributor<T extends { id: number }>({
         setTimeout(fillVisibleSentinels, 100);
         return;
       }
-      
+
       addItemToColumn(currentColumn);
       currentColumn++;
-      
+
       if (currentColumn < columns && queueRef.current.length > 0) {
         setTimeout(distributeOne, initialDelay);
       } else {
@@ -145,22 +145,22 @@ export function useColumnDistributor<T extends { id: number }>({
         setTimeout(fillVisibleSentinels, 100);
       }
     };
-    
+
     distributeOne();
   }, [columns, addItemToColumn, initialDelay, fillVisibleSentinels]);
 
   // 새 아이템이 들어오면 대기열에 추가
   useEffect(() => {
     const newItems = items.filter(item => !distributedIdsRef.current.has(item.id));
-    
+
     if (newItems.length > 0) {
       // 새 아이템 ID 기록
       newItems.forEach(item => distributedIdsRef.current.add(item.id));
-      
+
       // 대기열에 추가
       queueRef.current.push(...newItems);
       setQueueLength(queueRef.current.length);
-      
+
       // 컬럼이 비어있으면 초기 배분 시작
       const totalDistributed = columnItems.reduce((sum, col) => sum + col.length, 0);
       if (totalDistributed === 0) {
@@ -176,16 +176,16 @@ export function useColumnDistributor<T extends { id: number }>({
   useEffect(() => {
     if (prevColumnsRef.current !== columns) {
       prevColumnsRef.current = columns;
-      
+
       // 모든 아이템을 다시 대기열에
       const allItems = columnItems.flat();
       queueRef.current = [...allItems, ...queueRef.current];
       distributedIdsRef.current.clear();
       items.forEach(item => distributedIdsRef.current.add(item.id));
-      
+
       setColumnItems(Array.from({ length: columns }, () => []));
       setQueueLength(queueRef.current.length);
-      
+
       // 재배분
       setTimeout(() => distributeInitial(), 50);
     }
@@ -195,13 +195,13 @@ export function useColumnDistributor<T extends { id: number }>({
   useEffect(() => {
     // 초기 배분 중이면 observer 설정 안함
     if (isInitialDistributingRef.current) return;
-    
+
     const observers: IntersectionObserver[] = [];
-    
+
     for (let columnIndex = 0; columnIndex < columns; columnIndex++) {
       const sentinel = sentinelRefs.current[columnIndex];
       if (!sentinel) continue;
-      
+
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach(entry => {
@@ -218,16 +218,16 @@ export function useColumnDistributor<T extends { id: number }>({
             }
           });
         },
-        { 
+        {
           threshold: 0,
           rootMargin: '300px 0px' // 300px 여유를 두고 미리 감지
         }
       );
-      
+
       observer.observe(sentinel);
       observers.push(observer);
     }
-    
+
     return () => {
       observers.forEach(obs => obs.disconnect());
     };
@@ -236,7 +236,7 @@ export function useColumnDistributor<T extends { id: number }>({
   // 스크롤 이벤트로 보충 (observer가 놓칠 수 있는 경우 대비)
   useEffect(() => {
     let rafId: number | null = null;
-    
+
     const onScroll = () => {
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
@@ -246,7 +246,7 @@ export function useColumnDistributor<T extends { id: number }>({
         }
       });
     };
-    
+
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);

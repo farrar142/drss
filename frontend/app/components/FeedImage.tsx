@@ -44,7 +44,7 @@ export const FeedImage: FC<{
           obs.disconnect();
         }
       });
-    }, { 
+    }, {
       threshold: 0,
       rootMargin: '200px 0px' // 뷰포트 위아래 200px 여유
     });
@@ -70,8 +70,8 @@ export const FeedImage: FC<{
   // Placeholder skeleton while not visible (애니메이션 제거 - 성능 이슈)
   if (!isVisible) {
     return (
-      <div 
-        ref={wrapperRef} 
+      <div
+        ref={wrapperRef}
         className={cn(
           "bg-muted/30 rounded",
           className

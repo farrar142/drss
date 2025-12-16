@@ -12,9 +12,8 @@ import {
   EyeOff,
   GripVertical,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +39,6 @@ interface FeedListItemProps {
 }
 
 export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd }) => {
-  const router = useRouter();
   const { updateFeed, removeFeed } = useRSSStore();
 
   const [editOpen, setEditOpen] = useState(false);
@@ -111,52 +109,87 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   return (
     <>
       <div
-        className={cn('flex items-center group', !feed.visible && 'opacity-50')}
+        className={cn(
+          'flex items-center group rounded-md',
+          'hover:bg-sidebar-accent/40 transition-colors',
+          !feed.visible && 'opacity-50'
+        )}
         draggable
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         {/* Drag Handle */}
-        <div className="cursor-grab opacity-0 group-hover:opacity-100 transition-opacity p-1">
+        <div className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity p-1">
           <GripVertical className="w-3 h-3 text-muted-foreground" />
         </div>
-        {/* Feed Item Button */}
-        <button
-          onClick={() => router.push(`/category/${categoryId}/feed/${feed.id}`)}
+
+        {/* Feed Item Link */}
+        <Link
+          href={`/category/${categoryId}/feed/${feed.id}`}
           draggable={false}
           className={cn(
             'flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md',
-            'hover:bg-sidebar-accent/50 transition-colors',
+            'transition-colors',
             'text-left',
             'min-w-0'
           )}
         >
-          {feed.favicon_url ? (
-            <img src={feed.favicon_url} alt="" className="w-4 h-4 rounded-sm object-cover" />
-          ) : (
-            <Rss className="w-4 h-4 text-primary shrink-0" />
-          )}
+          {/* Favicon */}
+          <div className="w-4 h-4 shrink-0 flex items-center justify-center">
+            {feed.favicon_url ? (
+              <img
+                src={feed.favicon_url}
+                alt=""
+                className="w-4 h-4 rounded-sm object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <Rss className={cn(
+              "w-4 h-4 text-muted-foreground",
+              feed.favicon_url && "hidden"
+            )} />
+          </div>
 
-          <span title={feed.title} className="text-xs text-sidebar-foreground truncate flex-1 min-w-0">
+          {/* Title */}
+          <span
+            title={feed.title}
+            className="text-xs text-sidebar-foreground truncate flex-1 min-w-0"
+          >
             {feed.title}
           </span>
 
-          {!feed.visible && <EyeOff className="w-3 h-3 text-muted-foreground shrink-0" />}
+          {/* Hidden indicator */}
+          {!feed.visible && (
+            <EyeOff className="w-3 h-3 text-muted-foreground shrink-0" />
+          )}
 
+          {/* Item count badge */}
           <span
             className={cn(
-              'text-[10px] px-1.5 py-0.5 rounded',
-              'bg-accent/50 text-foreground font-semibold'
+              'text-[10px] px-1.5 py-0.5 rounded-full shrink-0',
+              'bg-muted/80 text-muted-foreground font-medium',
+              feed.item_count > 0 && 'bg-primary/15 text-primary'
             )}
           >
             {feed.item_count}
           </span>
-        </button>
+        </Link>
 
+        {/* More menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className={cn('p-1 rounded opacity-0 group-hover:opacity-100', 'hover:bg-sidebar-accent transition-all', 'focus:opacity-100', 'shrink-0 ml-2')}>
-              <MoreVertical className="w-4 h-4 text-muted-foreground" />
+            <button
+              className={cn(
+                'p-1 rounded-md opacity-0 group-hover:opacity-100',
+                'hover:bg-sidebar-accent/80 transition-all',
+                'focus:opacity-100',
+                'shrink-0 mr-1'
+              )}
+            >
+              <MoreVertical className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">

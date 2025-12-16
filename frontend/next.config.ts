@@ -25,6 +25,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Enable standalone output for production Docker builds
+  // This creates a minimal production bundle in .next/standalone
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   // trailingSlash: true,
   // Ensure Turbopack can be used by providing an (empty) turbopack config.
   // This silences the build error when a webpack config is present and

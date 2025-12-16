@@ -47,9 +47,9 @@ function Column({
         />
       ))}
       {/* Sentinel: 이 컬럼의 끝이 보이면 대기열에서 아이템 추가 */}
-      <div 
-        ref={setSentinelRef(columnIndex)} 
-        className="h-4 w-full" 
+      <div
+        ref={setSentinelRef(columnIndex)}
+        className="h-4 w-full"
         data-column-sentinel={columnIndex}
       />
     </div>
@@ -80,9 +80,9 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
             // Board 모드: 단일 컬럼으로 모든 아이템 표시
             <div className="w-full space-y-3 px-1">
               {items.map((item) => (
-                <FeedItemCard 
-                  key={item.id} 
-                  item={item} 
+                <FeedItemCard
+                  key={item.id}
+                  item={item}
                   onMediaClick={handleMediaClick}
                   onCollapseChange={handleCollapseChange}
                 />
