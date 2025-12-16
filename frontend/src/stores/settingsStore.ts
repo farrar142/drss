@@ -80,6 +80,10 @@ interface SettingsStore {
   mediaReadDirection: 'ltr' | 'rtl';
   setMediaReadDirection: (direction: 'ltr' | 'rtl') => void;
 
+  // 미디어 모달 듀얼 뷰 정렬 (center: 중앙 모아보기, spread: 좌우 분리)
+  mediaDualAlignment: 'center' | 'spread';
+  setMediaDualAlignment: (alignment: 'center' | 'spread') => void;
+
   // 앱바 필터
   filter: 'all' | 'unread' | 'read' | 'favorite';
   setFilter: (filter: 'all' | 'unread' | 'read' | 'favorite') => void;
@@ -111,6 +115,10 @@ export const useSettingsStore = create<SettingsStore>()(
       // 미디어 모달 읽기 방향 기본값 ltr (왼→오)
       mediaReadDirection: 'ltr',
       setMediaReadDirection: (direction) => set({ mediaReadDirection: direction }),
+
+      // 미디어 모달 듀얼 뷰 정렬 기본값 spread (좌우 분리)
+      mediaDualAlignment: 'spread',
+      setMediaDualAlignment: (alignment) => set({ mediaDualAlignment: alignment }),
 
       // 앱바 필터 기본값 all
       filter: 'all',

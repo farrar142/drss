@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect } from 'react';
-import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2, ArrowLeftRight } from 'lucide-react';
+import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2, ArrowLeftRight, AlignCenterHorizontal, Columns } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FeedImage } from './FeedImage';
 import { UseMediaModalReturn, MediaItem } from '../hooks/useMediaModal';
@@ -125,7 +125,9 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
     mediaViewMode: viewMode,
     setMediaViewMode: setViewMode,
     mediaReadDirection: readDirection,
-    setMediaReadDirection: setReadDirection
+    setMediaReadDirection: setReadDirection,
+    mediaDualAlignment: dualAlignment,
+    setMediaDualAlignment: setDualAlignment
   } = useSettingsStore();
 
   // viewMode에 따른 네비게이션 핸들러
@@ -323,7 +325,30 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           }
         }}
       >
-        {/* Reading Direction Toggle Button - Only in Dual View */}
+        {/* Dual Alignment Toggle Button - Only in Dual View (Top Left) */}
+        {viewMode === 2 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDualAlignment(dualAlignment === 'spread' ? 'center' : 'spread');
+            }}
+            title={dualAlignment === 'spread' ? '중앙에 모아보기' : '좌우로 분리하기'}
+            className={cn(
+              "absolute top-4 left-4 z-20 p-2 rounded-full backdrop-blur-sm transition-colors",
+              dualAlignment === 'center'
+                ? "bg-primary/80 hover:bg-primary"
+                : "bg-black/60 hover:bg-black/80"
+            )}
+          >
+            {dualAlignment === 'spread' ? (
+              <AlignCenterHorizontal className="w-5 h-5 text-white" />
+            ) : (
+              <Columns className="w-5 h-5 text-white" />
+            )}
+          </button>
+        )}
+
+        {/* Reading Direction Toggle Button - Only in Dual View (Top Right) */}
         {viewMode === 2 && (
           <button
             onClick={(e) => {
@@ -391,10 +416,16 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           const rightIndex = readDirection === 'ltr' ? baseRightIndex : baseLeftIndex;
 
           return (
-            <div className="flex items-center justify-center gap-4 w-full h-[calc(95vh-80px)]">
+            <div className={cn(
+              "flex items-center h-[calc(95vh-80px)] w-full",
+              dualAlignment === 'center' ? "justify-center gap-2" : "justify-between gap-4"
+            )}>
               {/* Left Image - 클릭 시 이전/다음 (RTL에 따라 다름) */}
               <div
-                className="flex-1 h-full flex items-center justify-center cursor-pointer"
+                className={cn(
+                  "h-full flex items-center cursor-pointer",
+                  dualAlignment === 'center' ? "justify-end" : "flex-1 justify-center"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   // RTL일 때 왼쪽 클릭 = 다음, LTR일 때 왼쪽 클릭 = 이전
@@ -422,12 +453,15 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
                 )}
               </div>
 
-              {/* Divider */}
-              <div className="w-px h-3/4 bg-border" />
+              {/* Divider - only show in spread mode */}
+              {dualAlignment === 'spread' && <div className="w-px h-3/4 bg-border" />}
 
               {/* Right Image - 클릭 시 다음/이전 (RTL에 따라 다름) */}
               <div
-                className="flex-1 h-full flex items-center justify-center cursor-pointer"
+                className={cn(
+                  "h-full flex items-center cursor-pointer",
+                  dualAlignment === 'center' ? "justify-start" : "flex-1 justify-center"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   // RTL일 때 오른쪽 클릭 = 이전, LTR일 때 오른쪽 클릭 = 다음
