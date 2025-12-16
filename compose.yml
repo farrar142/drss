@@ -13,7 +13,7 @@ x-django-config: &backend
     - PYTHONUNBUFFERED=1
     - PYTHONDONTWRITEBYTECODE=1
   env_file:
-    - .env.production
+    - .env
   networks:
     - drss-network
   logging:
@@ -112,7 +112,7 @@ services:
       - NODE_ENV=production
       - TZ=Asia/Seoul
     env_file:
-      - .env.production
+      - .env
     networks:
       - drss-network
     depends_on:
