@@ -70,7 +70,11 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   scrollContainerRef,
 }) => {
   return (
-    <div className="relative">
+    <div className={cn(
+      "relative",
+      // 크루징 중에는 pointer-events 비활성화 (성능 최적화)
+      cruising.isCruising && "pointer-events-none"
+    )}>
       <PullToRefresh onRefresh={handleLoadNew} scrollContainerRef={scrollContainerRef}>
         <div className="w-full">
           {/* Content Grid */}

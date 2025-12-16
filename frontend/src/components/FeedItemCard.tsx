@@ -255,6 +255,11 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-[92px]",
         viewMode === 'board' ? 'mb-3' : ''
       )}
+      style={{
+        // 화면 밖 카드 렌더링 최적화
+        contentVisibility: 'auto',
+        containIntrinsicSize: '0 300px', // 예상 높이
+      }}
       onClick={() => {
         const newCollapsed = !collapsed;
         setCollapsed(newCollapsed);

@@ -60,6 +60,7 @@ const PanelView: React.FC<PanelViewProps> = ({
   const [tabBarVisible, setTabBarVisible] = useState(true);
   const lastScrollTop = useRef(0);
   const isRestoringScroll = useRef(false);
+  const tabBarVisibleRef = useRef(true); // 현재 상태를 ref로 추적
 
   // 스크롤에 따른 탭바 숨김/표시 (패널 1개일 때만)
   useEffect(() => {
@@ -68,7 +69,10 @@ const PanelView: React.FC<PanelViewProps> = ({
 
     // 패널이 2개 이상이면 항상 표시하고 리스너 불필요
     if (panelsCount > 1) {
-      setTabBarVisible(true);
+      if (!tabBarVisibleRef.current) {
+        tabBarVisibleRef.current = true;
+        setTabBarVisible(true);
+      }
       return;
     }
 
@@ -77,29 +81,29 @@ const PanelView: React.FC<PanelViewProps> = ({
 
       const currentScrollTop = container.scrollTop;
       const scrollThreshold = 50;
-
-      // 맨 위에서는 항상 표시
-      if (currentScrollTop < scrollThreshold) {
-        setTabBarVisible(true);
-        onTabBarVisibilityChange?.(true);
-        lastScrollTop.current = currentScrollTop;
-        return;
-      }
-
       const scrollDiff = currentScrollTop - lastScrollTop.current;
-
-      // 스크롤 다운: 탭바 숨김
-      if (scrollDiff > 0 && currentScrollTop > scrollThreshold) {
-        setTabBarVisible(false);
-        onTabBarVisibilityChange?.(false);
-      }
-      // 스크롤 업: 탭바 표시
-      else if (scrollDiff < 0) {
-        setTabBarVisible(true);
-        onTabBarVisibilityChange?.(true);
-      }
-
       lastScrollTop.current = currentScrollTop;
+
+      // 변경이 필요한지 계산
+      let shouldBeVisible = tabBarVisibleRef.current;
+
+      if (currentScrollTop < scrollThreshold) {
+        // 맨 위에서는 항상 표시
+        shouldBeVisible = true;
+      } else if (scrollDiff > 5) {
+        // 스크롤 다운 (5px 이상 움직였을 때만)
+        shouldBeVisible = false;
+      } else if (scrollDiff < -5) {
+        // 스크롤 업 (5px 이상 움직였을 때만)
+        shouldBeVisible = true;
+      }
+
+      // 상태가 변경될 때만 업데이트
+      if (shouldBeVisible !== tabBarVisibleRef.current) {
+        tabBarVisibleRef.current = shouldBeVisible;
+        setTabBarVisible(shouldBeVisible);
+        onTabBarVisibilityChange?.(shouldBeVisible);
+      }
     };
 
     container.addEventListener('scroll', handleScrollForToggle, { passive: true });
@@ -129,9 +133,16 @@ const PanelView: React.FC<PanelViewProps> = ({
     }
   }, [panel.activeTabId, savedScrollPosition]);
 
-  // 스크롤 위치 저장
+  // 스크롤 위치 저장 (쓰로틀링)
+  const lastSaveTime = useRef(0);
   const handleScroll = useCallback(() => {
     if (isRestoringScroll.current) return;
+
+    // 200ms 쓰로틀링
+    const now = Date.now();
+    if (now - lastSaveTime.current < 200) return;
+    lastSaveTime.current = now;
+
     const container = scrollContainerRef.current;
     if (container) {
       onScrollChange(container.scrollTop);

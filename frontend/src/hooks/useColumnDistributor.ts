@@ -83,23 +83,25 @@ export function useColumnDistributor<T extends { id: number }>({
     const currentColumns = columnsRef.current;
 
     setColumnItems(prev => {
-      // 컬럼 배열 크기가 현재 컬럼 수와 다르면 새 배열 생성
-      let base = prev;
-      if (prev.length !== currentColumns) {
-        base = Array.from({ length: currentColumns }, (_, i) =>
-          i < prev.length ? [...prev[i]] : []
-        );
-      }
-
       // 컬럼 인덱스가 범위를 벗어나면 무시
       if (columnIndex >= currentColumns) {
         // 아이템을 다시 대기열에 넣음
         queueRef.current.unshift(item);
-        return base;
+        return prev;
       }
 
-      const next = base.map(col => [...col]);
-      next[columnIndex] = [...next[columnIndex], item];
+      // 컬럼 배열 크기가 현재 컬럼 수와 다르면 새 배열 생성
+      if (prev.length !== currentColumns) {
+        const next = Array.from({ length: currentColumns }, (_, i) =>
+          i < prev.length ? [...prev[i]] : []
+        );
+        next[columnIndex] = [...next[columnIndex], item];
+        return next;
+      }
+
+      // 해당 컬럼만 새 배열로 교체 (다른 컬럼은 그대로 참조)
+      const next = [...prev];
+      next[columnIndex] = [...prev[columnIndex], item];
       return next;
     });
     setQueueLength(queueRef.current.length);
@@ -136,12 +138,11 @@ export function useColumnDistributor<T extends { id: number }>({
       }
     }
 
-    // 아이템이 추가되었고 아직 대기열에 남아있으면, 다음 프레임에 다시 체크
+    // 아이템이 추가되었고 아직 대기열에 남아있으면, 일정 시간 후 다시 체크
     // (단, sentinel이 여전히 보이는 경우에만 계속)
     if (addedAny && queueRef.current.length > 0) {
-      requestAnimationFrame(() => {
-        setTimeout(fillVisibleSentinels, 16);
-      });
+      // 재귀 호출 대신 단순 setTimeout (50ms 딜레이로 부하 감소)
+      setTimeout(fillVisibleSentinels, 50);
     }
     // queue가 남아있어도 sentinel이 안 보이면 대기 (스크롤할 때까지)
   }, [addItemToColumn]);
@@ -293,31 +294,6 @@ export function useColumnDistributor<T extends { id: number }>({
       observers.forEach(obs => obs.disconnect());
     };
   }, [enabled, addItemToColumn, columns, fillVisibleSentinels]);
-
-  // 스크롤 이벤트로 보충 (observer가 놓칠 수 있는 경우 대비)
-  useEffect(() => {
-    let rafId: number | null = null;
-
-    const onScroll = () => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (queueRef.current.length > 0 && !isInitialDistributingRef.current) {
-          fillVisibleSentinels();
-        }
-      });
-    };
-
-    // window 스크롤과 document 레벨 스크롤 이벤트 (capture phase)
-    window.addEventListener('scroll', onScroll, { passive: true });
-    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      document.removeEventListener('scroll', onScroll, { capture: true });
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [fillVisibleSentinels]);
 
   // sentinel ref setter
   const setSentinelRef = useCallback((columnIndex: number) => (el: HTMLDivElement | null) => {
