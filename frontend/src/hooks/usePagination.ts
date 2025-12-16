@@ -20,7 +20,8 @@ export const usePagination = <T extends { id: number }>(
   } & PaginationFilters) => Promise<PaginatedResponse<T>>,
   getCursorField: (item: T) => string,
   key?: string | number,  // key to reset pagination when changed
-  filters?: PaginationFilters
+  filters?: PaginationFilters,
+  enabled: boolean = true  // 활성화 여부 - false이면 데이터 로딩하지 않음
 ) => {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
@@ -162,10 +163,13 @@ export const usePagination = <T extends { id: number }>(
   }, [loading, paginationApi, removeDuplicates, getCursorField, compareCursors, filters]);
 
   useEffect(() => {
+    // enabled가 false이면 로딩하지 않음
+    if (!enabled) return;
+    
     if (!initialized && !loading) {
       loadItems(undefined, 'before');  // Initial load - get newest items first
     }
-  }, [initialized, loading, loadItems, cacheKey]);  // cacheKey 추가하여 필터 변경 시 재fetch
+  }, [enabled, initialized, loading, loadItems, cacheKey]);  // enabled, cacheKey 추가하여 필터 변경 시 재fetch
 
   const handleLoadMore = useCallback(() => {
     // 이전 글 불러오기 (older items)

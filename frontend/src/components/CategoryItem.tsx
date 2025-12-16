@@ -45,7 +45,7 @@ export const CategoryItem: FC<{
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
   onNavigateCategory?: (category: RSSCategory) => void;
-  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string) => void;
+  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => void;
   // 카테고리 드래그용
   onCategoryDragStart?: (e: React.DragEvent, category: RSSCategory) => void;
   onCategoryDragOver?: (e: React.DragEvent) => void;

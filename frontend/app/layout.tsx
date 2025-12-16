@@ -38,10 +38,10 @@ export default async function RootLayout({
 
   // 초기 다크모드 클래스 결정 (system인 경우 기본 dark)
   const initialDark = themeData?.mode === 'dark' || themeData?.mode === 'system' || !themeData;
-  
+
   // 초기 색상 결정
   const initialColors = themeData?.colors || defaultColors;
-  
+
   // 초기 CSS 변수 스타일 생성
   const initialStyles = getInitialThemeStyles(initialColors, initialDark);
 

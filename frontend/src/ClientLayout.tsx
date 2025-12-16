@@ -68,9 +68,7 @@ export function ClientLayout({
 
   return (
     <AuthProvider>
-      <AppLayout>
-        {children}
-      </AppLayout>
+      <AppLayout authChildren={children} />
     </AuthProvider>
   );
 }

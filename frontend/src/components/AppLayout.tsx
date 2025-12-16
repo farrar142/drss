@@ -37,14 +37,15 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from '../stores/languageStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { TabBar } from './TabBar';
+import { ContentRenderer } from './ContentRenderer';
 import { useTabStore } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
-  children: React.ReactNode;
+  authChildren?: React.ReactNode;
 }
 
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ authChildren }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -71,14 +72,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
+  const [isHoveringTop, setIsHoveringTop] = useState(false);
   
   // Refs for scroll tracking
   const lastScrollY = useRef(0);
   const scrollThreshold = 50; // 스크롤 감지 임계값
+  const hoverZoneHeight = 60; // 상단 호버 감지 영역 높이
 
   // 스크롤에 따른 헤더 숨김/표시
   useEffect(() => {
     const handleScroll = () => {
+      // 상단 호버 중이면 스크롤로 숨기지 않음
+      if (isHoveringTop) return;
+      
       const currentScrollY = window.scrollY;
       
       // 맨 위에서는 항상 표시
@@ -104,7 +110,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHoveringTop]);
+
+  // 마우스가 상단에 가까워지면 헤더 표시
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const isNearTop = e.clientY < hoverZoneHeight;
+      setIsHoveringTop(isNearTop);
+      
+      if (isNearTop && !headerVisible) {
+        setHeaderVisible(true);
+      }
+    };
+
+    const handleMouseLeave = () => {
+      setIsHoveringTop(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [headerVisible]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
@@ -160,7 +190,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   // Auth pages don't use the layout
   if (pathname?.startsWith('/auth/')) {
-    return <>{children}</>;
+    return <>{authChildren}</>;
   }
 
   return (
@@ -294,11 +324,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div 
         className={cn(
           "fixed left-0 right-0 z-40",
-          "transition-transform duration-300 ease-in-out",
-          headerVisible ? "translate-y-0" : "-translate-y-full"
+          "transition-all duration-300 ease-in-out"
         )}
         style={{ 
-          top: '3.5rem', // h-14
+          // 헤더가 숨겨지면 탭바도 위로 이동 (앱바 높이만큼)
+          top: headerVisible ? '3.5rem' : '-2.25rem', // h-14 or negative h-9
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0 
         }}
       >
@@ -325,7 +355,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         }}
       >
         <div className="p-1 sm:p-2 md:p-4 lg:p-6">
-          {children}
+          <ContentRenderer />
         </div>
       </main>
     </div>

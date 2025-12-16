@@ -35,7 +35,7 @@ interface FeedListItemProps {
   categoryId: number;
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
-  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string) => void;
+  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => void;
 }
 
 export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
@@ -125,7 +125,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
         {/* Feed Item Button */}
         <button
-          onClick={() => onNavigateFeed?.(categoryId, feed.id, feed.title)}
+          onClick={() => onNavigateFeed?.(categoryId, feed.id, feed.title, feed.favicon_url || undefined)}
           className={cn(
             'flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md',
             'transition-colors',

@@ -10,6 +10,8 @@ export interface Tab {
   path: string;
   // 카테고리나 피드의 경우 ID 저장
   resourceId?: number;
+  // 피드의 경우 favicon URL
+  favicon?: string;
   // 탭별 상태
   scrollPosition?: number;
   filter?: 'all' | 'unread' | 'read' | 'favorite';

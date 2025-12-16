@@ -39,7 +39,7 @@ type DrawerContentProps = {
   feeds: RSSFeed[];
   onNavigateHome: () => void;
   onNavigateCategory: (category: RSSCategory) => void;
-  onNavigateFeed: (categoryId: number, feedId: number, feedTitle: string) => void;
+  onNavigateFeed: (categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => void;
   onOpenAdd: () => void;
   onDeleteCategory: (category: RSSCategory) => Promise<void>;
   draggingFeed: FeedSchema | null;
@@ -226,13 +226,14 @@ export const CategoryDrawer: FC<{
     });
   }, [openTab, saveCurrentScroll]);
 
-  const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string) => {
+  const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => {
     saveCurrentScroll();
     openTab({ 
       type: 'feed', 
       title: feedTitle, 
       path: `/category/${categoryId}/feed/${feedId}`,
-      resourceId: feedId 
+      resourceId: feedId,
+      favicon: faviconUrl
     });
   }, [openTab, saveCurrentScroll]);
 
