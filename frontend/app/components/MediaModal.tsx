@@ -56,8 +56,58 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           "bg-card/90 rounded-2xl border border-border p-4",
           "shadow-2xl"
         )}
+
         onClick={(e) => {
-          e.stopPropagation();
+          // same logic as previous img onClick
+          const evt = e as React.MouseEvent<HTMLImageElement>;
+          evt.stopPropagation();
+          const idx = currentMediaIndexRef.current;
+          if (!mediaList || mediaList.length <= 1 || idx == null) return;
+
+          try {
+            const img = evt.currentTarget as HTMLImageElement;
+            const rect = img.getBoundingClientRect();
+            const clickX = evt.clientX - rect.left;
+            const isLeft = clickX < rect.width / 2;
+
+            const now = Date.now();
+            if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+              clickStateRef.current = { startIndex: idx, isLeft, time: now };
+            }
+            if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = window.setTimeout(() => {
+              clickTimeoutRef.current = null;
+              clickStateRef.current = null;
+            }, CLICK_STATE_WINDOW) as unknown as number;
+            if (isLeft) prevMedia(); else nextMedia();
+          } catch (err) {
+            // ignore
+          }
+        }}
+        onDoubleClick={(e) => {
+          const evt = e as React.MouseEvent<HTMLImageElement>;
+          evt.stopPropagation();
+          const s = clickStateRef.current;
+          if (clickTimeoutRef.current) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+          }
+          clickStateRef.current = null;
+          if (!mediaList || mediaList.length <= 1) return;
+          if (!s) return;
+          try {
+            const img = evt.currentTarget as HTMLImageElement;
+            const rect = img.getBoundingClientRect();
+            const clickX = evt.clientX - rect.left;
+            const isLeftDbl = clickX < rect.width / 2;
+            if (isLeftDbl && s.isLeft && s.startIndex === 0) {
+              closeModal();
+            } else if (!isLeftDbl && !s.isLeft && s.startIndex === mediaList.length - 1) {
+              closeModal();
+            }
+          } catch (err) {
+            // ignore
+          }
         }}
         onPointerDown={(e) => {
           (e.currentTarget as any)._startX = e.clientX;
@@ -83,58 +133,6 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           <FeedImage
             src={modalMedia.src}
             alt="Enlarged"
-            onClick={(e) => {
-              // same logic as previous img onClick
-              const evt = e as React.MouseEvent<HTMLImageElement>;
-              evt.stopPropagation();
-              const idx = currentMediaIndexRef.current;
-              if (!mediaList || mediaList.length <= 1 || idx == null) return;
-
-              try {
-                const img = evt.currentTarget as HTMLImageElement;
-                const rect = img.getBoundingClientRect();
-                const clickX = evt.clientX - rect.left;
-                const isLeft = clickX < rect.width / 2;
-
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                if (isLeft) prevMedia(); else nextMedia();
-              } catch (err) {
-                // ignore
-              }
-            }}
-            onDoubleClick={(e) => {
-              const evt = e as React.MouseEvent<HTMLImageElement>;
-              evt.stopPropagation();
-              const s = clickStateRef.current;
-              if (clickTimeoutRef.current) {
-                window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = null;
-              }
-              clickStateRef.current = null;
-              if (!mediaList || mediaList.length <= 1) return;
-              if (!s) return;
-              try {
-                const img = evt.currentTarget as HTMLImageElement;
-                const rect = img.getBoundingClientRect();
-                const clickX = evt.clientX - rect.left;
-                const isLeftDbl = clickX < rect.width / 2;
-                if (isLeftDbl && s.isLeft && s.startIndex === 0) {
-                  closeModal();
-                } else if (!isLeftDbl && !s.isLeft && s.startIndex === mediaList.length - 1) {
-                  closeModal();
-                }
-              } catch (err) {
-                // ignore
-              }
-            }}
           />
         ) : null}
 
