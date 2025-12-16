@@ -38,7 +38,11 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className={cn(
           "p-3 rounded-full shadow-lg transition-all",
+<<<<<<< HEAD
           "bg-primary hover:bg-primary/80 text-primary-foreground",
+=======
+          "bg-secondary hover:bg-secondary/80 text-secondary-foreground",
+>>>>>>> 9712ff5 (위로가기 버튼 추가)
           "hover:scale-105 active:scale-95"
         )}
         data-cruising-control
