@@ -262,7 +262,7 @@ export default function SettingsPage() {
               </Button>
             ))}
           </div>
-          
+
           {/* Preview */}
           <div className="mt-4 border border-border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-3 py-2 border-b border-border">
@@ -271,7 +271,7 @@ export default function SettingsPage() {
             <div className="p-3">
               <FeedItemCard
                 item={dummyItem}
-                onMediaClick={() => {}}
+                onMediaClick={() => { }}
                 fontSizeOverride={fontSizeLevel}
               />
             </div>

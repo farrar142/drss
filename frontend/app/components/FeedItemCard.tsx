@@ -175,7 +175,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   const { fontSizeLevel: storeFontSize } = useSettingsStore();
   const fontSizeLevel = fontSizeOverride || storeFontSize;
   const fontSize = fontSizeConfig[fontSizeLevel];
-  
+
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);

@@ -52,8 +52,8 @@ export const CategoryDrawer: FC<{
     // (older specs). Ensure we normalize the response to `RSSCategory` by
     // defaulting `visible` to `true` when absent.
     feedsRoutersCategoryListCategories().then((cats) => {
-      const normalized = (cats || []).map((c: any) => ({ 
-        ...c, 
+      const normalized = (cats || []).map((c: any) => ({
+        ...c,
         visible: (c.visible ?? true),
         order: (c.order ?? 0)
       }));
