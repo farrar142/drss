@@ -1,13 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Sun, Moon, Monitor } from 'lucide-react';
+import { Palette, RotateCcw, Sun, Moon, Monitor, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { useThemeStore, applyThemeColors } from '../stores/themeStore';
+import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '../stores/settingsStore';
+import { FeedItemCard } from '../components/FeedItemCard';
+import { RSSItem } from '../types/rss';
+
+// 더미 피드 아이템
+const dummyItem: RSSItem = {
+  id: 0,
+  feed_id: 0,
+  title: '샘플 피드 아이템 제목입니다',
+  link: 'https://example.com',
+  description: '<p>이것은 피드 아이템의 설명 미리보기입니다. 폰트 사이즈가 어떻게 보이는지 확인할 수 있습니다.</p><p>여러 줄의 텍스트가 포함되어 있어 가독성을 테스트할 수 있습니다.</p>',
+  published_at: new Date().toISOString(),
+  is_read: false,
+  is_favorite: true,
+};
 
 // Preset color themes (HEX values)
 const presetThemes = [
@@ -23,6 +39,7 @@ const presetThemes = [
 
 export default function SettingsPage() {
   const { mode, setMode, colors, setColors, resetColors } = useThemeStore();
+  const { fontSizeLevel, setFontSizeLevel, cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
 
   // Local state for color pickers
   const [primaryHex, setPrimaryHex] = useState(colors.primary);
@@ -219,6 +236,75 @@ export default function SettingsPage() {
           기본값으로 초기화
         </Button>
       </div>
+
+      {/* Font Size */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Type className="w-5 h-5" />
+            피드 폰트 크기
+          </CardTitle>
+          <CardDescription>
+            피드 아이템의 텍스트 크기를 조절합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            {fontSizeLevels.map((level) => (
+              <Button
+                key={level}
+                variant={fontSizeLevel === level ? 'default' : 'outline'}
+                onClick={() => setFontSizeLevel(level)}
+                className="flex-1"
+                size="sm"
+              >
+                {fontSizeConfig[level].label}
+              </Button>
+            ))}
+          </div>
+          
+          {/* Preview */}
+          <div className="mt-4 border border-border rounded-lg overflow-hidden">
+            <div className="bg-muted/50 px-3 py-2 border-b border-border">
+              <span className="text-sm text-muted-foreground">미리보기</span>
+            </div>
+            <div className="p-3">
+              <FeedItemCard
+                item={dummyItem}
+                onMediaClick={() => {}}
+                fontSizeOverride={fontSizeLevel}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cruise Speed */}
+      <Card>
+        <CardHeader>
+          <CardTitle>크루즈 속도</CardTitle>
+          <CardDescription>
+            자동 스크롤 기능의 기본 속도를 설정합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">느림</span>
+            <Slider
+              value={[cruiseSpeedPercent]}
+              onValueChange={([value]) => setCruiseSpeedPercent(value)}
+              min={0}
+              max={100}
+              step={1}
+              className="flex-1"
+            />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">빠름</span>
+          </div>
+          <div className="text-center text-sm text-muted-foreground">
+            현재 속도: {Math.round(cruiseSpeedPercent)}%
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Preview */}
       <Card>

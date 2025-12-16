@@ -6,6 +6,7 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } fro
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
 import { useRSSStore } from "../stores/rssStore";
+import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../stores/settingsStore";
 import { RSSItem } from "../types/rss";
 import { FeedImage } from "./FeedImage";
 import { FeedVideo } from "./FeedVideo";
@@ -167,9 +168,14 @@ const renderDescription = (
 export const FeedItemCard = forwardRef<HTMLDivElement, {
   item: RSSItem,
   onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
-  onCollapseChange?: (id: number, collapsed: boolean) => void
-}>(({ item, onMediaClick, onCollapseChange }, ref) => {
+  onCollapseChange?: (id: number, collapsed: boolean) => void,
+  fontSizeOverride?: FontSizeLevel, // 미리보기용 오버라이드
+}>(({ item, onMediaClick, onCollapseChange, fontSizeOverride }, ref) => {
   const { viewMode } = useRSSStore()
+  const { fontSizeLevel: storeFontSize } = useSettingsStore();
+  const fontSizeLevel = fontSizeOverride || storeFontSize;
+  const fontSize = fontSizeConfig[fontSizeLevel];
+  
   const [collapsed, setCollapsed] = useState(true);
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
@@ -258,20 +264,21 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
     >
       {/* Header with actions and title */}
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex items-center gap-2 flex-wrap flex-1">
+      <div className={cn("flex justify-between items-start", fontSize.gap)}>
+        <div className={cn("flex items-center flex-wrap flex-1", fontSize.gap)}>
           {/* Read Toggle Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleRead(); }}
             className={cn(
-              "p-1.5 rounded-full transition-colors",
+              "p-1 rounded-full transition-colors flex items-center justify-center",
+              fontSize.iconWrapper,
               isRead
                 ? "bg-primary/20 hover:bg-primary/30"
                 : "bg-muted hover:bg-muted/80"
             )}
           >
             <CheckCircle className={cn(
-              "w-5 h-5",
+              fontSize.icon,
               isRead ? "text-primary" : "text-muted-foreground"
             )} />
           </button>
@@ -280,23 +287,24 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleFavorite(); }}
             className={cn(
-              "p-1.5 rounded-full transition-colors",
+              "p-1 rounded-full transition-colors flex items-center justify-center",
+              fontSize.iconWrapper,
               isFavorite
                 ? "bg-red-500/20 hover:bg-red-500/30"
                 : "bg-muted hover:bg-muted/80"
             )}
           >
             <Heart className={cn(
-              "w-5 h-5",
+              fontSize.icon,
               isFavorite ? "text-red-500 fill-red-500" : "text-muted-foreground"
             )} />
           </button>
 
           {/* Title */}
-          <h3 className="flex-1 text-base font-semibold text-foreground leading-snug">
+          <h3 className={cn("flex-1 font-semibold text-foreground leading-snug", fontSize.title)}>
             {item.title}
             {publishedAt && (
-              <div className="text-xs text-muted-foreground font-normal mt-1">
+              <div className={cn("text-muted-foreground font-normal mt-1", fontSize.meta)}>
                 {publishedAt}
               </div>
             )}
@@ -310,8 +318,9 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "px-3 py-1.5 rounded-md text-xs font-medium text-white whitespace-nowrap",
-            "bg-primary hover:bg-primary/90 transition-colors"
+            "px-2 py-1 rounded-md font-medium text-white whitespace-nowrap",
+            "bg-primary hover:bg-primary/90 transition-colors",
+            fontSize.meta
           )}
         >
           Read more
@@ -320,7 +329,10 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
 
       {/* Description */}
       {(viewMode === 'feed' || !collapsed) && (
-        <div className="mt-3 text-muted-foreground leading-relaxed overflow-hidden prose prose-sm dark:prose-invert max-w-none">
+        <div className={cn(
+          "mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
+          fontSize.body
+        )}>
           {description}
         </div>
       )}

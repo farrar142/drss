@@ -83,8 +83,8 @@ export function useFeedViewer({
 
   // Use extracted hooks
   const mediaModal = useMediaModal({ items });
-  // 지수 함수 속도: 0%→10px/s, 100%→300px/s
-  const cruising = useCruising({ minSpeed: 10, maxSpeed: 300, defaultSpeed: 10 });
+  // 지수 함수 속도: 0%→10px/s, 100%→300px/s (기본 속도는 settingsStore에서 관리)
+  const cruising = useCruising({ minSpeed: 10, maxSpeed: 300 });
 
   // Use fast, CSS-based masonry when possible
   const useCSSColumns = true;

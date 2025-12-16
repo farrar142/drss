@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useSettingsStore } from '../stores/settingsStore';
 
 export interface UseCruisingOptions {
   /** Minimum speed in pixels per second */
   minSpeed?: number;
   /** Maximum speed in pixels per second */
   maxSpeed?: number;
-  /** Default speed in pixels per second */
-  defaultSpeed?: number;
 }
 
 export interface UseCruisingReturn {
@@ -36,11 +35,12 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
   const {
     minSpeed = 10,      // 0%에서의 속도
     maxSpeed = 300,    // 100%에서의 속도
-    defaultSpeed = 30, // 기본값
   } = options;
 
+  // 설정 스토어에서 속도 가져오기
+  const { cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
+
   const [isCruising, setIsCruising] = useState(false);
-  const [speed, setSpeed] = useState(defaultSpeed);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
   const accumulatedScrollRef = useRef<number>(0); // 누적 스크롤 값
@@ -55,21 +55,13 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
     return minSpeed + (maxSpeed - minSpeed) * Math.pow(t, 2.5);
   }, [minSpeed, maxSpeed]);
 
-  const speedToPercent = useCallback((spd: number): number => {
-    // 역함수: t = ((speed - minSpeed) / (maxSpeed - minSpeed))^(1/2.5)
-    const normalized = (spd - minSpeed) / (maxSpeed - minSpeed);
-    const t = Math.pow(Math.max(0, Math.min(1, normalized)), 1 / 2.5);
-    return t * 100;
-  }, [minSpeed, maxSpeed]);
-
-  // Calculate percentage from current speed
-  const speedPercent = speedToPercent(speed);
+  // Calculate speed from current percentage
+  const speed = percentToSpeed(cruiseSpeedPercent);
 
   const setSpeedPercent = useCallback((percent: number) => {
     const clampedPercent = Math.max(0, Math.min(100, percent));
-    const newSpeed = percentToSpeed(clampedPercent);
-    setSpeed(newSpeed);
-  }, [percentToSpeed]);
+    setCruiseSpeedPercent(clampedPercent);
+  }, [setCruiseSpeedPercent]);
 
   const stopCruising = useCallback(() => {
     setIsCruising(false);
@@ -190,7 +182,7 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
     stopCruising,
     toggleCruising,
     setSpeedPercent,
-    speedPercent,
+    speedPercent: cruiseSpeedPercent,
     minSpeed,
     maxSpeed,
   };
