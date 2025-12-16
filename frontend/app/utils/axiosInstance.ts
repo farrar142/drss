@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:3000',
+  // baseURL: 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -37,5 +37,7 @@ instance.interceptors.response.use(
 );
 
 export function axiosInstance<T = any>(config: AxiosRequestConfig): Promise<T> {
-  return instance(config).then(response => response.data);
+  return instance(config).then(response => response.data).catch(error => {
+    return Promise.reject(error);
+  });
 }

@@ -58,7 +58,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 p-4">
+    <div className="max-w-2xl mx-auto space-y-6 p-1">
       <div className="flex items-center gap-3 mb-8">
         <Palette className="w-8 h-8 text-primary" />
         <h1 className="text-3xl font-bold text-foreground">설정</h1>

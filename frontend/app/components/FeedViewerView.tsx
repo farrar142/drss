@@ -151,21 +151,6 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   items,
   handleLoadNew,
 }) => {
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY || window.pageYOffset;
-      setShowScrollTop(y > 200);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
   return (
     <>
       <PullToRefresh onRefresh={handleLoadNew}>
@@ -241,22 +226,6 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
         </div>
       </PullToRefresh>
 
-      {/* Scroll-to-top button that appears after user scrolls down */}
-      <button
-        onClick={scrollToTop}
-        aria-label="맨 위로"
-        className={cn(
-          "fixed z-50",
-          "flex items-center justify-center",
-          // wider pill, shorter vertical padding, primary background, white icon + small text
-          "rounded-full bg-primary text-white px-6 py-1 shadow-lg transition-all duration-150 hover:shadow-xl",
-          showScrollTop ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        // center relative to viewport and move a bit higher than spinner baseline
-        style={{ top: 'calc(var(--pull-spinner-top, 88px) - 12px)', left: '50vw', transform: 'translateX(-50%)' }}
-      >
-        <ArrowUp className="w-6 h-6 text-white" />
-      </button>
 
       {/* Media Modal */}
       <MediaModal modal={mediaModal} />

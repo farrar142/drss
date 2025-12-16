@@ -40,6 +40,8 @@ services:
       - "3000:3000"
     environment:
       - TZ=Asia/Seoul
+      - WATCHPACK_POLLING=true
+      - HOST=0.0.0.0
     env_file:
       - .env
     command: npm run dev

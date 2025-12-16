@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '../services/api';
 import { AxiosError } from 'axios';
+import { error } from 'console';
 
 interface User {
   id: number;

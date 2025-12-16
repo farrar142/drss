@@ -255,7 +255,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
         }}
       >
-        <div className="p-6">
+        <div className="p-1">
           {children}
         </div>
       </main>
