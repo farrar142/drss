@@ -4,9 +4,11 @@ import Image from 'next/image';
 export const FeedImage: FC<{
   src: string;
   alt?: string;
+  className?: string;
+  contain?: boolean; // true면 부모에 맞춰 contain 모드로 표시
   onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
   onDoubleClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
-}> = ({ src, alt = '', onClick, onDoubleClick }) => {
+}> = ({ src, alt = '', className, contain = false, onClick, onDoubleClick }) => {
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -67,6 +69,7 @@ export const FeedImage: FC<{
       <img
         src={src}
         alt={alt}
+        className={className}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -78,7 +81,12 @@ export const FeedImage: FC<{
           if (onDoubleClick) onDoubleClick(e as unknown as React.MouseEvent<HTMLImageElement>);
         }}
         loading="lazy"
-        style={{
+        style={contain ? {
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain',
+          cursor: 'pointer'
+        } : {
           display: 'block',
           width: '100%',
           height: 'auto',
@@ -88,8 +96,52 @@ export const FeedImage: FC<{
     );
   }
 
+  // contain 모드: fill 사용해서 부모에 맞춤
+  if (contain) {
+    return (
+      <div ref={wrapperRef} className={className} style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="90vw"
+          style={{
+            objectFit: 'contain',
+            cursor: 'pointer',
+            opacity: loaded ? 1 : 0,
+            transition: 'opacity 0.2s'
+          }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onClick) onClick(e as unknown as React.MouseEvent<HTMLImageElement>);
+          }}
+          onDoubleClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (onDoubleClick) onDoubleClick(e as unknown as React.MouseEvent<HTMLImageElement>);
+          }}
+          onLoad={() => setLoaded(true)}
+          onError={() => setError(true)}
+          loading="lazy"
+          unoptimized={src.startsWith('data:') || (() => {
+            try {
+              const url = new URL(src);
+              const host = url.hostname.toLowerCase();
+              const envHosts = process?.env?.NEXT_PUBLIC_UNOPTIMIZED_IMAGE_HOSTS;
+              const unoptimizedHosts = envHosts ? envHosts.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+              return unoptimizedHosts.includes(host);
+            } catch (e) {
+              return false;
+            }
+          })()}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div ref={wrapperRef}>
+    <div ref={wrapperRef} className={className}>
 
       <Image
         src={src}

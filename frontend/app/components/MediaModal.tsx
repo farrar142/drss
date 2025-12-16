@@ -133,6 +133,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           <FeedImage
             src={modalMedia.src}
             alt="Enlarged"
+            contain
           />
         ) : null}
 
