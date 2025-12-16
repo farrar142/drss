@@ -97,7 +97,8 @@ export const FeedImage: FC<{
       <img
         src={src}
         alt={alt}
-        className={className}
+        className={cn(className, "select-none")}
+        draggable={false}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -127,12 +128,13 @@ export const FeedImage: FC<{
   // contain 모드: fill 사용해서 부모에 맞춤
   if (contain) {
     return (
-      <div ref={wrapperRef} className={className} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div ref={wrapperRef} className={cn(className, "select-none")} style={{ position: 'relative', width: '100%', height: '100%' }}>
         <Image
           src={src}
           alt={alt}
           fill
-          sizes="90vw"
+          sizes="95vw"
+          draggable={false}
           style={{
             objectFit: 'contain',
             cursor: 'pointer',
@@ -168,7 +170,7 @@ export const FeedImage: FC<{
   }
 
   return (
-    <div ref={wrapperRef} className={className}>
+    <div ref={wrapperRef} className={cn(className, "select-none")}>
 
       <Image
         src={src}
@@ -176,6 +178,7 @@ export const FeedImage: FC<{
         width={naturalSize?.width || 800}
         height={naturalSize?.height || 600}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        draggable={false}
         style={{
           width: '100%',
           height: 'auto',

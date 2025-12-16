@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect } from 'react';
-import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2 } from 'lucide-react';
+import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2, ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FeedImage } from './FeedImage';
 import { UseMediaModalReturn, MediaItem } from '../hooks/useMediaModal';
@@ -121,7 +121,12 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
-  const { mediaViewMode: viewMode, setMediaViewMode: setViewMode } = useSettingsStore();
+  const {
+    mediaViewMode: viewMode,
+    setMediaViewMode: setViewMode,
+    mediaReadDirection: readDirection,
+    setMediaReadDirection: setReadDirection
+  } = useSettingsStore();
 
   // viewMode에 따른 네비게이션 핸들러
   const handleNext = () => {
@@ -222,20 +227,45 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
       {/* Media Content */}
       <div
         className={cn(
-          "w-[90vw] h-[90vh] flex items-center justify-center",
+          "w-[95vw] h-[95vh] flex items-center justify-center",
           "bg-card/90 rounded-2xl border border-border p-4",
-          "shadow-2xl relative"
+          "shadow-2xl relative touch-none select-none"
         )}
         // onClick={(e) => e.stopPropagation()}
+        onDragStart={(e) => e.preventDefault()}
         onPointerDown={(e) => {
           (e.currentTarget as any)._startX = e.clientX;
+          (e.currentTarget as any)._startY = e.clientY;
         }}
         onPointerUp={(e) => {
           const startX = (e.currentTarget as any)._startX;
-          if (typeof startX !== 'number') return;
+          const startY = (e.currentTarget as any)._startY;
+          if (typeof startX !== 'number' || typeof startY !== 'number') return;
+
           const dx = e.clientX - startX;
-          if (Math.abs(dx) > 30) {
-            if (dx > 0) prevMedia(); else nextMedia();
+          const dy = e.clientY - startY;
+          const absDx = Math.abs(dx);
+          const absDy = Math.abs(dy);
+
+          // 최소 스와이프 거리
+          const minSwipeDistance = 30;
+
+          // RTL 모드일 때 방향 반전
+          const isRtl = readDirection === 'rtl';
+
+          // 수평 스와이프가 수직보다 큰 경우: 이전/다음
+          if (absDx > minSwipeDistance && absDx > absDy) {
+            if (isRtl) {
+              // RTL: 오른쪽 스와이프 = 다음, 왼쪽 스와이프 = 이전
+              if (dx > 0) handleNext(); else handlePrev();
+            } else {
+              // LTR: 오른쪽 스와이프 = 이전, 왼쪽 스와이프 = 다음
+              if (dx > 0) handlePrev(); else handleNext();
+            }
+          }
+          // 수직 스와이프가 수평보다 큰 경우: 위로 = 다음, 아래로 = 이전
+          else if (absDy > minSwipeDistance && absDy > absDx) {
+            if (dy > 0) handlePrev(); else handleNext();
           }
         }}
         onClick={(e) => {
@@ -258,7 +288,12 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
               clickTimeoutRef.current = null;
               clickStateRef.current = null;
             }, CLICK_STATE_WINDOW) as unknown as number;
-            if (isLeft) prevMedia(); else nextMedia();
+            // RTL 모드일 때 클릭 방향 반전
+            if (readDirection === 'rtl') {
+              if (isLeft) nextMedia(); else prevMedia();
+            } else {
+              if (isLeft) prevMedia(); else nextMedia();
+            }
           } catch (err) {
             // ignore
           }
@@ -288,6 +323,39 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           }
         }}
       >
+        {/* Reading Direction Toggle Button - Only in Dual View */}
+        {viewMode === 2 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setReadDirection(readDirection === 'ltr' ? 'rtl' : 'ltr');
+            }}
+            title={readDirection === 'ltr' ? '오른쪽→왼쪽으로 보기' : '왼쪽→오른쪽으로 보기'}
+            className={cn(
+              "absolute top-4 right-4 z-20 p-2 rounded-full backdrop-blur-sm transition-colors",
+              readDirection === 'rtl' 
+                ? "bg-primary/80 hover:bg-primary" 
+                : "bg-black/60 hover:bg-black/80"
+            )}
+          >
+            <div className="flex items-center gap-1.5 text-white text-xs font-medium px-1">
+              {readDirection === 'ltr' ? (
+                <>
+                  <span>L</span>
+                  <ArrowLeftRight className="w-4 h-4" />
+                  <span>R</span>
+                </>
+              ) : (
+                <>
+                  <span>R</span>
+                  <ArrowLeftRight className="w-4 h-4" />
+                  <span>L</span>
+                </>
+              )}
+            </div>
+          </button>
+        )}
+
         {/* Single View Mode */}
         {viewMode === 1 && (
           <>
@@ -297,7 +365,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
                 src={modalMedia.src}
                 controls
                 autoPlay
-                className="max-w-full max-h-[calc(90vh-80px)] object-contain rounded-lg"
+                className="max-w-full max-h-[calc(95vh-80px)] object-contain rounded-lg"
                 onClick={(e) => e.stopPropagation()}
               />
             ) : modalMedia?.type === 'image' ? (
@@ -305,7 +373,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
                 src={modalMedia.src}
                 alt="Enlarged"
                 contain
-                className="max-h-[calc(90vh-80px)]"
+                className="max-h-[calc(95vh-80px)]"
                 onClick={(e) => e.preventDefault()}
               />
             ) : null}
@@ -315,20 +383,25 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
         {/* Dual View Mode */}
         {viewMode === 2 && (() => {
           // 듀얼 뷰에서는 항상 짝수 인덱스(0, 2, 4...)에서 시작하도록 보정
-          const leftIndex = currentMediaIndex != null ? Math.floor(currentMediaIndex / 2) * 2 : null;
-          const rightIndex = leftIndex != null ? leftIndex + 1 : null;
+          const baseLeftIndex = currentMediaIndex != null ? Math.floor(currentMediaIndex / 2) * 2 : null;
+          const baseRightIndex = baseLeftIndex != null ? baseLeftIndex + 1 : null;
+
+          // readDirection에 따라 좌우 인덱스 결정
+          const leftIndex = readDirection === 'ltr' ? baseLeftIndex : baseRightIndex;
+          const rightIndex = readDirection === 'ltr' ? baseRightIndex : baseLeftIndex;
 
           return (
-            <div className="flex items-center justify-center gap-4 w-full h-[calc(90vh-80px)]">
-              {/* Left Image - 클릭 시 이전으로 */}
+            <div className="flex items-center justify-center gap-4 w-full h-[calc(95vh-80px)]">
+              {/* Left Image - 클릭 시 이전/다음 (RTL에 따라 다름) */}
               <div
                 className="flex-1 h-full flex items-center justify-center cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handlePrev();
+                  // RTL일 때 왼쪽 클릭 = 다음, LTR일 때 왼쪽 클릭 = 이전
+                  if (readDirection === 'rtl') handleNext(); else handlePrev();
                 }}
               >
-                {leftIndex != null && mediaList[leftIndex] && (
+                {leftIndex != null && leftIndex < mediaList.length && mediaList[leftIndex] && (
                   mediaList[leftIndex].type === 'video' ? (
                     <FeedVideo
                       key={mediaList[leftIndex].src}
@@ -352,12 +425,13 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
               {/* Divider */}
               <div className="w-px h-3/4 bg-border" />
 
-              {/* Right Image - 클릭 시 다음으로 */}
+              {/* Right Image - 클릭 시 다음/이전 (RTL에 따라 다름) */}
               <div
                 className="flex-1 h-full flex items-center justify-center cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleNext();
+                  // RTL일 때 오른쪽 클릭 = 이전, LTR일 때 오른쪽 클릭 = 다음
+                  if (readDirection === 'rtl') handlePrev(); else handleNext();
                 }}
               >
                 {rightIndex != null && rightIndex < mediaList.length && mediaList[rightIndex] ? (

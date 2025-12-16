@@ -262,7 +262,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
     >
       {/* Sticky Header: Title + Actions in one row */}
-      <div 
+      <div
         className={cn(
           "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
           fontSize.gap,
