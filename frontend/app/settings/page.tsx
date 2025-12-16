@@ -266,6 +266,39 @@ export default function SettingsPage() {
         </Button>
       </div>
 
+      {/* Preview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.settings.preview}</CardTitle>
+          <CardDescription>
+            {t.settings.previewDescription}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button>Primary 버튼</Button>
+            <Button variant="secondary">Secondary 버튼</Button>
+            <Button variant="outline">Outline 버튼</Button>
+            <Button variant="ghost">Ghost 버튼</Button>
+            <Button variant="destructive">Destructive 버튼</Button>
+          </div>
+          <div className="p-4 rounded-lg bg-accent">
+            <p className="text-accent-foreground">Accent 배경 영역</p>
+          </div>
+          <div className="p-4 rounded-lg bg-muted">
+            <p className="text-muted-foreground">Muted 배경 영역</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground text-xs">P</span>
+            </div>
+            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
+              <span className="text-secondary-foreground text-xs">S</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Font Size */}
       <Card>
         <CardHeader>
@@ -339,38 +372,6 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.preview}</CardTitle>
-          <CardDescription>
-            {t.settings.previewDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            <Button>Primary 버튼</Button>
-            <Button variant="secondary">Secondary 버튼</Button>
-            <Button variant="outline">Outline 버튼</Button>
-            <Button variant="ghost">Ghost 버튼</Button>
-            <Button variant="destructive">Destructive 버튼</Button>
-          </div>
-          <div className="p-4 rounded-lg bg-accent">
-            <p className="text-accent-foreground">Accent 배경 영역</p>
-          </div>
-          <div className="p-4 rounded-lg bg-muted">
-            <p className="text-muted-foreground">Muted 배경 영역</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-xs">P</span>
-            </div>
-            <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center">
-              <span className="text-secondary-foreground text-xs">S</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

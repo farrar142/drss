@@ -252,7 +252,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
       key={item.id}
       className={cn(
-        "glass-card p-4 cursor-pointer",
+        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-14",
         viewMode === 'board' ? 'mb-3' : ''
       )}
       onClick={() => {
@@ -261,24 +261,41 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         onCollapseChange && onCollapseChange(item.id, newCollapsed);
       }}
     >
-      {/* Header with actions and title */}
-      <div className={cn("flex justify-between items-start", fontSize.gap)}>
-        <div className={cn("flex items-center flex-wrap flex-1", fontSize.gap)}>
+      {/* Sticky Header: Title + Actions in one row */}
+      <div 
+        className={cn(
+          "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
+          fontSize.gap,
+          // Apply sticky when content is visible (feed mode or expanded in board mode)
+          (viewMode === 'feed' || !collapsed) && "sticky top-14 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        )}
+        onClick={(e) => {
+          // When sticky header is clicked, scroll the card to top (below app bar)
+          if (viewMode === 'feed' || !collapsed) {
+            e.stopPropagation();
+            localRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }}
+      >
+        {/* Title - truncated */}
+        <h3 className={cn("font-semibold text-foreground leading-snug truncate flex-1 min-w-0", fontSize.title)}>
+          {item.title}
+        </h3>
+
+        {/* Actions */}
+        <div className={cn("flex items-center shrink-0", fontSize.gap)}>
           {/* Read Toggle Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleRead(); }}
             className={cn(
               "p-1 rounded-full transition-colors flex items-center justify-center",
-              fontSize.iconWrapper,
               isRead
-                ? "bg-primary/20 hover:bg-primary/30"
-                : "bg-muted hover:bg-muted/80"
+                ? "text-primary hover:bg-primary/10"
+                : "text-muted-foreground hover:bg-muted"
             )}
+            title={isRead ? "Mark as unread" : "Mark as read"}
           >
-            <CheckCircle className={cn(
-              fontSize.icon,
-              isRead ? "text-primary" : "text-muted-foreground"
-            )} />
+            <CheckCircle className={cn(fontSize.icon)} />
           </button>
 
           {/* Favorite Toggle Button */}
@@ -286,49 +303,43 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             onClick={(e) => { e.stopPropagation(); handleToggleFavorite(); }}
             className={cn(
               "p-1 rounded-full transition-colors flex items-center justify-center",
-              fontSize.iconWrapper,
               isFavorite
-                ? "bg-red-500/20 hover:bg-red-500/30"
-                : "bg-muted hover:bg-muted/80"
+                ? "text-red-500 hover:bg-red-500/10"
+                : "text-muted-foreground hover:bg-muted"
             )}
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
-            <Heart className={cn(
-              fontSize.icon,
-              isFavorite ? "text-red-500 fill-red-500" : "text-muted-foreground"
-            )} />
+            <Heart className={cn(fontSize.icon, isFavorite && "fill-red-500")} />
           </button>
 
-          {/* Title */}
-          <h3 className={cn("flex-1 font-semibold text-foreground leading-snug", fontSize.title)}>
-            {item.title}
-            {publishedAt && (
-              <div className={cn("text-muted-foreground font-normal mt-1", fontSize.meta)}>
-                {publishedAt}
-              </div>
+          {/* Read More Link */}
+          <a
+            href={item.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              "px-2 py-1 sm:px-3 sm:py-1.5 rounded-full font-medium transition-colors shrink-0 whitespace-nowrap",
+              "bg-primary text-primary-foreground hover:bg-primary/90",
+              fontSize.meta
             )}
-          </h3>
+          >
+            Read more
+          </a>
         </div>
-
-        {/* Read More Link */}
-        <a
-          href={item.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className={cn(
-            "px-2 py-1 rounded-md font-medium text-white whitespace-nowrap",
-            "bg-primary hover:bg-primary/90 transition-colors",
-            fontSize.meta
-          )}
-        >
-          Read more
-        </a>
       </div>
+
+      {/* Date - aligned with title */}
+      {publishedAt && (
+        <div className={cn("text-muted-foreground", fontSize.meta)}>
+          {publishedAt}
+        </div>
+      )}
 
       {/* Description */}
       {(viewMode === 'feed' || !collapsed) && (
         <div className={cn(
-          "mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
+          "mt-2 sm:mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
           fontSize.body
         )}>
           {description}
