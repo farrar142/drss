@@ -1,10 +1,11 @@
+from typing import Optional
 import feedparser
 import requests
 import re
 from urllib.parse import urlparse
 
 
-def fetch_feed_data(url: str, custom_headers: dict = None):
+def fetch_feed_data(url: str, custom_headers: Optional[dict] = None):
     """
     RSS 피드를 가져와 파싱하는 공통 함수
     """
@@ -27,7 +28,7 @@ def fetch_feed_data(url: str, custom_headers: dict = None):
     return feed
 
 
-def extract_favicon_url(url: str, headers: dict = None):
+def extract_favicon_url(url: str, headers: Optional[dict] = None):
     """
     주어진 URL에서 favicon URL을 추출하는 함수
     """

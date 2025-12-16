@@ -56,12 +56,12 @@ def update_feed_items(feed_id):
 
         if guid in existing_guids:
             continue
-
+        guid = str(guid)[:500]
         # 제목 추출
         title = getattr(entry, "title", "No Title")
         if not isinstance(title, str):
             continue
-
+        title = title[:200]
         # 설명 추출
         description = ""
         if hasattr(entry, "description"):
@@ -111,12 +111,13 @@ def update_feeds_by_category(category_id):
     """
     특정 카테고리의 모든 RSS 피드들을 업데이트하는 task
     """
-    RSSFeed = apps.get_model("feeds", "RSSFeed")
+    from .models import RSSFeed
+
     feeds = RSSFeed.objects.filter(category_id=category_id, visible=True)
     results = []
 
     for feed in feeds:
-        result = update_feed_items.delay(feed.id)
+        result = update_feed_items.delay(feed.pk)
         results.append(result)
 
     return f"Scheduled updates for {len(feeds)} feeds in category {category_id}"
@@ -127,12 +128,13 @@ def update_all_feeds():
     """
     모든 활성화된 RSS 피드들을 업데이트하는 task
     """
-    RSSFeed = apps.get_model("feeds", "RSSFeed")
+    from .models import RSSFeed
+
     feeds = RSSFeed.objects.filter(visible=True)
     results = []
 
     for feed in feeds:
-        result = update_feed_items.delay(feed.id)
+        result = update_feed_items.delay(feed.pk)
         results.append(result)
 
     return f"Scheduled updates for {len(feeds)} feeds"

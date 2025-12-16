@@ -22,11 +22,27 @@ services:
       - "8000:8000"
   celery-worker:
     <<: *backend
-    entrypoint: celery -A base worker --loglevel=info
+    entrypoint: celery -A base worker --loglevel=info --concurrency 1
   celery-beat:
     <<: *backend
     entrypoint: celery -A base beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-
+  node:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: drss-frontend
+    restart: always
+    volumes:
+      - ./frontend:/usr/src/app
+      - node_modules:/usr/src/app/node_modules # node_modules는 named volume으로 유지
+      - next_cache:/usr/src/app/.next/cache # next.js 캐시를 위한 named volume
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Seoul
+    env_file:
+      - .env
+    command: npm run dev
 volumes:
-  postgres_data:
-  redis_data:
+  node_modules:
+  next_cache:

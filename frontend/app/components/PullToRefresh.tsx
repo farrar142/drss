@@ -19,12 +19,13 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
 }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isTriggered, setIsTriggered] = useState(false);
+  const isRefreshingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wheelAccumulatorRef = useRef(0);
   const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const onRefreshRef = useRef(onRefresh);
   const hasCalledRefreshRef = useRef(false); // API 호출 여부 추적
-  
+
   // onRefresh를 ref로 저장해서 useEffect dependency에서 제외
   useEffect(() => {
     onRefreshRef.current = onRefresh;
@@ -33,9 +34,12 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
   // 리셋 함수
   const resetState = useCallback(() => {
     setPullDistance(0);
-    setIsTriggered(false);
+    // If a refresh is in progress, keep the spinner visible until it completes
+    if (!isRefreshingRef.current) {
+      setIsTriggered(false);
+      hasCalledRefreshRef.current = false;
+    }
     wheelAccumulatorRef.current = 0;
-    hasCalledRefreshRef.current = false;
   }, []);
 
   // 스크롤/휠 이벤트로 overscroll 감지
@@ -44,20 +48,30 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
       // 페이지 최상단에서 위로 스크롤할 때만 처리
       if (window.scrollY <= 0 && e.deltaY < 0) {
         e.preventDefault();
-        
+
         // 휠 값 누적 (위로 스크롤 = 음수, 양수로 변환)
         wheelAccumulatorRef.current += Math.abs(e.deltaY) * 0.3;
-        
+
         const distance = Math.min(wheelAccumulatorRef.current, threshold * 1.5);
         setPullDistance(distance);
-        
+
         if (distance >= threshold && !hasCalledRefreshRef.current) {
-          setIsTriggered(true);
           hasCalledRefreshRef.current = true;
-          // 임계값 도달하면 바로 API 호출 (결과는 나중에 적용)
-          onRefreshRef.current();
+          // 임계값 도달하면 바로 API 호출. 완료되면 스피너를 즉시 끕니다.
+          (async () => {
+            try {
+              isRefreshingRef.current = true;
+              setIsTriggered(true);
+              await Promise.resolve(onRefreshRef.current());
+            } finally {
+              isRefreshingRef.current = false;
+              setIsTriggered(false);
+              setPullDistance(0);
+              hasCalledRefreshRef.current = false;
+            }
+          })();
         }
-        
+
         // 휠 멈추면 리셋 (사용자가 손을 뗀 것으로 간주)
         if (wheelTimeoutRef.current) {
           clearTimeout(wheelTimeoutRef.current);
@@ -71,7 +85,7 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
     // 터치 이벤트 (모바일)
     let touchStartY = 0;
     let isTouching = false;
-    
+
     const handleTouchStart = (e: TouchEvent) => {
       if (window.scrollY <= 0) {
         touchStartY = e.touches[0].clientY;
@@ -90,12 +104,21 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
         const resistance = 0.4;
         const distance = Math.min(diff * resistance, threshold * 1.5);
         setPullDistance(distance);
-        
+
         if (distance >= threshold && !hasCalledRefreshRef.current) {
-          setIsTriggered(true);
           hasCalledRefreshRef.current = true;
-          // 임계값 도달하면 바로 API 호출
-          onRefreshRef.current();
+          (async () => {
+            try {
+              isRefreshingRef.current = true;
+              setIsTriggered(true);
+              await Promise.resolve(onRefreshRef.current());
+            } finally {
+              isRefreshingRef.current = false;
+              setIsTriggered(false);
+              setPullDistance(0);
+              hasCalledRefreshRef.current = false;
+            }
+          })();
         }
       }
     };
@@ -124,26 +147,25 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
     };
   }, [threshold, resetState]); // onRefresh 제거!
 
-  // 스피너 표시 조건: 당기는 중이고 pullDistance > 10
-  const showSpinner = pullDistance > 10;
+  // 스피너 표시 조건: 당기는 중이거나 리프레시가 트리거된 상태
+  const showSpinner = isTriggered || pullDistance > 10;
 
   // 스피너 크기 (당긴 거리에 비례)
   const spinnerScale = Math.min(pullDistance / threshold, 1);
   const spinnerSize = 24 + spinnerScale * 16; // 24px ~ 40px
-
+  // Fixed spinner top position (can be adjusted via CSS variable --pull-spinner-top)
+  const spinnerTop = 'var(--pull-spinner-top, 88px)';
   return (
     <div ref={containerRef} className="relative">
       {/* 스피너만 표시 */}
       <div
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 z-50",
+          "fixed z-50",
           "flex items-center justify-center",
           "transition-all duration-150",
           showSpinner ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        style={{
-          top: 80 + pullDistance * 0.5,
-        }}
+        style={{ top: spinnerTop, left: '50vw', transform: 'translateX(-50%)' }}
       >
         <div
           className="rounded-full bg-background shadow-lg border p-2"

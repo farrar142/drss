@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect, useMemo, useCallback } from "react";
+import { ArrowUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { RSSItem } from "../types/rss";
 import { MeasuredItem } from "./MeasuredItem";
@@ -101,6 +102,7 @@ function ColumnVirtual({
     };
   }, [columnData, offsets, getItemHeight]);
 
+
   return (
     <div className="relative">
       <div style={{ height: offsets.total, position: 'relative' }}>
@@ -149,6 +151,21 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   items,
   handleLoadNew,
 }) => {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || window.pageYOffset;
+      setShowScrollTop(y > 200);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   return (
     <>
       <PullToRefresh onRefresh={handleLoadNew}>
@@ -223,6 +240,23 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
         )}
       </div>
       </PullToRefresh>
+
+      {/* Scroll-to-top button that appears after user scrolls down */}
+      <button
+        onClick={scrollToTop}
+        aria-label="맨 위로"
+        className={cn(
+          "fixed left-1/2 -translate-x-1/2 z-50",
+          "flex items-center justify-center",
+          // wider pill, shorter vertical padding, primary background, white icon + small text
+          "rounded-full bg-primary text-white px-6 py-1 shadow-lg transition-all duration-150 hover:shadow-xl",
+          showScrollTop ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+        // move a bit higher than the spinner baseline
+        style={{ top: 'calc(var(--pull-spinner-top, 88px) - 12px)' }}
+      >
+        <ArrowUp className="w-6 h-6 text-white" />
+      </button>
 
       {/* Media Modal */}
       <MediaModal modal={mediaModal} />
