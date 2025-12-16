@@ -25,6 +25,52 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
       className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3"
       data-cruising-control
     >
+      {/* Top spacer (빈 영역) */}
+      <div className="h-3" />
+
+      {/* Scroll-to-top button placed above speed control */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={cn(
+          "p-3 rounded-full shadow-lg transition-all",
+          "bg-primary hover:bg-primary/90 text-primary-foreground",
+          "hover:scale-105 active:scale-95"
+        )}
+        data-cruising-control
+        title="맨 위로"
+        aria-label="맨 위로"
+      >
+        <ChevronsUp className="w-5 h-5 -mt-0.5" />
+      </button>
+
+      {/* Speed Slider - shows when expanded or cruising */}
+      {(isExpanded || isCruising) && (
+        <div
+          className={cn(
+            "bg-card/95 backdrop-blur-sm rounded-xl border border-border shadow-lg p-4",
+            "animate-in slide-in-from-bottom-2 fade-in duration-200"
+          )}
+          data-cruising-control
+        >
+          <div className="flex items-center gap-3 min-w-[200px]">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">느림</span>
+            <Slider
+              value={[speedPercent]}
+              onValueChange={([value]: number[]) => onSpeedChange(value)}
+              min={0}
+              max={100}
+              step={1}
+              className="flex-1"
+              data-cruising-control
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">빠름</span>
+          </div>
+          <div className="text-center text-xs text-muted-foreground mt-2">
+            스크롤 속도: {Math.round(speedPercent)}%
+          </div>
+        </div>
+      )}
+
       {/* Speed Slider - shows when expanded or cruising */}
       {(isExpanded || isCruising) && (
         <div
