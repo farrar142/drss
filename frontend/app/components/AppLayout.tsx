@@ -257,11 +257,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
         }}
       >
-<<<<<<< HEAD
         <div className="p-1 sm:p-2 md:p-4 lg:p-6">
-=======
-        <div className="p-1">
->>>>>>> 9712ff5 (위로가기 버튼 추가)
           {children}
         </div>
       </main>

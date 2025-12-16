@@ -115,15 +115,12 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
         </div>
       </PullToRefresh>
 
-<<<<<<< HEAD
       {/* Queue indicator (개발용, 나중에 제거 가능) */}
       {process.env.NODE_ENV === 'development' && queueLength > 0 && (
         <div className="sticky bottom-4 left-0 w-fit bg-primary/80 text-primary-foreground px-2 py-1 rounded text-xs">
           Queue: {queueLength}
         </div>
       )}
-=======
->>>>>>> 9712ff5 (위로가기 버튼 추가)
 
       {/* Media Modal */}
       <MediaModal modal={mediaModal} />
