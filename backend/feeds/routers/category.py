@@ -35,8 +35,22 @@ def update_category(request, category_id: int, data: CategoryUpdateSchema):
         category.description = data.description
     if data.visible is not None:
         category.visible = data.visible
+    if data.order is not None:
+        category.order = data.order
     category.save()
     return category
+
+
+@router.post("/reorder", response=list[CategorySchema], auth=JWTAuth())
+def reorder_categories(request, data: CategoryReorderSchema):
+    """카테고리 순서 일괄 변경"""
+    categories = []
+    for order, category_id in enumerate(data.category_ids):
+        category = get_object_or_404(RSSCategory, id=category_id, user=request.auth)
+        category.order = order
+        category.save()
+        categories.append(category)
+    return categories
 
 
 @router.delete("/{category_id}", auth=JWTAuth())

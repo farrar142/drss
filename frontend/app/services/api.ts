@@ -83,6 +83,7 @@ export interface CategorySchema {
   name: string;
   description: string;
   visible: boolean;
+  order: number;
 }
 
 export interface CategoryCreateSchema {
@@ -97,10 +98,17 @@ export type CategoryUpdateSchemaDescription = string | null;
 
 export type CategoryUpdateSchemaVisible = boolean | null;
 
+export type CategoryUpdateSchemaOrder = number | null;
+
 export interface CategoryUpdateSchema {
   name?: CategoryUpdateSchemaName;
   description?: CategoryUpdateSchemaDescription;
   visible?: CategoryUpdateSchemaVisible;
+  order?: CategoryUpdateSchemaOrder;
+}
+
+export interface CategoryReorderSchema {
+  category_ids: number[];
 }
 
 export interface ItemSchema {
@@ -337,6 +345,21 @@ export const feedsRoutersCategoryDeleteCategory = (
     }
   
 /**
+ * 카테고리 순서 일괄 변경
+ * @summary Reorder Categories
+ */
+export const feedsRoutersCategoryReorderCategories = (
+    categoryReorderSchema: CategoryReorderSchema,
+ ) => {
+      return axiosInstance<CategorySchema[]>(
+      {url: `/api/categories/reorder`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: categoryReorderSchema
+    },
+      );
+    }
+  
+/**
  * @summary Refresh Category Feeds
  */
 export const feedsRoutersCategoryRefreshCategoryFeeds = (
@@ -489,6 +512,7 @@ export type FeedsRoutersCategoryListCategoriesResult = NonNullable<Awaited<Retur
 export type FeedsRoutersCategoryCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryCreateCategory>>>
 export type FeedsRoutersCategoryUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryUpdateCategory>>>
 export type FeedsRoutersCategoryDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryDeleteCategory>>>
+export type FeedsRoutersCategoryReorderCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryReorderCategories>>>
 export type FeedsRoutersCategoryRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryRefreshCategoryFeeds>>>
 export type FeedsRoutersCategoryGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryGetCategoryStats>>>
 export type FeedsRoutersItemToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemFavorite>>>

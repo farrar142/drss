@@ -8,6 +8,7 @@ class CategorySchema(Schema):
     name: str
     description: str
     visible: bool
+    order: int
 
 
 class CategoryCreateSchema(Schema):
@@ -20,6 +21,11 @@ class CategoryUpdateSchema(Schema):
     name: Optional[str] = None
     description: Optional[str] = None
     visible: Optional[bool] = None
+    order: Optional[int] = None
+
+
+class CategoryReorderSchema(Schema):
+    category_ids: list[int]  # 순서대로 정렬된 카테고리 ID 리스트
 
 
 class FeedSchema(Schema):
