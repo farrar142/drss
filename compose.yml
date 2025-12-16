@@ -1,50 +1,174 @@
+# Production Docker Compose Configuration
+# Usage: docker compose -f prod.compose.yml up -d
+
 x-django-config: &backend
   build:
     context: ./backend
-    dockerfile: Dockerfile
-  image: drss-backend
+    dockerfile: prod.Dockerfile
+    target: production
   restart: always
-  volumes:
-    - ./backend:/usr/src/app
   environment:
     - DJANGO_SETTINGS_MODULE=base.settings
     - TZ=Asia/Seoul
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
   env_file:
-    - .env
+    - .env.production
+  networks:
+    - drss-network
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
 
 services:
+  # ===================
+  # Django API Server
+  # ===================
   django:
     <<: *backend
-    # Run collectstatic at container start so static files (including admin
-    # assets) are available to WhiteNoise before Uvicorn serves requests.
-    entrypoint: sh -c "python manage.py collectstatic --noinput && uvicorn base.asgi:application --host 0.0.0.0 --port 8000 --workers 8"
+    image: drss-backend:production
+    container_name: drss-django
     ports:
       - "8000:8000"
+    volumes:
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===================
+  # Celery Worker
+  # ===================
   celery-worker:
     <<: *backend
-    entrypoint: celery -A base worker --loglevel=info --concurrency 1
+    image: drss-backend:production
+    container_name: drss-celery-worker
+    entrypoint: celery
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
+    depends_on:
+      - django
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ===================
+  # Celery Beat Scheduler
+  # ===================
   celery-beat:
     <<: *backend
-    entrypoint: celery -A base beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    image: drss-backend:production
+    container_name: drss-celery-beat
+    entrypoint: celery
+    command: ["-A", "base", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    depends_on:
+      - django
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # ===================
+  # Next.js Frontend
+  # ===================
   node:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
-    image: drss-frontend
+      dockerfile: prod.Dockerfile
+      target: production
+    image: drss-frontend:production
+    container_name: drss-frontend
     restart: always
-    volumes:
-      - ./frontend:/usr/src/app
-      - node_modules:/usr/src/app/node_modules # node_modules는 named volume으로 유지
-      - next_cache:/usr/src/app/.next # next.js 캐시를 위한 named volume
     ports:
       - "3000:3000"
     environment:
+      - NODE_ENV=production
       - TZ=Asia/Seoul
-      - WATCHPACK_POLLING=true
-      - HOST=0.0.0.0
     env_file:
-      - .env
-    command: npm run dev
+      - .env.production
+    networks:
+      - drss-network
+    depends_on:
+      django:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ===================
+  # Redis (Cache & Message Broker)
+  # ===================
+  redis:
+    image: redis:7-alpine
+    container_name: drss-redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - drss-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 300M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+networks:
+  drss-network:
+    driver: bridge
+
 volumes:
-  node_modules:
-  next_cache:
+  static_volume:
+  media_volume:
+  redis_data:
