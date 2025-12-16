@@ -22,6 +22,7 @@ type MeseasuredItemProp<T extends { id: number }> = {
 export const MeasuredItem = <T extends { id: number }>({ item, onMediaClick, onHeightChange, isForcedVisible, estimateHeight, onCollapseChange, Renderer }: MeseasuredItemProp<T>) => {
   const ref = useRef<HTMLDivElement>(null);
   const lastHeightRef = useRef<number>(0);
+  const measuredRef = useRef<boolean>(false); // 측정 완료 여부
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -39,42 +40,26 @@ export const MeasuredItem = <T extends { id: number }>({ item, onMediaClick, onH
     obs.observe(ref.current);
 
     const measureHeight = () => {
+      // 이미 측정 완료되었으면 무시
+      if (measuredRef.current) return;
+
       if (ref.current) {
         const height = ref.current.offsetHeight;
         // Only report if height changed significantly
         if (Math.abs(lastHeightRef.current - height) > 10) {
           lastHeightRef.current = height;
           onHeightChange(item.id, height);
+          // 측정 완료로 마킹 (한번만 측정)
+          measuredRef.current = true;
         }
       }
     };
 
     // Initial measurement after a short delay to let content render
-    const initialTimeout = setTimeout(measureHeight, 100);
-
-    // Re-measure when images load
-    const images = ref.current.querySelectorAll('img');
-    const imageLoadHandler = () => {
-      setTimeout(measureHeight, 50);
-    };
-
-    images.forEach(img => {
-      if (!img.complete) {
-        img.addEventListener('load', imageLoadHandler);
-        img.addEventListener('error', imageLoadHandler);
-      }
-    });
-
-    // One final measurement after all images should be loaded
-    const finalTimeout = setTimeout(measureHeight, 1000);
+    const initialTimeout = setTimeout(measureHeight, 150);
 
     return () => {
       clearTimeout(initialTimeout);
-      clearTimeout(finalTimeout);
-      images.forEach(img => {
-        img.removeEventListener('load', imageLoadHandler);
-        img.removeEventListener('error', imageLoadHandler);
-      });
     };
   }, [item.id, onHeightChange]);
 

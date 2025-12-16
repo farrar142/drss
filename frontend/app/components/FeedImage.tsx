@@ -1,5 +1,6 @@
 import { FC, useState, useRef, useEffect } from "react";
 import Image from 'next/image';
+import { cn } from "@/lib/utils";
 
 export const FeedImage: FC<{
   src: string;
@@ -12,7 +13,7 @@ export const FeedImage: FC<{
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Start loading only when element is visible (or when src is not an http(s) url)
+  // Start loading only when element is near viewport
   useEffect(() => {
     // If src is not an absolute http(s) url, load immediately
     try {
@@ -35,6 +36,7 @@ export const FeedImage: FC<{
       return;
     }
 
+    // rootMargin: 뷰포트 위아래 200px 범위 내에 들어오면 로딩 시작
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -42,7 +44,10 @@ export const FeedImage: FC<{
           obs.disconnect();
         }
       });
-    }, { threshold: 0.01 });
+    }, { 
+      threshold: 0,
+      rootMargin: '200px 0px' // 뷰포트 위아래 200px 여유
+    });
 
     obs.observe(el);
     return () => obs.disconnect();
@@ -61,6 +66,29 @@ export const FeedImage: FC<{
     setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
     setLoaded(true);
   };
+
+  // Placeholder skeleton while not visible (애니메이션 제거 - 성능 이슈)
+  if (!isVisible) {
+    return (
+      <div 
+        ref={wrapperRef} 
+        className={cn(
+          "bg-muted/30 rounded",
+          className
+        )}
+        style={contain ? {
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          minHeight: '200px'
+        } : {
+          width: '100%',
+          aspectRatio: '16/9',
+          minHeight: '100px'
+        }}
+      />
+    );
+  }
 
   // For images without known dimensions, use regular img tag for proper aspect ratio
   if (error) {

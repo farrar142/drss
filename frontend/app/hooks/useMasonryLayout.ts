@@ -9,14 +9,24 @@ export const useMasonryLayout = <T extends { id: number }>(items: T[], columns: 
   const heightsRef = useRef<Map<number, number>>(new Map());
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingUpdatesRef = useRef<Map<number, number>>(new Map());
+  // 이미 측정 완료된 아이템 추적 (한번 측정되면 재측정 안함)
+  const measuredItemsRef = useRef<Set<number>>(new Set());
 
   // Register height for an item - debounced and only updates if significantly different
   const registerHeight = useCallback((itemId: number, height: number) => {
+    // 이미 측정된 아이템은 무시 (이미지 로드로 인한 높이 변화 방지)
+    if (measuredItemsRef.current.has(itemId)) {
+      return;
+    }
+
     const currentHeight = heightsRef.current.get(itemId) || 0;
 
-    // Only update if height changed by more than 20px (avoid micro-adjustments)
-    if (Math.abs(currentHeight - height) > 20) {
+    // Only update if height changed by more than 50px (avoid micro-adjustments)
+    if (Math.abs(currentHeight - height) > 50 || currentHeight === 0) {
       pendingUpdatesRef.current.set(itemId, height);
+      // 측정 완료로 마킹
+      measuredItemsRef.current.add(itemId);
+      heightsRef.current.set(itemId, height);
 
       // Debounce updates to batch them together
       if (updateTimeoutRef.current) {
@@ -29,13 +39,12 @@ export const useMasonryLayout = <T extends { id: number }>(items: T[], columns: 
             const newMap = new Map(prev);
             pendingUpdatesRef.current.forEach((h, id) => {
               newMap.set(id, h);
-              heightsRef.current.set(id, h);
             });
             pendingUpdatesRef.current.clear();
             return newMap;
           });
         }
-      }, 300); // Wait 300ms before applying updates
+      }, 500); // Wait 500ms before applying updates
     }
   }, []);
 
