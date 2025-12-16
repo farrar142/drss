@@ -4,8 +4,9 @@ import Image from 'next/image';
 export const FeedImage: FC<{
   src: string;
   alt?: string;
-  onClick: () => void;
-}> = ({ src, alt = '', onClick }) => {
+  onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
+  onDoubleClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
+}> = ({ src, alt = '', onClick, onDoubleClick }) => {
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -69,7 +70,12 @@ export const FeedImage: FC<{
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onClick();
+          if (onClick) onClick(e as unknown as React.MouseEvent<HTMLImageElement>);
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDoubleClick) onDoubleClick(e as unknown as React.MouseEvent<HTMLImageElement>);
         }}
         loading="lazy"
         style={{
@@ -101,7 +107,12 @@ export const FeedImage: FC<{
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          onClick();
+          if (onClick) onClick(e as unknown as React.MouseEvent<HTMLImageElement>);
+        }}
+        onDoubleClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (onDoubleClick) onDoubleClick(e as unknown as React.MouseEvent<HTMLImageElement>);
         }}
         onLoad={handleLoad}
         onError={() => setError(true)}

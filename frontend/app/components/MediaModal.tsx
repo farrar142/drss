@@ -3,6 +3,7 @@
 import { FC } from 'react';
 import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { FeedImage } from './FeedImage';
 import { UseMediaModalReturn, MediaItem } from '../hooks/useMediaModal';
 
 export interface MediaModalProps {
@@ -79,19 +80,20 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
             onClick={(e) => e.stopPropagation()}
           />
         ) : modalMedia?.type === 'image' ? (
-          <img
+          <FeedImage
             src={modalMedia.src}
             alt="Enlarged"
-            className="max-w-full max-h-full object-contain rounded-lg"
             onClick={(e) => {
-              e.stopPropagation();
+              // same logic as previous img onClick
+              const evt = e as React.MouseEvent<HTMLImageElement>;
+              evt.stopPropagation();
               const idx = currentMediaIndexRef.current;
               if (!mediaList || mediaList.length <= 1 || idx == null) return;
 
               try {
-                const img = e.currentTarget as HTMLImageElement;
+                const img = evt.currentTarget as HTMLImageElement;
                 const rect = img.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
+                const clickX = evt.clientX - rect.left;
                 const isLeft = clickX < rect.width / 2;
 
                 const now = Date.now();
@@ -109,7 +111,8 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
               }
             }}
             onDoubleClick={(e) => {
-              e.stopPropagation();
+              const evt = e as React.MouseEvent<HTMLImageElement>;
+              evt.stopPropagation();
               const s = clickStateRef.current;
               if (clickTimeoutRef.current) {
                 window.clearTimeout(clickTimeoutRef.current);
@@ -119,9 +122,9 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
               if (!mediaList || mediaList.length <= 1) return;
               if (!s) return;
               try {
-                const img = e.currentTarget as HTMLImageElement;
+                const img = evt.currentTarget as HTMLImageElement;
                 const rect = img.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
+                const clickX = evt.clientX - rect.left;
                 const isLeftDbl = clickX < rect.width / 2;
                 if (isLeftDbl && s.isLeft && s.startIndex === 0) {
                   closeModal();
