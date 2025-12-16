@@ -49,7 +49,6 @@ export interface UseFeedViewerReturn {
   items: RSSItem[];
 
   // Auto-refresh
-  refreshProgress: number;
   newPostsCount: number;
   isRefreshing: boolean;
   handleLoadNew: () => void;
@@ -68,6 +67,8 @@ export function useFeedViewer({
   newPostsCount: externalNewPostsCount = 0,
   autoRefreshInterval = 60000,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
+  console.log('[useFeedViewer] render:', { itemsLength: items.length, hasNext, loading });
+
   const { viewMode } = useSettingsStore();
   const isMd = useMediaQuery('(max-width: 768px)');
   const isXl = useMediaQuery('(min-width: 1280px)');
@@ -76,6 +77,8 @@ export function useFeedViewer({
   let columns = 1;
   if (isXl) columns = 3;
   else if (!isMd) columns = 2;
+
+  console.log('[useFeedViewer] columns:', { isMd, isXl, columns });
 
   // Use column distributor instead of masonry layout
   const {
@@ -103,46 +106,28 @@ export function useFeedViewer({
   onLoadNewRef.current = onLoadNew;
 
   // Auto-refresh state
-  const [refreshProgress, setRefreshProgress] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const isRefreshingRef = useRef(false);
   const [newPostsCount, setNewPostsCount] = useState(externalNewPostsCount);
 
   // Update newPostsCount when external value changes
   useEffect(() => {
+    console.log('[useFeedViewer] Effect 1 (externalNewPostsCount):', externalNewPostsCount);
     setNewPostsCount(externalNewPostsCount);
   }, [externalNewPostsCount]);
 
-  // Auto-refresh with progress
+  // Auto-refresh
   useEffect(() => {
+    console.log('[useFeedViewer] Effect 2 (auto-refresh):', { onLoadNew: !!onLoadNew, autoRefreshInterval });
     if (!onLoadNew || autoRefreshInterval <= 0) return;
-
-    const startTime = Date.now();
-    let animationId: number;
-
-    const updateProgress = () => {
-      if (typeof document !== 'undefined' && document.hidden) {
-        // 탭이 숨겨져 있으면 진행률 유지
-        animationId = requestAnimationFrame(updateProgress);
-        return;
-      }
-
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min((elapsed / autoRefreshInterval) * 100, 100);
-      setRefreshProgress(progress);
-
-      if (progress < 100) {
-        animationId = requestAnimationFrame(updateProgress);
-      }
-    };
-
-    animationId = requestAnimationFrame(updateProgress);
 
     // 자동 새로고침 실행
     const intervalId = setInterval(async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      if (isRefreshing) return;
+      if (isRefreshingRef.current) return;
 
       try {
+        isRefreshingRef.current = true;
         setIsRefreshing(true);
         const cb = onLoadNewRef.current;
         if (cb) {
@@ -152,31 +137,22 @@ export function useFeedViewer({
           }
         }
       } finally {
+        isRefreshingRef.current = false;
         setIsRefreshing(false);
-        setRefreshProgress(0);
       }
     }, autoRefreshInterval);
 
-    const visibilityHandler = () => {
-      if (!document.hidden) {
-        // 탭이 다시 보이면 진행률 리셋
-        setRefreshProgress(0);
-      }
-    };
-    document.addEventListener('visibilitychange', visibilityHandler);
-
     return () => {
-      cancelAnimationFrame(animationId);
       clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', visibilityHandler);
     };
-  }, [onLoadNew, autoRefreshInterval, isRefreshing]);
+  }, [onLoadNew, autoRefreshInterval]);
 
   // Handle manual load new
   const handleLoadNew = useCallback(async () => {
-    if (isRefreshing) return;
+    if (isRefreshingRef.current) return;
 
     try {
+      isRefreshingRef.current = true;
       setIsRefreshing(true);
       const cb = onLoadNewRef.current;
       if (cb) {
@@ -187,10 +163,10 @@ export function useFeedViewer({
       }
       setNewPostsCount(0);
     } finally {
+      isRefreshingRef.current = false;
       setIsRefreshing(false);
-      setRefreshProgress(0);
     }
-  }, [isRefreshing]);
+  }, []);
 
   // Track expanded items
   const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
@@ -225,7 +201,6 @@ export function useFeedViewer({
     hasNext,
     loading,
     items,
-    refreshProgress,
     newPostsCount,
     isRefreshing,
     handleLoadNew,

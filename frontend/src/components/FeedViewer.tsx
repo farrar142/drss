@@ -14,6 +14,8 @@ export interface FeedViewerProps {
 }
 
 export const FeedViewer: FC<FeedViewerProps> = (props) => {
+  console.log('[FeedViewer] render:', { itemsLength: props.items.length });
   const viewerState = useFeedViewer(props);
+  console.log('[FeedViewer] after useFeedViewer');
   return <FeedViewerView {...viewerState} />;
 };

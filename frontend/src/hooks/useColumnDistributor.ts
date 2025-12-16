@@ -151,6 +151,22 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 새 아이템이 들어오면 대기열에 추가
   useEffect(() => {
+    console.log('[useColumnDistributor] Effect 1 (items):', { itemsLength: items.length, distributedSize: distributedIdsRef.current.size, queueLength: queueRef.current.length });
+    // items가 비어있으면 모든 것을 초기화 (필터 변경 등)
+    if (items.length === 0) {
+      // 이미 비어있으면 다시 초기화하지 않음 (무한 루프 방지)
+      if (distributedIdsRef.current.size === 0 && queueRef.current.length === 0) {
+        console.log('[useColumnDistributor] Effect 1: Already empty, skipping');
+        return;
+      }
+      console.log('[useColumnDistributor] Effect 1: Clearing all');
+      queueRef.current = [];
+      distributedIdsRef.current.clear();
+      setColumnItems(Array.from({ length: columns }, () => []));
+      setQueueLength(0);
+      return;
+    }
+
     const newItems = items.filter(item => !distributedIdsRef.current.has(item.id));
 
     if (newItems.length > 0) {
@@ -161,25 +177,26 @@ export function useColumnDistributor<T extends { id: number }>({
       queueRef.current.push(...newItems);
       setQueueLength(queueRef.current.length);
 
-      // 컬럼이 비어있으면 초기 배분 시작
-      const totalDistributed = columnItems.reduce((sum, col) => sum + col.length, 0);
-      if (totalDistributed === 0) {
+      // 컬럼이 비어있으면 초기 배분 시작 (ref로 체크)
+      if (distributedIdsRef.current.size === newItems.length) {
+        // 새로 추가된 아이템만 있다 = 컬럼이 비어있었다
         distributeInitial();
       } else {
         // 이미 컬럼에 아이템이 있으면 바로 보이는 sentinel 채우기
         setTimeout(fillVisibleSentinels, 50);
       }
     }
-  }, [items, columnItems, distributeInitial, fillVisibleSentinels]);
+  }, [items, distributeInitial, fillVisibleSentinels, columns]);
 
   // 컬럼 수 변경 시 리셋
   useEffect(() => {
+    console.log('[useColumnDistributor] Effect 2 (columns):', { prevColumns: prevColumnsRef.current, columns });
     if (prevColumnsRef.current !== columns) {
+      console.log('[useColumnDistributor] Effect 2: Columns changed, resetting');
       prevColumnsRef.current = columns;
 
-      // 모든 아이템을 다시 대기열에
-      const allItems = columnItems.flat();
-      queueRef.current = [...allItems, ...queueRef.current];
+      // 모든 아이템을 다시 대기열에 (items 기준으로)
+      queueRef.current = [...items];
       distributedIdsRef.current.clear();
       items.forEach(item => distributedIdsRef.current.add(item.id));
 
@@ -189,10 +206,11 @@ export function useColumnDistributor<T extends { id: number }>({
       // 재배분
       setTimeout(() => distributeInitial(), 50);
     }
-  }, [columns, columnItems, items, distributeInitial]);
+  }, [columns, items, distributeInitial]);
 
   // IntersectionObserver로 sentinel 감지
   useEffect(() => {
+    console.log('[useColumnDistributor] Effect 3 (IntersectionObserver):', { isInitialDistributing: isInitialDistributingRef.current, columns });
     // 초기 배분 중이면 observer 설정 안함
     if (isInitialDistributingRef.current) return;
 
@@ -235,6 +253,7 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 스크롤 이벤트로 보충 (observer가 놓칠 수 있는 경우 대비)
   useEffect(() => {
+    console.log('[useColumnDistributor] Effect 4 (scroll listener)');
     let rafId: number | null = null;
 
     const onScroll = () => {

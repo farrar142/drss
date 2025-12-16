@@ -71,6 +71,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   handleLoadNew,
   queueLength,
 }) => {
+  console.log(`FeedViewerView rendered with ${items.length} items `, columnItems);
   return (
     <div className="relative">
       <PullToRefresh onRefresh={handleLoadNew}>
