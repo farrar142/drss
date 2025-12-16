@@ -267,9 +267,12 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
           fontSize.gap,
           // Apply sticky when content is visible (feed mode or expanded in board mode)
-          // top-[92px] = app bar (56px) + tab bar (36px)
-          (viewMode === 'feed' || !collapsed) && "sticky top-[92px] z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+          (viewMode === 'feed' || !collapsed) && "sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[top] duration-300"
         )}
+        style={{
+          // CSS 변수로 헤더 오프셋 사용 (기본값 92px)
+          top: (viewMode === 'feed' || !collapsed) ? 'var(--header-offset, 92px)' : undefined,
+        }}
         onClick={(e) => {
           // When sticky header is clicked, scroll the card to top (below app bar)
           if (viewMode === 'feed' || !collapsed) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu,
@@ -70,6 +70,41 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [headerVisible, setHeaderVisible] = useState(true);
+  
+  // Refs for scroll tracking
+  const lastScrollY = useRef(0);
+  const scrollThreshold = 50; // 스크롤 감지 임계값
+
+  // 스크롤에 따른 헤더 숨김/표시
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // 맨 위에서는 항상 표시
+      if (currentScrollY < scrollThreshold) {
+        setHeaderVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+      
+      const scrollDiff = currentScrollY - lastScrollY.current;
+      
+      // 스크롤 다운: 헤더 숨김 (일정량 이상 스크롤했을 때)
+      if (scrollDiff > 10 && currentScrollY > scrollThreshold) {
+        setHeaderVisible(false);
+      }
+      // 스크롤 업: 헤더 표시
+      else if (scrollDiff < -10) {
+        setHeaderVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
@@ -131,7 +166,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header 
+        className={cn(
+          "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+          "transition-transform duration-300 ease-in-out",
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        )}
+        style={{ top: 0 }}
+      >
         <div className="flex h-full items-center gap-4 px-4">
           <Button variant="ghost" size="icon" onClick={toggleDrawer}>
             <Menu className="h-5 w-5" />
@@ -250,8 +292,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Tab Bar */}
       <div 
-        className="fixed top-14 left-0 right-0 z-40"
-        style={{ marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0 }}
+        className={cn(
+          "fixed left-0 right-0 z-40",
+          "transition-transform duration-300 ease-in-out",
+          headerVisible ? "translate-y-0" : "-translate-y-full"
+        )}
+        style={{ 
+          top: '3.5rem', // h-14
+          marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0 
+        }}
       >
         <TabBar />
       </div>
@@ -271,6 +320,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         style={{
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
           paddingTop: 'calc(3.5rem + 2.25rem)', // h-14 (앱바) + h-9 (탭바)
+          // CSS 변수로 sticky header 오프셋 전달
+          ['--header-offset' as string]: headerVisible ? '92px' : '0px',
         }}
       >
         <div className="p-1 sm:p-2 md:p-4 lg:p-6">
