@@ -1,9 +1,10 @@
 'use client';
 
-import { FC, useState } from 'react';
+import { FC, useState, useRef, useCallback } from 'react';
 import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/ui/slider';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export interface CruisingControlsProps {
   isCruising: boolean;
@@ -19,14 +20,31 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
   onSpeedChange,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isTouchEventRef = useRef(false);
 
   // 크루즈 시작하면 슬라이더 닫기
-  const handleToggle = () => {
+  const doToggle = useCallback(() => {
     if (!isCruising) {
       setIsExpanded(false);
     }
     onToggle();
-  };
+  }, [isCruising, onToggle]);
+
+  // 클릭 이벤트 - 터치로 발생한 거면 무시
+  const handleClick = useCallback(() => {
+    if (isTouchEventRef.current) {
+      isTouchEventRef.current = false;
+      return;
+    }
+    doToggle();
+  }, [doToggle]);
+
+  // 터치 이벤트 - 터치임을 표시하고 토글
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    isTouchEventRef.current = true;
+    doToggle();
+  }, [doToggle]);
 
   return (
     <div
@@ -97,7 +115,8 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
 
         {/* Play/Pause button */}
         <button
-          onClick={handleToggle}
+          onClick={handleClick}
+          onTouchEnd={handleTouchEnd}
           className={cn(
             "p-3 rounded-full shadow-lg transition-all",
             "hover:scale-105 active:scale-95",
@@ -115,18 +134,18 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
             <ChevronDown className="w-5 h-5" />
           )}
         </button>
-      </div>
 
-      {/* Cruising indicator */}
-      {isCruising && (
-        <div
-          className={cn(
-            "absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-500",
-            "animate-pulse"
-          )}
-          data-cruising-control
-        />
-      )}
+        {/* Cruising indicator */}
+        {isCruising && (
+          <div
+            className={cn(
+              "absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-green-500",
+              "animate-pulse"
+            )}
+            data-cruising-control
+          />
+        )}
+      </div>
     </div>
   );
 };

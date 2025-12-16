@@ -5,7 +5,7 @@ export const FeedVideo: FC<{
   src?: string;
   poster?: string;
   className?: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLVideoElement>) => void | (() => void);
   [key: string]: any;
 }> = ({ src, poster, className, onClick, ...props }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -51,7 +51,7 @@ export const FeedVideo: FC<{
       onClick={(e) => {
         if (onClick) {
           e.stopPropagation();
-          onClick();
+          onClick(e);
         }
       }}
       {...props}

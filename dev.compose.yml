@@ -63,13 +63,9 @@ services:
       - BACKEND_HOST=django
     env_file:
       - .env
-    command: npm run dev
+    command: npx next dev --hostname 0.0.0.0
     networks:
       - drss-dev
-    depends_on:
-      django:
-        condition: service_healthy
-
 networks:
   drss-dev:
     driver: bridge

@@ -71,6 +71,10 @@ interface SettingsStore {
   // 폰트 사이즈
   fontSizeLevel: FontSizeLevel;
   setFontSizeLevel: (level: FontSizeLevel) => void;
+
+  // 미디어 모달 뷰 모드 (1개 또는 2개)
+  mediaViewMode: 1 | 2;
+  setMediaViewMode: (mode: 1 | 2) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -83,6 +87,10 @@ export const useSettingsStore = create<SettingsStore>()(
       // 폰트 사이즈 기본값 md
       fontSizeLevel: 'md',
       setFontSizeLevel: (level) => set({ fontSizeLevel: level }),
+
+      // 미디어 모달 뷰 모드 기본값 1개
+      mediaViewMode: 1,
+      setMediaViewMode: (mode) => set({ mediaViewMode: mode }),
     }),
     {
       name: 'drss-settings',

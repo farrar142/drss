@@ -1,12 +1,14 @@
 'use client';
 
-import { FC, useState } from 'react';
-import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2 } from 'lucide-react';
+import { FC, useState, useEffect } from 'react';
+import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { FeedImage } from './FeedImage';
 import { UseMediaModalReturn, MediaItem } from '../hooks/useMediaModal';
+import { useSettingsStore } from '../stores/settingsStore';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { FeedVideo } from './FeedVideo';
 
 // 미디어 URL에서 파일명 추출
 const getFilenameFromUrl = (url: string, index: number, type: 'image' | 'video'): string => {
@@ -112,11 +114,54 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const { mediaViewMode: viewMode, setMediaViewMode: setViewMode } = useSettingsStore();
+
+  // viewMode에 따른 네비게이션 핸들러
+  const handleNext = () => {
+    if (currentMediaIndex == null) return;
+    const step = viewMode;
+    const next = Math.min(currentMediaIndex + step, mediaListRef.current.length - 1);
+    if (next !== currentMediaIndex) showMediaAt(next);
+  };
+
+  const handlePrev = () => {
+    if (currentMediaIndex == null) return;
+    const step = viewMode;
+    const prev = Math.max(currentMediaIndex - step, 0);
+    if (prev !== currentMediaIndex) showMediaAt(prev);
+  };
+
+  // 모달이 열릴 때 body 스크롤 막기
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [modalOpen]);
 
   if (!modalOpen) return null;
 
   const mediaList = mediaListRef.current;
   const mediaCount = mediaList.length;
+
+  // 듀얼 뷰 모드에서의 인덱스 계산
+  const leftIndex = currentMediaIndex != null ? Math.floor(currentMediaIndex / 2) * 2 : null;
+  const rightIndex = leftIndex != null ? Math.min(leftIndex + 1, mediaCount - 1) : null;
+
+  // 네비게이션 가능 여부 (viewMode에 따라 다르게 계산)
+  const canGoPrev = currentMediaIndex != null && (
+    viewMode === 1
+      ? currentMediaIndex > 0
+      : (leftIndex != null && leftIndex > 0)
+  );
+  const canGoNext = currentMediaIndex != null && (
+    viewMode === 1
+      ? currentMediaIndex < mediaCount - 1
+      : (rightIndex != null && rightIndex < mediaCount - 1)
+  );
 
   const handleDownloadCurrent = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -148,72 +193,14 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
       )}
       onClick={closeModal}
     >
-      {/* Top Controls */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        {/* Download Current Media */}
-        {modalMedia && (
-          <button
-            onClick={handleDownloadCurrent}
-            title={modalMedia.type === 'video' ? '현재 비디오 다운로드' : '현재 이미지 다운로드'}
-            className={cn(
-              "p-2 rounded-full",
-              "bg-white/10 hover:bg-white/20 transition-colors"
-            )}
-          >
-            <Download className="w-6 h-6 text-white" />
-          </button>
-        )}
-
-        {/* Download All as ZIP */}
-        {mediaCount > 1 && (
-          <button
-            onClick={handleDownloadAll}
-            disabled={isDownloading}
-            title={isDownloading ? `다운로드 중... ${downloadProgress}%` : `전체 미디어 다운로드 (${mediaCount}개)`}
-            className={cn(
-              "p-2 rounded-full relative",
-              "bg-white/10 hover:bg-white/20 transition-colors",
-              isDownloading && "cursor-wait"
-            )}
-          >
-            {isDownloading ? (
-              <>
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
-                <span className="absolute -bottom-1 -right-1 text-[10px] bg-primary text-primary-foreground rounded-full px-1">
-                  {downloadProgress}%
-                </span>
-              </>
-            ) : (
-              <>
-                <Archive className="w-6 h-6 text-white" />
-                <span className="absolute -bottom-1 -right-1 text-[10px] bg-primary text-primary-foreground rounded-full px-1.5">
-                  {mediaCount}
-                </span>
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Close Button */}
-        <button
-          onClick={closeModal}
-          className={cn(
-            "p-2 rounded-full",
-            "bg-white/10 hover:bg-white/20 transition-colors"
-          )}
-        >
-          <X className="w-6 h-6 text-white" />
-        </button>
-      </div>
-
       {/* Media Content */}
       <div
         className={cn(
           "w-[90vw] h-[90vh] flex items-center justify-center",
           "bg-card/90 rounded-2xl border border-border p-4",
-          "shadow-2xl"
+          "shadow-2xl relative"
         )}
-        onClick={(e) => e.stopPropagation()}
+        // onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => {
           (e.currentTarget as any)._startX = e.clientX;
         }}
@@ -225,224 +212,395 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
             if (dx > 0) prevMedia(); else nextMedia();
           }
         }}
-      >
-        {modalMedia?.type === 'video' ? (
-          <video
-            src={modalMedia.src}
-            controls
-            autoPlay
-            className="max-w-full max-h-full object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : modalMedia?.type === 'image' ? (
-          <FeedImage
-            src={modalMedia.src}
-            alt="Enlarged"
-            contain
-            onClick={(e) => {
-              e.stopPropagation();
-              const idx = currentMediaIndexRef.current;
-              if (!mediaList || mediaList.length <= 1 || idx == null) return;
+        onClick={(e) => {
+          e.stopPropagation();
+          const idx = currentMediaIndexRef.current;
+          if (!mediaList || mediaList.length <= 1 || idx == null) return;
 
-              try {
-                const img = e.currentTarget as HTMLImageElement;
-                const rect = img.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const isLeft = clickX < rect.width / 2;
+          try {
+            const img = e.currentTarget as HTMLImageElement;
+            const rect = img.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const isLeft = clickX < rect.width / 2;
 
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                if (isLeft) prevMedia(); else nextMedia();
-              } catch (err) {
-                // ignore
-              }
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              const s = clickStateRef.current;
-              if (clickTimeoutRef.current) {
-                window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = null;
-              }
+            const now = Date.now();
+            if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+              clickStateRef.current = { startIndex: idx, isLeft, time: now };
+            }
+            if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = window.setTimeout(() => {
+              clickTimeoutRef.current = null;
               clickStateRef.current = null;
-              if (!mediaList || mediaList.length <= 1) return;
-              if (!s) return;
-              try {
-                const img = e.currentTarget as HTMLImageElement;
-                const rect = img.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const isLeftDbl = clickX < rect.width / 2;
-                if (isLeftDbl && s.isLeft && s.startIndex === 0) {
-                  closeModal();
-                } else if (!isLeftDbl && !s.isLeft && s.startIndex === mediaList.length - 1) {
-                  closeModal();
-                }
-              } catch (err) {
-                // ignore
-              }
-            }}
-          />
-        ) : null}
+            }, CLICK_STATE_WINDOW) as unknown as number;
+            if (isLeft) prevMedia(); else nextMedia();
+          } catch (err) {
+            // ignore
+          }
+        }}
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          const s = clickStateRef.current;
+          if (clickTimeoutRef.current) {
+            window.clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+          }
+          clickStateRef.current = null;
+          if (!mediaList || mediaList.length <= 1) return;
+          if (!s) return;
+          try {
+            const img = e.currentTarget as HTMLImageElement;
+            const rect = img.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const isLeftDbl = clickX < rect.width / 2;
+            if (isLeftDbl && s.isLeft && s.startIndex === 0) {
+              closeModal();
+            } else if (!isLeftDbl && !s.isLeft && s.startIndex === mediaList.length - 1) {
+              closeModal();
+            }
+          } catch (err) {
+            // ignore
+          }
+        }}
+      >
+        {/* Single View Mode */}
+        {viewMode === 1 && (
+          <>
+            {modalMedia?.type === 'video' ? (
+              <FeedVideo
+                src={modalMedia.src}
+                controls
+                autoPlay
+                className="max-w-full max-h-[calc(90vh-80px)] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : modalMedia?.type === 'image' ? (
+              <FeedImage
+                src={modalMedia.src}
+                alt="Enlarged"
+                contain
+                className="max-h-[calc(90vh-80px)]"
+                onClick={(e) => e.preventDefault()}
+              />
+            ) : null}
+          </>
+        )}
 
-        {/* Prev / Next buttons */}
-        {mediaList.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const idx = currentMediaIndexRef.current;
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft: true, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                showMediaAt(0);
-              }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                const s = clickStateRef.current;
-                if (clickTimeoutRef.current) {
-                  window.clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = null;
-                }
-                clickStateRef.current = null;
-                if (s && s.isLeft && s.startIndex === 0) closeModal();
-              }}
-              title="처음으로"
-              aria-label="first"
-              className={cn(
-                "p-2 rounded bg-white/10 hover:bg-white/20",
-                (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
-              )}
-              aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
-            >
-              <SkipBack className="w-4 h-4" />
-              <span className="sr-only">처음으로</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const idx = currentMediaIndexRef.current;
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft: true, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                prevMedia();
-              }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                const s = clickStateRef.current;
-                if (clickTimeoutRef.current) {
-                  window.clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = null;
-                }
-                clickStateRef.current = null;
-                if (s && s.isLeft && s.startIndex === 0) closeModal();
-              }}
-              title="이전"
-              aria-label="previous"
-              className={cn(
-                "p-2 rounded bg-white/10 hover:bg-white/20",
-                (currentMediaIndex == null || currentMediaIndex === 0) && "opacity-40 pointer-events-none"
-              )}
-              aria-disabled={currentMediaIndex == null || currentMediaIndex === 0}
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="sr-only">이전</span>
-            </button>
-            <div className="text-xs text-white/90 bg-black/40 px-3 py-1 rounded">
-              {currentMediaIndex != null ? `${currentMediaIndex + 1}/${mediaList.length}` : ''}
+        {/* Dual View Mode */}
+        {viewMode === 2 && (() => {
+          // 듀얼 뷰에서는 항상 짝수 인덱스(0, 2, 4...)에서 시작하도록 보정
+          const leftIndex = currentMediaIndex != null ? Math.floor(currentMediaIndex / 2) * 2 : null;
+          const rightIndex = leftIndex != null ? leftIndex + 1 : null;
+
+          return (
+            <div className="flex items-center justify-center gap-4 w-full h-[calc(90vh-80px)]">
+              {/* Left Image */}
+              <div className="flex-1 h-full flex items-center justify-center">
+                {leftIndex != null && mediaList[leftIndex] && (
+                  mediaList[leftIndex].type === 'video' ? (
+                    <FeedVideo
+                      src={mediaList[leftIndex].src}
+                      controls
+                      className="max-w-full max-h-full object-contain rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <FeedImage
+                      src={mediaList[leftIndex].src}
+                      alt={`Image ${leftIndex + 1}`}
+                      contain
+                      className="max-h-full"
+                      onClick={(e) => {
+                        // e.stopPropagation();
+                        e.preventDefault()
+                        handlePrev();
+                      }}
+                    />
+                  )
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-3/4 bg-border" />
+
+              {/* Right Image */}
+              <div className="flex-1 h-full flex items-center justify-center">
+                {rightIndex != null && rightIndex < mediaList.length && mediaList[rightIndex] ? (
+                  mediaList[rightIndex].type === 'video' ? (
+                    <FeedVideo
+                      src={mediaList[rightIndex].src}
+                      controls
+                      className="max-w-full max-h-full object-contain rounded-lg"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <FeedImage
+                      src={mediaList[rightIndex].src}
+                      alt={`Image ${rightIndex + 1}`}
+                      contain
+                      className="max-h-full"
+                      onClick={(e) => {
+                        // e.stopPropagation();
+                        e.preventDefault()
+                        handleNext();
+                      }}
+                    />
+                  )
+                ) : (
+                  <div className="flex items-center justify-center text-muted-foreground">
+                    <span className="text-sm">마지막 이미지</span>
+                  </div>
+                )}
+              </div>
             </div>
+          );
+        })()}
+
+        {/* Bottom Controls Bar */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+          <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1.5">
+
+            {/* === 저장들 === */}
+            {/* Download Current */}
+            {modalMedia && (
+              <button
+                onClick={handleDownloadCurrent}
+                title={modalMedia.type === 'video' ? '현재 비디오 다운로드' : '현재 이미지 다운로드'}
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <Download className="w-4 h-4 text-white" />
+              </button>
+            )}
+
+            {/* Download All as ZIP */}
+            {mediaCount > 1 && (
+              <button
+                onClick={handleDownloadAll}
+                disabled={isDownloading}
+                title={isDownloading ? `다운로드 중... ${downloadProgress}%` : `전체 다운로드 (${mediaCount}개)`}
+                className={cn(
+                  "p-2 rounded-full hover:bg-white/20 transition-colors relative",
+                  isDownloading && "cursor-wait"
+                )}
+              >
+                {isDownloading ? (
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
+                ) : (
+                  <>
+                    <Archive className="w-4 h-4 text-white" />
+                    <span className="absolute -top-1 -right-1 text-[9px] bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center font-medium">
+                      {mediaCount}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Divider: 저장들 | 브라우징 */}
+            {mediaList.length > 1 && <div className="w-px h-5 bg-white/20 mx-1" />}
+
+            {/* === 브라우징 === */}
+            {mediaList.length > 1 && (
+              <>
+                {/* First */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const idx = currentMediaIndexRef.current;
+                    const now = Date.now();
+                    if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+                      clickStateRef.current = { startIndex: idx, isLeft: true, time: now };
+                    }
+                    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = window.setTimeout(() => {
+                      clickTimeoutRef.current = null;
+                      clickStateRef.current = null;
+                    }, CLICK_STATE_WINDOW) as unknown as number;
+                    showMediaAt(0);
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    const s = clickStateRef.current;
+                    if (clickTimeoutRef.current) {
+                      window.clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                    }
+                    clickStateRef.current = null;
+                    if (s && s.isLeft && s.startIndex === 0) closeModal();
+                  }}
+                  title="처음으로"
+                  aria-label="first"
+                  className={cn(
+                    "p-2 rounded-full hover:bg-white/20 transition-colors",
+                    !canGoPrev && "opacity-30 pointer-events-none"
+                  )}
+                  aria-disabled={!canGoPrev}
+                >
+                  <SkipBack className="w-4 h-4 text-white" />
+                </button>
+
+                {/* Previous */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const idx = currentMediaIndexRef.current;
+                    const now = Date.now();
+                    if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+                      clickStateRef.current = { startIndex: idx, isLeft: true, time: now };
+                    }
+                    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = window.setTimeout(() => {
+                      clickTimeoutRef.current = null;
+                      clickStateRef.current = null;
+                    }, CLICK_STATE_WINDOW) as unknown as number;
+                    handlePrev();
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    const s = clickStateRef.current;
+                    if (clickTimeoutRef.current) {
+                      window.clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                    }
+                    clickStateRef.current = null;
+                    if (s && s.isLeft && s.startIndex === 0) closeModal();
+                  }}
+                  title="이전"
+                  aria-label="previous"
+                  className={cn(
+                    "p-2 rounded-full hover:bg-white/20 transition-colors",
+                    !canGoPrev && "opacity-30 pointer-events-none"
+                  )}
+                  aria-disabled={!canGoPrev}
+                >
+                  <ChevronLeft className="w-4 h-4 text-white" />
+                </button>
+
+                {/* Counter */}
+                <div className="px-3 py-1 text-xs text-white/90 font-medium min-w-[60px] text-center">
+                  {currentMediaIndex != null ? (
+                    viewMode === 2
+                      ? (() => {
+                        const leftIdx = Math.floor(currentMediaIndex / 2) * 2;
+                        const rightIdx = Math.min(leftIdx + 1, mediaList.length - 1);
+                        return leftIdx === rightIdx
+                          ? `${leftIdx + 1} / ${mediaList.length}`
+                          : `${leftIdx + 1}-${rightIdx + 1} / ${mediaList.length}`;
+                      })()
+                      : `${currentMediaIndex + 1} / ${mediaList.length}`
+                  ) : ''}
+                </div>
+
+                {/* Next */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const idx = currentMediaIndexRef.current;
+                    const now = Date.now();
+                    if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+                      clickStateRef.current = { startIndex: idx, isLeft: false, time: now };
+                    }
+                    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = window.setTimeout(() => {
+                      clickTimeoutRef.current = null;
+                      clickStateRef.current = null;
+                    }, CLICK_STATE_WINDOW) as unknown as number;
+                    handleNext();
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    const s = clickStateRef.current;
+                    if (clickTimeoutRef.current) {
+                      window.clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                    }
+                    clickStateRef.current = null;
+                    if (s && !s.isLeft && s.startIndex === mediaList.length - 1) closeModal();
+                  }}
+                  title="다음"
+                  aria-label="next"
+                  className={cn(
+                    "p-2 rounded-full hover:bg-white/20 transition-colors",
+                    !canGoNext && "opacity-30 pointer-events-none"
+                  )}
+                  aria-disabled={!canGoNext}
+                >
+                  <ChevronRight className="w-4 h-4 text-white" />
+                </button>
+
+                {/* Last */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const idx = currentMediaIndexRef.current;
+                    const now = Date.now();
+                    if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
+                      clickStateRef.current = { startIndex: idx, isLeft: false, time: now };
+                    }
+                    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+                    clickTimeoutRef.current = window.setTimeout(() => {
+                      clickTimeoutRef.current = null;
+                      clickStateRef.current = null;
+                    }, CLICK_STATE_WINDOW) as unknown as number;
+                    showMediaAt(mediaList.length - 1);
+                  }}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    const s = clickStateRef.current;
+                    if (clickTimeoutRef.current) {
+                      window.clearTimeout(clickTimeoutRef.current);
+                      clickTimeoutRef.current = null;
+                    }
+                    clickStateRef.current = null;
+                    if (s && !s.isLeft && s.startIndex === mediaList.length - 1) closeModal();
+                  }}
+                  title="마지막으로"
+                  aria-label="last"
+                  className={cn(
+                    "p-2 rounded-full hover:bg-white/20 transition-colors",
+                    !canGoNext && "opacity-30 pointer-events-none"
+                  )}
+                  aria-disabled={!canGoNext}
+                >
+                  <SkipForward className="w-4 h-4 text-white" />
+                </button>
+              </>
+            )}
+
+            {/* Divider: 브라우징 | 2개보기, 종료 */}
+            <div className="w-px h-5 bg-white/20 mx-1" />
+
+            {/* === 2개보기, 종료 === */}
+            {/* View Mode Toggle (only if multiple media) */}
+            {mediaCount > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewMode(viewMode === 1 ? 2 : 1);
+                }}
+                title={viewMode === 1 ? '2개씩 보기' : '1개씩 보기'}
+                className={cn(
+                  "p-2 rounded-full hover:bg-white/20 transition-colors",
+                  viewMode === 2 && "bg-white/20"
+                )}
+              >
+                {viewMode === 1 ? (
+                  <Columns2 className="w-4 h-4 text-white" />
+                ) : (
+                  <Square className="w-4 h-4 text-white" />
+                )}
+              </button>
+            )}
+
+            {/* Close */}
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const idx = currentMediaIndexRef.current;
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft: false, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                nextMedia();
-              }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                const s = clickStateRef.current;
-                if (clickTimeoutRef.current) {
-                  window.clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = null;
-                }
-                clickStateRef.current = null;
-                if (s && !s.isLeft && s.startIndex === mediaList.length - 1) closeModal();
-              }}
-              title="다음"
-              aria-label="next"
-              className={cn(
-                "p-2 rounded bg-white/10 hover:bg-white/20",
-                (currentMediaIndex == null || currentMediaIndex === mediaList.length - 1) && "opacity-40 pointer-events-none"
-              )}
-              aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaList.length - 1}
+              onClick={closeModal}
+              title="닫기"
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
-              <span className="sr-only">다음</span>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const idx = currentMediaIndexRef.current;
-                const now = Date.now();
-                if (!clickStateRef.current || now - clickStateRef.current.time > CLICK_STATE_WINDOW) {
-                  clickStateRef.current = { startIndex: idx, isLeft: false, time: now };
-                }
-                if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
-                clickTimeoutRef.current = window.setTimeout(() => {
-                  clickTimeoutRef.current = null;
-                  clickStateRef.current = null;
-                }, CLICK_STATE_WINDOW) as unknown as number;
-                showMediaAt(mediaList.length - 1);
-              }}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                const s = clickStateRef.current;
-                if (clickTimeoutRef.current) {
-                  window.clearTimeout(clickTimeoutRef.current);
-                  clickTimeoutRef.current = null;
-                }
-                clickStateRef.current = null;
-                if (s && !s.isLeft && s.startIndex === mediaList.length - 1) closeModal();
-              }}
-              title="마지막으로"
-              aria-label="last"
-              className={cn(
-                "p-2 rounded bg-white/10 hover:bg-white/20",
-                (currentMediaIndex == null || currentMediaIndex === mediaList.length - 1) && "opacity-40 pointer-events-none"
-              )}
-              aria-disabled={currentMediaIndex == null || currentMediaIndex === mediaList.length - 1}
-            >
-              <SkipForward className="w-4 h-4" />
-              <span className="sr-only">마지막으로</span>
+              <X className="w-4 h-4 text-white" />
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
