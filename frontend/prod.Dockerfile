@@ -19,6 +19,7 @@ COPY . .
 # Set environment for production build
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV BACKEND_HOST=django
 
 # Build the application
 RUN npm run build
