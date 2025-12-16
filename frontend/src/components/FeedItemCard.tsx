@@ -306,6 +306,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
               const currentScrollTop = scrollContainer.scrollTop;
               const cardOffsetFromContainer = cardRect.top - containerRect.top;
               const targetScrollTop = currentScrollTop + cardOffsetFromContainer - tabBarHeight - 8;
+              console.log(Math.max(0, targetScrollTop))
               scrollContainer.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
             }
           }

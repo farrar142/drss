@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu,
@@ -74,6 +74,12 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   // 헤더 가시성 - 패널 1개일 때 스크롤에 따라 변경됨
   const [headerVisible, setHeaderVisible] = useState(true);
 
+  // 디버그용 래퍼
+  const handleHeaderVisibilityChange = useCallback((visible: boolean) => {
+    console.log('[AppLayout] setHeaderVisible called with:', visible);
+    setHeaderVisible(visible);
+  }, []);
+
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
 
@@ -137,8 +143,10 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
       <header
         className={cn(
           "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-          "transition-transform duration-300 ease-in-out",
-          headerVisible ? "translate-y-0" : "-translate-y-full"
+          "transition-all duration-300 ease-in-out",
+          headerVisible
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-full opacity-0 pointer-events-none"
         )}
         style={{ top: 0 }}
       >
@@ -273,10 +281,10 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         )}
         style={{
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
-          paddingTop: '3.5rem', // h-14 (앱바만)
+          paddingTop: headerVisible ? '3.5rem' : '0', // 헤더 숨김 시 패딩 제거
         }}
       >
-        <SplitPanelView headerVisible={headerVisible} onHeaderVisibilityChange={setHeaderVisible} />
+        <SplitPanelView headerVisible={headerVisible} onHeaderVisibilityChange={handleHeaderVisibilityChange} />
       </main>
     </div>
   );

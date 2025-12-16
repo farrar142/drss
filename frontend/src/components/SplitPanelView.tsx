@@ -64,15 +64,31 @@ const PanelView: React.FC<PanelViewProps> = ({
   // 스크롤에 따른 탭바 숨김/표시 (패널 1개일 때만)
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container) return;
+    console.log('[PanelView useEffect] Setup scroll listener', {
+      panelId: panel.id,
+      panelsCount,
+      containerExists: !!container,
+      containerScrollHeight: container?.scrollHeight,
+      containerClientHeight: container?.clientHeight,
+    });
 
-    // 패널이 2개 이상이면 항상 표시
+    if (!container) {
+      console.log('[PanelView useEffect] Container is NULL!');
+      return;
+    }
+
+    // 패널이 2개 이상이면 항상 표시하고 리스너 불필요
     if (panelsCount > 1) {
       setTabBarVisible(true);
       return;
     }
 
-    const handleScroll = () => {
+    const handleScrollForToggle = () => {
+      console.log('[handleScrollForToggle] called!', {
+        isRestoringScroll: isRestoringScroll.current,
+        scrollTop: container.scrollTop,
+      });
+
       if (isRestoringScroll.current) return;
 
       const currentScrollTop = container.scrollTop;
@@ -80,6 +96,7 @@ const PanelView: React.FC<PanelViewProps> = ({
 
       // 맨 위에서는 항상 표시
       if (currentScrollTop < scrollThreshold) {
+        console.log('[PanelView] At top - showing tabbar');
         setTabBarVisible(true);
         onTabBarVisibilityChange?.(true);
         lastScrollTop.current = currentScrollTop;
@@ -90,11 +107,13 @@ const PanelView: React.FC<PanelViewProps> = ({
 
       // 스크롤 다운: 탭바 숨김
       if (scrollDiff > 0 && currentScrollTop > scrollThreshold) {
+        console.log('[PanelView] Scroll DOWN - hiding tabbar');
         setTabBarVisible(false);
         onTabBarVisibilityChange?.(false);
       }
       // 스크롤 업: 탭바 표시
       else if (scrollDiff < 0) {
+        console.log('[PanelView] Scroll UP - showing tabbar');
         setTabBarVisible(true);
         onTabBarVisibilityChange?.(true);
       }
@@ -102,23 +121,35 @@ const PanelView: React.FC<PanelViewProps> = ({
       lastScrollTop.current = currentScrollTop;
     };
 
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [panelsCount, onTabBarVisibilityChange]);
+    console.log('[PanelView useEffect] Adding scroll listener to container', container);
+    container.addEventListener('scroll', handleScrollForToggle, { passive: true });
 
-  // 탭 변경 시 스크롤 위치 복원
+    return () => {
+      console.log('[PanelView useEffect] Removing scroll listener');
+      container.removeEventListener('scroll', handleScrollForToggle);
+    };
+  }, [panel.id, panelsCount, onTabBarVisibilityChange]);
+
+  // 탭 변경 시 스크롤 위치 복원 (탭 ID가 변경될 때만)
+  const prevActiveTabId = useRef(panel.activeTabId);
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    isRestoringScroll.current = true;
-    container.scrollTop = savedScrollPosition;
-    lastScrollTop.current = savedScrollPosition;
+    // 탭이 실제로 변경되었을 때만 스크롤 복원
+    if (prevActiveTabId.current !== panel.activeTabId) {
+      console.log('[PanelView] Tab changed, restoring scroll position:', savedScrollPosition);
+      isRestoringScroll.current = true;
+      container.scrollTop = savedScrollPosition;
+      lastScrollTop.current = savedScrollPosition;
+      prevActiveTabId.current = panel.activeTabId;
 
-    // 복원 후 짧은 딜레이 후 스크롤 감지 활성화
-    setTimeout(() => {
-      isRestoringScroll.current = false;
-    }, 100);
+      // 복원 후 짧은 딜레이 후 스크롤 감지 활성화
+      setTimeout(() => {
+        console.log('[PanelView] Scroll restore complete, enabling scroll detection');
+        isRestoringScroll.current = false;
+      }, 100);
+    }
   }, [panel.activeTabId, savedScrollPosition]);
 
   // 스크롤 위치 저장
@@ -136,7 +167,7 @@ const PanelView: React.FC<PanelViewProps> = ({
   return (
     <div
       className={cn(
-        "relative flex flex-col flex-1 min-w-0 h-full",
+        "relative flex flex-col flex-1 min-w-0 min-h-0 h-full",
         panelsCount > 1 && index === 0 && "border-r border-border",
         isActive && panelsCount > 1 && "ring-1 ring-primary/20"
       )}
@@ -159,8 +190,10 @@ const PanelView: React.FC<PanelViewProps> = ({
 
       {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정 */}
       <div className={cn(
-        "sticky top-0 z-30 transition-all duration-300 ease-in-out",
-        tabBarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+        "sticky top-0 z-30 transition-all duration-300 ease-in-out overflow-hidden",
+        tabBarVisible 
+          ? "max-h-[36px] opacity-100" 
+          : "max-h-0 opacity-0 pointer-events-none"
       )}>
         <TabBar
           panelId={panel.id}
@@ -178,7 +211,7 @@ const PanelView: React.FC<PanelViewProps> = ({
       {/* 컨텐츠 - 개별 스크롤 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto relative z-10"
+        className="flex-1 min-h-0 overflow-y-auto relative z-10"
         onScroll={handleScroll}
         style={{
           ['--header-offset' as string]: effectiveHeaderOffset,
@@ -214,7 +247,13 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
 
   // 패널 1개일 때 스크롤에 따른 헤더 토글
   const handleTabBarVisibilityChange = useCallback((visible: boolean) => {
+    console.log('[SplitPanelView handleTabBarVisibilityChange]', {
+      visible,
+      panelsCount: panels.length,
+      hasOnHeaderVisibilityChange: !!onHeaderVisibilityChange,
+    });
     if (panels.length === 1) {
+      console.log('[SplitPanelView] Calling onHeaderVisibilityChange with:', visible);
       onHeaderVisibilityChange?.(visible);
     }
   }, [panels.length, onHeaderVisibilityChange]);
@@ -323,7 +362,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
             resourceId: data.feedId,
             favicon: data.faviconUrl,
           };
-          
+
           // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
           if (panels.length === 1 && dragOverSide) {
             // 먼저 현재 패널에 탭 추가
@@ -357,7 +396,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
             path: `/category/${data.categoryId}`,
             resourceId: data.categoryId,
           };
-          
+
           // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
           if (panels.length === 1 && dragOverSide) {
             const newTabId = openTab(tabData, targetPanelId);
