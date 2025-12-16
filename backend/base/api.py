@@ -12,3 +12,8 @@ api.add_router("/feeds", feeds_router)
 api.add_router("/categories", category_router)
 api.add_router("/items", item_router)
 api.add_router("/auth", auth_router)
+
+
+@api.get("/health", auth=None)
+def health_check(request):
+    return {"status": "ok"}
