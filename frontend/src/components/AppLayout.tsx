@@ -74,9 +74,8 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   // 헤더 가시성 - 패널 1개일 때 스크롤에 따라 변경됨
   const [headerVisible, setHeaderVisible] = useState(true);
 
-  // 디버그용 래퍼
+  // 헤더 가시성 변경 핸들러
   const handleHeaderVisibilityChange = useCallback((visible: boolean) => {
-    console.log('[AppLayout] setHeaderVisible called with:', visible);
     setHeaderVisible(visible);
   }, []);
 

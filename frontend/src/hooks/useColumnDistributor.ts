@@ -58,6 +58,10 @@ export function useColumnDistributor<T extends { id: number }>({
   // 컬럼 수 변경 감지
   const prevColumnsRef = useRef(columns);
 
+  // 현재 컬럼 수 ref (최신 값 유지)
+  const columnsRef = useRef(columns);
+  columnsRef.current = columns;
+
   // 현재 뷰포트에 보이는 sentinel 추적
   const visibleSentinelsRef = useRef<Set<number>>(new Set());
 
@@ -76,8 +80,25 @@ export function useColumnDistributor<T extends { id: number }>({
     if (queueRef.current.length === 0) return false;
 
     const item = queueRef.current.shift()!;
+    const currentColumns = columnsRef.current;
+
     setColumnItems(prev => {
-      const next = prev.map(col => [...col]);
+      // 컬럼 배열 크기가 현재 컬럼 수와 다르면 새 배열 생성
+      let base = prev;
+      if (prev.length !== currentColumns) {
+        base = Array.from({ length: currentColumns }, (_, i) =>
+          i < prev.length ? [...prev[i]] : []
+        );
+      }
+
+      // 컬럼 인덱스가 범위를 벗어나면 무시
+      if (columnIndex >= currentColumns) {
+        // 아이템을 다시 대기열에 넣음
+        queueRef.current.unshift(item);
+        return base;
+      }
+
+      const next = base.map(col => [...col]);
       next[columnIndex] = [...next[columnIndex], item];
       return next;
     });
@@ -96,14 +117,17 @@ export function useColumnDistributor<T extends { id: number }>({
     if (queueRef.current.length === 0) return;
     if (isInitialDistributingRef.current) return;
 
+    const currentColumns = columnsRef.current;
+
     // 각 sentinel을 체크해서 뷰포트에 있으면 아이템 추가
     let addedAny = false;
 
-    for (let i = 0; i < columns; i++) {
+    for (let i = 0; i < currentColumns; i++) {
       const sentinel = sentinelRefs.current[i];
       if (!sentinel) continue;
 
       const rect = sentinel.getBoundingClientRect();
+      // sentinel이 뷰포트 근처에 있을 때만 (300px 여유)
       const isInViewport = rect.top < window.innerHeight + 300 && rect.bottom > -300;
 
       if (isInViewport && queueRef.current.length > 0) {
@@ -113,12 +137,14 @@ export function useColumnDistributor<T extends { id: number }>({
     }
 
     // 아이템이 추가되었고 아직 대기열에 남아있으면, 다음 프레임에 다시 체크
+    // (단, sentinel이 여전히 보이는 경우에만 계속)
     if (addedAny && queueRef.current.length > 0) {
       requestAnimationFrame(() => {
         setTimeout(fillVisibleSentinels, 16);
       });
     }
-  }, [columns, addItemToColumn]);
+    // queue가 남아있어도 sentinel이 안 보이면 대기 (스크롤할 때까지)
+  }, [addItemToColumn]);
 
   // 초기 배분: 각 컬럼에 하나씩 순차적으로
   const distributeInitial = useCallback(() => {
@@ -193,16 +219,34 @@ export function useColumnDistributor<T extends { id: number }>({
     if (prevColumnsRef.current !== columns) {
       prevColumnsRef.current = columns;
 
+      // 초기 배분 중단
+      isInitialDistributingRef.current = false;
+
       // 모든 아이템을 다시 대기열에 (items 기준으로)
       queueRef.current = [...items];
       distributedIdsRef.current.clear();
       items.forEach(item => distributedIdsRef.current.add(item.id));
 
-      setColumnItems(Array.from({ length: columns }, () => []));
+      // 새 컬럼 배열 생성
+      const newColumnItems = Array.from({ length: columns }, () => [] as T[]);
+      setColumnItems(newColumnItems);
       setQueueLength(queueRef.current.length);
 
-      // 재배분
-      setTimeout(() => distributeInitial(), 50);
+      // sentinel refs는 리셋하지 않음 (컴포넌트에서 다시 설정됨)
+      // 대신 기존 배열 확장/축소
+      if (sentinelRefs.current.length < columns) {
+        sentinelRefs.current = [
+          ...sentinelRefs.current,
+          ...Array(columns - sentinelRefs.current.length).fill(null)
+        ];
+      } else if (sentinelRefs.current.length > columns) {
+        sentinelRefs.current = sentinelRefs.current.slice(0, columns);
+      }
+
+      // 재배분 (상태 업데이트 후 실행되도록 충분한 딜레이)
+      setTimeout(() => {
+        distributeInitial();
+      }, 100);
     }
   }, [columns, items, distributeInitial]);
 
@@ -264,9 +308,13 @@ export function useColumnDistributor<T extends { id: number }>({
       });
     };
 
+    // window 스크롤과 document 레벨 스크롤 이벤트 (capture phase)
     window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+
     return () => {
       window.removeEventListener('scroll', onScroll);
+      document.removeEventListener('scroll', onScroll, { capture: true });
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, [fillVisibleSentinels]);

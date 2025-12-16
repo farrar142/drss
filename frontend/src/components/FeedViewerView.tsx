@@ -95,9 +95,11 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
               "grid gap-4",
               columns === 1 && "grid-cols-1",
               columns === 2 && "grid-cols-2",
-              columns === 3 && "grid-cols-3"
+              columns === 3 && "grid-cols-3",
+              columns === 4 && "grid-cols-4",
+              columns === 5 && "grid-cols-5"
             )}>
-              {columnItems.map((columnData, columnIndex) => (
+              {columnItems.slice(0, columns).map((columnData, columnIndex) => (
                 <Column
                   key={columnIndex}
                   columnData={columnData}

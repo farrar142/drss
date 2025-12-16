@@ -8,12 +8,9 @@ import { feedsRoutersItemListAllItems } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 
 export default function HomePage() {
-  console.log('[HomePage] render');
   const { filter } = useSettingsStore();
-  console.log('[HomePage] filter:', filter);
 
   const filters: PaginationFilters = useMemo(() => {
-    console.log('[HomePage] useMemo filters recalc');
     switch (filter) {
       case 'unread':
         return { is_read: false };
