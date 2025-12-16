@@ -30,8 +30,6 @@ services:
     <<: *backend
     image: drss-backend:production
     container_name: drss-django
-    ports:
-      - "8000:8000"
     volumes:
       - static_volume:/usr/src/app/staticfiles
       - media_volume:/usr/src/app/media
@@ -107,7 +105,7 @@ services:
     container_name: drss-frontend
     restart: always
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     environment:
       - NODE_ENV=production
       - TZ=Asia/Seoul
