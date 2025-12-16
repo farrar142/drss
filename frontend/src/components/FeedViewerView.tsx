@@ -24,14 +24,12 @@ export interface FeedViewerViewProps extends UseFeedViewerReturn { }
 function Column({
   columnData,
   columnIndex,
-  expandedSet,
   handleCollapseChange,
   handleMediaClick,
   setSentinelRef,
 }: {
   columnData: RSSItem[];
   columnIndex: number;
-  expandedSet: Set<number>;
   handleCollapseChange: (id: number, collapsed: boolean) => void;
   handleMediaClick: (src: string, type?: 'image' | 'video', itemId?: number) => void;
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
@@ -60,7 +58,6 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   viewMode,
   columns,
   columnItems,
-  expandedSet,
   handleCollapseChange,
   mediaModal,
   handleMediaClick,
@@ -104,7 +101,6 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
                   key={columnIndex}
                   columnData={columnData}
                   columnIndex={columnIndex}
-                  expandedSet={expandedSet}
                   handleCollapseChange={handleCollapseChange}
                   handleMediaClick={handleMediaClick}
                   setSentinelRef={setSentinelRef}

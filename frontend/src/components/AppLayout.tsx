@@ -72,19 +72,14 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [headerVisible, setHeaderVisible] = useState(true);
-  const [isHoveringTop, setIsHoveringTop] = useState(false);
   
   // Refs for scroll tracking
   const lastScrollY = useRef(0);
   const scrollThreshold = 50; // 스크롤 감지 임계값
-  const hoverZoneHeight = 60; // 상단 호버 감지 영역 높이
 
   // 스크롤에 따른 헤더 숨김/표시
   useEffect(() => {
     const handleScroll = () => {
-      // 상단 호버 중이면 스크롤로 숨기지 않음
-      if (isHoveringTop) return;
-      
       const currentScrollY = window.scrollY;
       
       // 맨 위에서는 항상 표시
@@ -110,31 +105,7 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHoveringTop]);
-
-  // 마우스가 상단에 가까워지면 헤더 표시
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const isNearTop = e.clientY < hoverZoneHeight;
-      setIsHoveringTop(isNearTop);
-      
-      if (isNearTop && !headerVisible) {
-        setHeaderVisible(true);
-      }
-    };
-
-    const handleMouseLeave = () => {
-      setIsHoveringTop(false);
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    document.addEventListener('mouseleave', handleMouseLeave);
-    
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseleave', handleMouseLeave);
-    };
-  }, [headerVisible]);
+  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;

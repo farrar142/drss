@@ -15,7 +15,6 @@ import { usePagination, PaginationFilters } from '../hooks/usePagination';
 
 // 홈 피드 컴포넌트
 const HomeFeed = memo(({ isActive }: { isActive: boolean }) => {
-  console.log(`[HomeFeed] render (isActive=${isActive})`);
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -54,7 +53,6 @@ HomeFeed.displayName = 'HomeFeed';
 
 // 카테고리 피드 컴포넌트
 const CategoryFeed = memo(({ categoryId, isActive }: { categoryId: number; isActive: boolean }) => {
-  console.log(`[CategoryFeed:${categoryId}] render (isActive=${isActive})`);
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -93,7 +91,6 @@ CategoryFeed.displayName = 'CategoryFeed';
 
 // 개별 피드 컴포넌트
 const SingleFeed = memo(({ feedId, isActive }: { feedId: number; isActive: boolean }) => {
-  console.log(`[SingleFeed:${feedId}] isActive=${isActive}`);
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {

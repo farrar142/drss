@@ -30,8 +30,7 @@ export interface UseFeedViewerReturn {
   columns: number;
   columnItems: RSSItem[][];
 
-  // Expanded items
-  expandedSet: Set<number>;
+  // Collapse handler
   handleCollapseChange: (id: number, collapsed: boolean) => void;
 
   // Media modal
@@ -166,15 +165,9 @@ export function useFeedViewer({
     }
   }, []);
 
-  // Track expanded items
-  const [expandedSet, setExpandedSet] = useState<Set<number>>(new Set());
-  const handleCollapseChange = useCallback((id: number, collapsed: boolean) => {
-    setExpandedSet(prev => {
-      const next = new Set(prev);
-      if (!collapsed) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+  // Collapse change handler (currently unused but kept for potential future use)
+  const handleCollapseChange = useCallback((_id: number, _collapsed: boolean) => {
+    // Currently no-op, can be used for tracking collapsed state if needed
   }, []);
 
   // Handle media click - use ref to stabilize callback
@@ -189,7 +182,6 @@ export function useFeedViewer({
     viewMode,
     columns,
     columnItems,
-    expandedSet,
     handleCollapseChange,
     mediaModal,
     handleMediaClick,

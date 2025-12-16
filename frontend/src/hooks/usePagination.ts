@@ -101,17 +101,9 @@ export const usePagination = <T extends { id: number }>(
 
   const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
     // 비활성 탭에서는 API 요청 차단
-    if (!enabled) {
-      console.log(`[usePagination:${key}] 🚫 Blocked - tab is inactive`);
-      return;
-    }
+    if (!enabled) return;
 
-    if (loading) {
-      console.log(`[usePagination:${key}] ⚠️ Already loading, skipping`);
-      return;
-    }
-
-    console.log(`[usePagination:${key}] 📡 API Request starting (cursor=${cursor}, direction=${direction})`);
+    if (loading) return;
 
     // 이전 요청 취소 마킹
     if (abortControllerRef.current) {
@@ -175,16 +167,10 @@ export const usePagination = <T extends { id: number }>(
 
   useEffect(() => {
     // enabled가 false이면 로딩하지 않음
-    if (!enabled) {
-      console.log(`[usePagination:${key}] ⏸️ Disabled, skipping load`);
-      return;
-    }
+    if (!enabled) return;
     
     if (!initialized && !loading) {
-      console.log(`[usePagination:${key}] 🚀 Starting initial load (enabled=${enabled}, initialized=${initialized})`);
       loadItems(undefined, 'before');  // Initial load - get newest items first
-    } else {
-      console.log(`[usePagination:${key}] ⏭️ Skip load (enabled=${enabled}, initialized=${initialized}, loading=${loading})`);
     }
   }, [enabled, initialized, loading, loadItems, cacheKey]);  // enabled, cacheKey 추가하여 필터 변경 시 재fetch
 
