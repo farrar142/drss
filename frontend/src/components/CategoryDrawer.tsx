@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { useRSSStore } from '../stores/rssStore';
 import { useTranslation } from '../stores/languageStore';
+import { useTabStore } from '../stores/tabStore';
 import { CategoryItem } from './CategoryItem';
 import {
   feedsRoutersCategoryCreateCategory,
@@ -37,6 +38,8 @@ type DrawerContentProps = {
   categories: RSSCategory[];
   feeds: RSSFeed[];
   onNavigateHome: () => void;
+  onNavigateCategory: (category: RSSCategory) => void;
+  onNavigateFeed: (categoryId: number, feedId: number, feedTitle: string) => void;
   onOpenAdd: () => void;
   onDeleteCategory: (category: RSSCategory) => Promise<void>;
   draggingFeed: FeedSchema | null;
@@ -51,6 +54,8 @@ const DrawerContent = memo(({
   categories,
   feeds,
   onNavigateHome,
+  onNavigateCategory,
+  onNavigateFeed,
   onOpenAdd,
   onDeleteCategory,
   draggingFeed,
@@ -158,6 +163,8 @@ const DrawerContent = memo(({
                 onFeedMoved={() => onDragEnd()}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
+                onNavigateCategory={onNavigateCategory}
+                onNavigateFeed={onNavigateFeed}
               />
             </div>
           ))}
@@ -190,10 +197,44 @@ export const CategoryDrawer: FC<{
   const router = useRouter();
   const { t } = useTranslation();
   const { categories, setCategories, addCategory, removeCategory, feeds, setFeeds } = useRSSStore();
+  const { openTab, activeTabId, saveScrollPosition } = useTabStore();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
+
+  // 현재 탭의 스크롤 위치 저장 헬퍼
+  const saveCurrentScroll = useCallback(() => {
+    if (activeTabId) {
+      saveScrollPosition(activeTabId, window.scrollY);
+    }
+  }, [activeTabId, saveScrollPosition]);
+
+  // 탭으로 네비게이션하는 핸들러들
+  const handleNavigateHome = useCallback(() => {
+    saveCurrentScroll();
+    openTab({ type: 'home', title: '메인스트림', path: '/home' });
+  }, [openTab, saveCurrentScroll]);
+
+  const handleNavigateCategory = useCallback((category: RSSCategory) => {
+    saveCurrentScroll();
+    openTab({ 
+      type: 'category', 
+      title: category.name, 
+      path: `/category/${category.id}`,
+      resourceId: category.id 
+    });
+  }, [openTab, saveCurrentScroll]);
+
+  const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string) => {
+    saveCurrentScroll();
+    openTab({ 
+      type: 'feed', 
+      title: feedTitle, 
+      path: `/category/${categoryId}/feed/${feedId}`,
+      resourceId: feedId 
+    });
+  }, [openTab, saveCurrentScroll]);
 
   useEffect(() => {
     feedsRoutersFeedListFeeds().then(setFeeds);
@@ -268,7 +309,9 @@ export const CategoryDrawer: FC<{
               pathname={pathname}
               categories={categories}
               feeds={feeds}
-              onNavigateHome={() => router.push('/home')}
+              onNavigateHome={handleNavigateHome}
+              onNavigateCategory={handleNavigateCategory}
+              onNavigateFeed={handleNavigateFeed}
               onOpenAdd={() => setAddCategoryOpen(true)}
               onDeleteCategory={handleDeleteCategory}
               draggingFeed={draggingFeed}
@@ -332,7 +375,9 @@ export const CategoryDrawer: FC<{
           pathname={pathname}
           categories={categories}
           feeds={feeds}
-          onNavigateHome={() => router.push('/home')}
+          onNavigateHome={handleNavigateHome}
+          onNavigateCategory={handleNavigateCategory}
+          onNavigateFeed={handleNavigateFeed}
           onOpenAdd={() => setAddCategoryOpen(true)}
           onDeleteCategory={handleDeleteCategory}
           draggingFeed={draggingFeed}

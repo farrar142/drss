@@ -252,7 +252,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
       key={item.id}
       className={cn(
-        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-14",
+        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-[92px]",
         viewMode === 'board' ? 'mb-3' : ''
       )}
       onClick={() => {
@@ -267,7 +267,8 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
           fontSize.gap,
           // Apply sticky when content is visible (feed mode or expanded in board mode)
-          (viewMode === 'feed' || !collapsed) && "sticky top-14 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+          // top-[92px] = app bar (56px) + tab bar (36px)
+          (viewMode === 'feed' || !collapsed) && "sticky top-[92px] z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
         )}
         onClick={(e) => {
           // When sticky header is clicked, scroll the card to top (below app bar)

@@ -36,6 +36,8 @@ import { useThemeStore } from '../stores/themeStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from '../stores/languageStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
+import { TabBar } from './TabBar';
+import { useTabStore } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
 interface AppLayoutProps {
@@ -60,6 +62,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     setFilter,
     setViewMode,
   } = useSettingsStore();
+
+  const { openTab } = useTabStore();
 
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
 
@@ -135,7 +139,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           <h1
             className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
-            onClick={() => router.push('/home')}
+            onClick={() => openTab({ type: 'home', title: '메인스트림', path: '/home' })}
           >
             DRSS
           </h1>
@@ -230,7 +234,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: '설정', path: '/settings' })}>
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}
               </DropdownMenuItem>
@@ -244,6 +248,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </header>
 
+      {/* Tab Bar */}
+      <div 
+        className="fixed top-14 left-0 right-0 z-40"
+        style={{ marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0 }}
+      >
+        <TabBar />
+      </div>
       {/* Sidebar */}
       <CategoryDrawer
         open={drawerOpen}
@@ -255,10 +266,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Main Content */}
       <main
         className={cn(
-          "pt-14 min-h-screen transition-all duration-300"
+          "min-h-screen transition-all duration-300"
         )}
         style={{
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
+          paddingTop: 'calc(3.5rem + 2.25rem)', // h-14 (앱바) + h-9 (탭바)
         }}
       >
         <div className="p-1 sm:p-2 md:p-4 lg:p-6">

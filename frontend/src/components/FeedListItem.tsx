@@ -12,7 +12,6 @@ import {
   EyeOff,
   GripVertical,
 } from 'lucide-react';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -36,9 +35,10 @@ interface FeedListItemProps {
   categoryId: number;
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
+  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string) => void;
 }
 
-export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd }) => {
+export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
   const { updateFeed, removeFeed } = useRSSStore();
 
   const [editOpen, setEditOpen] = useState(false);
@@ -123,10 +123,9 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           <GripVertical className="w-3 h-3 text-muted-foreground" />
         </div>
 
-        {/* Feed Item Link */}
-        <Link
-          href={`/category/${categoryId}/feed/${feed.id}`}
-          draggable={false}
+        {/* Feed Item Button */}
+        <button
+          onClick={() => onNavigateFeed?.(categoryId, feed.id, feed.title)}
           className={cn(
             'flex items-center gap-2 flex-1 px-2 py-1.5 rounded-md',
             'transition-colors',
@@ -176,7 +175,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           >
             {feed.item_count}
           </span>
-        </Link>
+        </button>
 
         {/* More menu */}
         <DropdownMenu>

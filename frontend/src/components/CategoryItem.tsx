@@ -44,6 +44,8 @@ export const CategoryItem: FC<{
   onFeedMoved?: (feedId: number, toCategoryId: number) => void;
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
+  onNavigateCategory?: (category: RSSCategory) => void;
+  onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string) => void;
   // 카테고리 드래그용
   onCategoryDragStart?: (e: React.DragEvent, category: RSSCategory) => void;
   onCategoryDragOver?: (e: React.DragEvent) => void;
@@ -58,6 +60,8 @@ export const CategoryItem: FC<{
   onFeedMoved,
   onDragStart,
   onDragEnd,
+  onNavigateCategory,
+  onNavigateFeed,
   onCategoryDragStart,
   onCategoryDragOver,
   onCategoryDrop,
@@ -225,10 +229,14 @@ export const CategoryItem: FC<{
             </button>
 
             {/* 카테고리 정보 */}
-            <Link
-              href={`/category/${category.id}`}
-              className="flex items-center gap-2 flex-1 min-w-0"
-              onClick={handleExpandToggle}
+            <button
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+              onClick={() => {
+                handleExpandToggle();
+                if (onNavigateCategory) {
+                  onNavigateCategory(category);
+                }
+              }}
             >
               <FolderOpen className={cn(
                 "w-4 h-4 shrink-0 transition-colors",
@@ -243,7 +251,7 @@ export const CategoryItem: FC<{
               {!category.visible && (
                 <EyeOff className="w-3 h-3 text-muted-foreground shrink-0" />
               )}
-            </Link>
+            </button>
 
             {/* 피드 개수 & 아이템 총 개수 */}
             <div className="flex items-center gap-1.5 shrink-0">
@@ -316,6 +324,7 @@ export const CategoryItem: FC<{
                       categoryId={category.id}
                       onDragStart={onDragStart}
                       onDragEnd={onDragEnd}
+                      onNavigateFeed={onNavigateFeed}
                     />
                   ))}
                 </div>
