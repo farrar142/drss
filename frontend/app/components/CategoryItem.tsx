@@ -26,6 +26,7 @@ import FeedDialog from './FeedDialog';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { FeedListItem } from './FeedListItem';
 import { useRSSStore } from '../stores/rssStore';
+import { useTranslation, interpolate } from '../stores/languageStore';
 import {
   feedsRoutersFeedCreateFeed,
   feedsRoutersCategoryUpdateCategory,
@@ -63,6 +64,7 @@ export const CategoryItem: FC<{
   isDraggingCategory,
 }) => {
     const { addFeed, updateCategory, updateFeed } = useRSSStore();
+    const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
     const [addFeedOpen, setAddFeedOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
@@ -124,14 +126,14 @@ export const CategoryItem: FC<{
     const handleRefresh = async () => {
       try {
         await feedsRoutersCategoryRefreshCategoryFeeds(category.id);
-        alert('카테고리 피드 새로고침이 예약되었습니다.');
+        alert(t.category.refreshing);
       } catch (error) {
         console.error('Failed to refresh category feeds', error);
       }
     };
 
     const handleDelete = async () => {
-      if (!confirm('정말로 이 카테고리를 삭제하시겠습니까? 하위 피드도 모두 삭제됩니다.')) return;
+      if (!confirm(t.category.deleteConfirm)) return;
       await deleteCategory(category);
     };
 
@@ -252,7 +254,7 @@ export const CategoryItem: FC<{
                     ? "bg-primary/20 text-primary"
                     : "bg-muted text-muted-foreground"
                 )}>
-                  {feeds.length}개 피드 · {totalItemCount}
+                  {feeds.length} · {totalItemCount}
                 </span>
               )}
 
@@ -272,25 +274,25 @@ export const CategoryItem: FC<{
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                    <Pencil className="w-4 h-4 mr-2 text-primary" /> 수정
+                    <Pencil className="w-4 h-4 mr-2 text-primary" /> {t.common.edit}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleToggleVisible}>
                     {category.visible ? (
                       <>
-                        <EyeOff className="w-4 h-4 mr-2 text-orange-500" /> 메인에서 숨기기
+                        <EyeOff className="w-4 h-4 mr-2 text-orange-500" /> {t.category.visible}
                       </>
                     ) : (
                       <>
-                        <Eye className="w-4 h-4 mr-2 text-green-500" /> 메인에 표시
+                        <Eye className="w-4 h-4 mr-2 text-green-500" /> {t.category.visible}
                       </>
                     )}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleRefresh}>
-                    <RefreshCw className="w-4 h-4 mr-2 text-blue-500" /> 전체 새로고침
+                    <RefreshCw className="w-4 h-4 mr-2 text-blue-500" /> {t.category.refresh}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                    <Trash2 className="w-4 h-4 mr-2" /> 삭제
+                    <Trash2 className="w-4 h-4 mr-2" /> {t.common.delete}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -319,7 +321,7 @@ export const CategoryItem: FC<{
                 </div>
               ) : (
                 <div className="text-xs text-muted-foreground text-center py-3 border border-dashed border-sidebar-border rounded-md">
-                  아직 피드가 없습니다
+                  {t.category.emptyDescription}
                 </div>
               )}
 
@@ -334,44 +336,44 @@ export const CategoryItem: FC<{
                 )}
                 onClick={() => setAddFeedOpen(true)}
               >
-                <Plus className="w-3.5 h-3.5" /> 피드 추가
+                <Plus className="w-3.5 h-3.5" /> {t.feed.add}
               </Button>
             </div>
           </div>
         </div>
 
-        <FeedDialog open={addFeedOpen} onOpenChange={setAddFeedOpen} title="RSS 피드 추가" submitLabel="추가" onSubmit={handleCreateSubmit} />
+        <FeedDialog open={addFeedOpen} onOpenChange={setAddFeedOpen} title={t.feed.add} submitLabel={t.common.add} onSubmit={handleCreateSubmit} />
 
         {/* 카테고리 수정 다이얼로그 */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>카테고리 수정</DialogTitle>
+              <DialogTitle>{t.category.edit}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="category-name">이름</Label>
+                <Label htmlFor="category-name">{t.category.name}</Label>
                 <Input
                   id="category-name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  placeholder="카테고리 이름"
+                  placeholder={t.category.name}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="category-description">설명</Label>
+                <Label htmlFor="category-description">{t.category.description}</Label>
                 <Input
                   id="category-description"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder="카테고리 설명 (선택)"
+                  placeholder={t.category.description}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="category-visible">메인 화면에 표시</Label>
+                  <Label htmlFor="category-visible">{t.category.visible}</Label>
                   <p className="text-xs text-muted-foreground">
-                    끄면 메인 화면에서 이 카테고리의 글이 보이지 않습니다
+                    {t.feed.visibleDescription}
                   </p>
                 </div>
                 <Switch
@@ -383,9 +385,9 @@ export const CategoryItem: FC<{
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>
-                취소
+                {t.common.cancel}
               </Button>
-              <Button onClick={handleEditSave}>저장</Button>
+              <Button onClick={handleEditSave}>{t.common.save}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

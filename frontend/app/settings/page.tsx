@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Sun, Moon, Monitor, Type } from 'lucide-react';
+import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Slider } from '@/components/ui/slider';
 import { useThemeStore, applyThemeColors } from '../stores/themeStore';
 import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '../stores/settingsStore';
+import { useTranslation, languageNames, availableLanguages } from '../stores/languageStore';
 import { FeedItemCard } from '../components/FeedItemCard';
 import { RSSItem } from '../types/rss';
 
@@ -40,6 +41,7 @@ const presetThemes = [
 export default function SettingsPage() {
   const { mode, setMode, colors, setColors, resetColors } = useThemeStore();
   const { fontSizeLevel, setFontSizeLevel, cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
+  const { t, language, setLanguage } = useTranslation();
 
   // Local state for color pickers
   const [primaryHex, setPrimaryHex] = useState(colors.primary);
@@ -78,18 +80,45 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-6 p-1">
       <div className="flex items-center gap-3 mb-8">
         <Palette className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold text-foreground">설정</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
       </div>
+
+      {/* Language */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="w-5 h-5" />
+            {t.settings.language}
+          </CardTitle>
+          <CardDescription>
+            {t.settings.languageDescription}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            {availableLanguages.map((lang) => (
+              <Button
+                key={lang}
+                variant={language === lang ? 'default' : 'outline'}
+                onClick={() => setLanguage(lang)}
+                className="flex-1 gap-2"
+              >
+                {languageNames[lang]}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Theme Mode */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sun className="w-5 h-5" />
-            테마 모드
+            {t.theme.mode}
           </CardTitle>
           <CardDescription>
-            라이트, 다크 또는 시스템 설정을 따르도록 선택합니다.
+            {t.theme.modeDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -100,7 +129,7 @@ export default function SettingsPage() {
               className="flex-1 gap-2"
             >
               <Sun className="w-4 h-4" />
-              라이트
+              {t.theme.light}
             </Button>
             <Button
               variant={mode === 'dark' ? 'default' : 'outline'}
@@ -108,7 +137,7 @@ export default function SettingsPage() {
               className="flex-1 gap-2"
             >
               <Moon className="w-4 h-4" />
-              다크
+              {t.theme.dark}
             </Button>
             <Button
               variant={mode === 'system' ? 'default' : 'outline'}
@@ -116,7 +145,7 @@ export default function SettingsPage() {
               className="flex-1 gap-2"
             >
               <Monitor className="w-4 h-4" />
-              시스템
+              {t.theme.system}
             </Button>
           </div>
         </CardContent>
@@ -125,9 +154,9 @@ export default function SettingsPage() {
       {/* Primary Color */}
       <Card>
         <CardHeader>
-          <CardTitle>주요 색상 (Primary)</CardTitle>
+          <CardTitle>{t.theme.primaryColor}</CardTitle>
           <CardDescription>
-            버튼, 링크, 액센트에 사용되는 주요 색상입니다.
+            {t.theme.primaryColorDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -141,7 +170,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="flex-1">
-              <Label htmlFor="primary-hex">HEX 값</Label>
+              <Label htmlFor="primary-hex">{t.theme.hexValue}</Label>
               <Input
                 id="primary-hex"
                 value={primaryHex}
@@ -160,9 +189,9 @@ export default function SettingsPage() {
       {/* Secondary Color */}
       <Card>
         <CardHeader>
-          <CardTitle>보조 색상 (Secondary)</CardTitle>
+          <CardTitle>{t.theme.secondaryColor}</CardTitle>
           <CardDescription>
-            보조 버튼과 덜 강조된 요소에 사용됩니다.
+            {t.theme.secondaryColorDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -176,7 +205,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="flex-1">
-              <Label htmlFor="secondary-hex">HEX 값</Label>
+              <Label htmlFor="secondary-hex">{t.theme.hexValue}</Label>
               <Input
                 id="secondary-hex"
                 value={secondaryHex}
@@ -195,9 +224,9 @@ export default function SettingsPage() {
       {/* Preset Themes */}
       <Card>
         <CardHeader>
-          <CardTitle>프리셋 테마</CardTitle>
+          <CardTitle>{t.theme.preset}</CardTitle>
           <CardDescription>
-            미리 정의된 색상 조합 중 하나를 선택하세요.
+            {t.theme.presetDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -233,7 +262,7 @@ export default function SettingsPage() {
       <div className="flex justify-end">
         <Button variant="outline" onClick={handleReset} className="gap-2">
           <RotateCcw className="w-4 h-4" />
-          기본값으로 초기화
+          {t.theme.resetColors}
         </Button>
       </div>
 
@@ -242,10 +271,10 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Type className="w-5 h-5" />
-            피드 폰트 크기
+            {t.settings.fontSize}
           </CardTitle>
           <CardDescription>
-            피드 아이템의 텍스트 크기를 조절합니다.
+            {t.settings.fontSizeDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -258,7 +287,11 @@ export default function SettingsPage() {
                 className="flex-1"
                 size="sm"
               >
-                {fontSizeConfig[level].label}
+                {level === 'xs' ? t.settings.fontSizeSmall :
+                  level === 'sm' ? t.settings.fontSizeDefault :
+                    level === 'md' ? t.settings.fontSizeLarge :
+                      level === 'lg' ? t.settings.fontSizeExtraLarge :
+                        'XL'}
               </Button>
             ))}
           </div>
@@ -266,7 +299,7 @@ export default function SettingsPage() {
           {/* Preview */}
           <div className="mt-4 border border-border rounded-lg overflow-hidden">
             <div className="bg-muted/50 px-3 py-2 border-b border-border">
-              <span className="text-sm text-muted-foreground">미리보기</span>
+              <span className="text-sm text-muted-foreground">{t.settings.preview}</span>
             </div>
             <div className="p-3">
               <FeedItemCard
@@ -282,14 +315,14 @@ export default function SettingsPage() {
       {/* Cruise Speed */}
       <Card>
         <CardHeader>
-          <CardTitle>크루즈 속도</CardTitle>
+          <CardTitle>{t.settings.cruiseSpeed}</CardTitle>
           <CardDescription>
-            자동 스크롤 기능의 기본 속도를 설정합니다.
+            {t.settings.cruiseSpeedDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">느림</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">{t.settings.cruiseSpeedSlow}</span>
             <Slider
               value={[cruiseSpeedPercent]}
               onValueChange={([value]) => setCruiseSpeedPercent(value)}
@@ -298,10 +331,10 @@ export default function SettingsPage() {
               step={1}
               className="flex-1"
             />
-            <span className="text-sm text-muted-foreground whitespace-nowrap">빠름</span>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">{t.settings.cruiseSpeedFast}</span>
           </div>
           <div className="text-center text-sm text-muted-foreground">
-            현재 속도: {Math.round(cruiseSpeedPercent)}%
+            {Math.round(cruiseSpeedPercent)}%
           </div>
         </CardContent>
       </Card>
@@ -309,9 +342,9 @@ export default function SettingsPage() {
       {/* Preview */}
       <Card>
         <CardHeader>
-          <CardTitle>미리보기</CardTitle>
+          <CardTitle>{t.settings.preview}</CardTitle>
           <CardDescription>
-            현재 선택한 색상이 어떻게 보이는지 미리 확인하세요.
+            {t.settings.previewDescription}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

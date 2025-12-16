@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from '../../stores/languageStore';
 
 export default function SignUp() {
     const { user, signup, loading } = useAuth();
     const router = useRouter();
+    const { t } = useTranslation();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,7 +29,7 @@ export default function SignUp() {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-muted-foreground">로딩 중...</p>
+                <p className="text-muted-foreground">{t.common.loading}</p>
             </div>
         );
     }
@@ -35,14 +37,14 @@ export default function SignUp() {
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password !== confirmPassword) {
-            setError('비밀번호가 일치하지 않습니다.');
+            setError(t.errors.passwordMismatch);
             return;
         }
         try {
             await signup(username, password, email);
             setError('');
         } catch (err: any) {
-            setError(err.response?.data?.message || '회원가입 실패');
+            setError(err.response?.data?.message || t.errors.unknownError);
         }
     };
 
@@ -57,7 +59,7 @@ export default function SignUp() {
                     "text-3xl font-bold text-center mb-6",
                     "bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent"
                 )}>
-                    회원가입
+                    {t.auth.signUp}
                 </h1>
 
                 {error && (
@@ -72,50 +74,50 @@ export default function SignUp() {
 
                 <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="username">사용자명</Label>
+                        <Label htmlFor="username">{t.auth.username}</Label>
                         <Input
                             id="username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
-                            placeholder="사용자명을 입력하세요"
+                            placeholder={t.auth.username}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="email">이메일</Label>
+                        <Label htmlFor="email">{t.auth.email}</Label>
                         <Input
                             id="email"
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
-                            placeholder="이메일을 입력하세요"
+                            placeholder={t.auth.email}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">비밀번호</Label>
+                        <Label htmlFor="password">{t.auth.password}</Label>
                         <Input
                             id="password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            placeholder="비밀번호를 입력하세요"
+                            placeholder={t.auth.password}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+                        <Label htmlFor="confirmPassword">{t.auth.confirmPassword}</Label>
                         <Input
                             id="confirmPassword"
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             required
-                            placeholder="비밀번호를 다시 입력하세요"
+                            placeholder={t.auth.confirmPassword}
                         />
                     </div>
                     <Button type="submit" className="w-full mt-6">
-                        회원가입
+                        {t.auth.signUp}
                     </Button>
                 </form>
 
@@ -124,7 +126,7 @@ export default function SignUp() {
                         href="/auth/signin"
                         className="text-muted-foreground hover:text-primary transition-colors text-sm"
                     >
-                        이미 계정이 있으신가요? 로그인
+                        {t.auth.hasAccount} {t.auth.signIn}
                     </Link>
                 </div>
             </div>

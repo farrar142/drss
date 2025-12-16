@@ -33,6 +33,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { useAuth } from '../context/AuthContext';
 import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';
+import { useTranslation } from '../stores/languageStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +45,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
+  const { t } = useTranslation();
 
   // Zustand stores
   const {
@@ -140,7 +142,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="검색..."
+              placeholder={`${t.common.search}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -151,23 +153,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {/* Filter Buttons */}
           <div className="hidden lg:flex items-center">
             <ToggleGroup type="single" value={filter} onValueChange={(v) => v && setFilter(v as typeof filter)}>
-              <Tooltip content="전체">
-                <ToggleGroupItem value="all" aria-label="전체">
+              <Tooltip content={t.filter.all}>
+                <ToggleGroupItem value="all" aria-label={t.filter.all}>
                   <ListFilter className="h-4 w-4" />
                 </ToggleGroupItem>
               </Tooltip>
-              <Tooltip content="읽지 않음">
-                <ToggleGroupItem value="unread" aria-label="읽지 않음">
+              <Tooltip content={t.filter.unread}>
+                <ToggleGroupItem value="unread" aria-label={t.filter.unread}>
                   <Bookmark className="h-4 w-4" />
                 </ToggleGroupItem>
               </Tooltip>
-              <Tooltip content="읽음">
-                <ToggleGroupItem value="read" aria-label="읽음">
+              <Tooltip content={t.filter.read}>
+                <ToggleGroupItem value="read" aria-label={t.filter.read}>
                   <BookmarkCheck className="h-4 w-4" />
                 </ToggleGroupItem>
               </Tooltip>
-              <Tooltip content="즐겨찾기">
-                <ToggleGroupItem value="favorite" aria-label="즐겨찾기">
+              <Tooltip content={t.filter.favorite}>
+                <ToggleGroupItem value="favorite" aria-label={t.filter.favorite}>
                   <Heart className="h-4 w-4" />
                 </ToggleGroupItem>
               </Tooltip>
@@ -175,7 +177,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
 
           {/* View Mode Toggle */}
-          <Tooltip content={viewMode === 'board' ? '피드 보기' : '보드 보기'}>
+          <Tooltip content={viewMode === 'board' ? t.view.feedView : t.view.boardView}>
             <Button
               variant="ghost"
               size="icon"
@@ -197,20 +199,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>테마</DropdownMenuLabel>
+              <DropdownMenuLabel>{t.theme.title}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setThemeMode('system')}>
                 <Monitor className="mr-2 h-4 w-4" />
-                시스템
+                {t.theme.system}
                 {themeMode === 'system' && <span className="ml-auto text-primary">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setThemeMode('light')}>
                 <Sun className="mr-2 h-4 w-4" />
-                라이트
+                {t.theme.light}
                 {themeMode === 'light' && <span className="ml-auto text-primary">✓</span>}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setThemeMode('dark')}>
                 <Moon className="mr-2 h-4 w-4" />
-                다크
+                {t.theme.dark}
                 {themeMode === 'dark' && <span className="ml-auto text-primary">✓</span>}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -226,12 +228,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Palette className="mr-2 h-4 w-4" />
-                설정
+                {t.common.settings}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                로그아웃
+                {t.common.logout}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { feedsRoutersFeedValidateFeed, FeedValidationResponse } from '../services/api';
+import { useTranslation } from '../stores/languageStore';
 
 interface HeaderEntry {
   key: string;
@@ -65,10 +66,14 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   open,
   onOpenChange,
   initial = {},
-  title = '피드',
-  submitLabel = '저장',
+  title,
+  submitLabel,
   onSubmit,
 }) => {
+  const { t } = useTranslation();
+  const dialogTitle = title ?? t.nav.feeds;
+  const dialogSubmitLabel = submitLabel ?? t.common.save;
+
   const [url, setUrl] = useState(initial.url ?? '');
   const [feedTitle, setFeedTitle] = useState(initial.title ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
@@ -111,7 +116,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
 
   const handleValidate = async () => {
     if (!url.trim()) {
-      alert('URL을 입력하세요.');
+      alert(t.feed.enterUrl);
       return;
     }
     setValidating(true);
@@ -123,7 +128,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       if (!description && result.description) setDescription(result.description);
     } catch (error) {
       console.error(error);
-      alert('피드 검증 실패: ' + ((error as any)?.message || '알 수 없는 오류'));
+      alert(t.feed.validationFailed + ': ' + ((error as any)?.message || t.errors.unknownError));
       setValidationResult(null);
     } finally {
       setValidating(false);
@@ -156,33 +161,33 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
           <DialogDescription>
-            피드 정보를 입력하고 검증하세요.
+            {t.feed.enterUrl}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="feed-url">URL</Label>
+            <Label htmlFor="feed-url">{t.feed.url}</Label>
             <div className="flex gap-2">
               <Input id="feed-url" value={url} onChange={(e) => setUrl(e.target.value)} autoFocus />
               <Button variant="outline" onClick={handleValidate} disabled={validating} className="shrink-0">
                 {validating ? (
                   <>
                     <svg className="w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" /></svg>
-                    검증 중
+                    {t.feed.validating}
                   </>
-                ) : '검증'}
+                ) : t.feed.validate}
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>커스텀 헤더</Label>
+              <Label>{t.feed.customHeaders}</Label>
               <Button type="button" variant="outline" size="sm" onClick={addHeaderEntry} className="h-7 px-2">
-                <Plus className="w-3 h-3 mr-1" /> 추가
+                <Plus className="w-3 h-3 mr-1" /> {t.feed.addHeader}
               </Button>
             </div>
             {headerEntries.length > 0 ? (
@@ -215,47 +220,47 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">헤더가 없습니다. 추가 버튼을 눌러 헤더를 추가하세요.</p>
+              <p className="text-xs text-muted-foreground">{t.feed.noHeaders}</p>
             )}
           </div>
 
           {validationResult && (
             <div className="p-3 rounded-lg bg-accent/50 border border-border space-y-1">
-              <p className="text-sm font-semibold text-foreground">검증 결과</p>
-              <p className="text-sm text-muted-foreground">제목: {validationResult.title}</p>
-              <p className="text-sm text-muted-foreground">설명: {validationResult.description}</p>
-              <p className="text-sm text-muted-foreground">아이템 수: {validationResult.items_count}</p>
+              <p className="text-sm font-semibold text-foreground">{t.feed.validationResult}</p>
+              <p className="text-sm text-muted-foreground">{t.feed.title}: {validationResult.title}</p>
+              <p className="text-sm text-muted-foreground">{t.feed.description}: {validationResult.description}</p>
+              <p className="text-sm text-muted-foreground">{t.feed.itemCount}: {validationResult.items_count}</p>
               {validationResult.latest_item_date && (
-                <p className="text-sm text-muted-foreground">최신 아이템 날짜: {validationResult.latest_item_date}</p>
+                <p className="text-sm text-muted-foreground">{t.feed.latestItemDate}: {validationResult.latest_item_date}</p>
               )}
             </div>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="feed-title">제목</Label>
+            <Label htmlFor="feed-title">{t.feed.title}</Label>
             <Input id="feed-title" value={feedTitle} onChange={(e) => setFeedTitle(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="feed-description">설명</Label>
+            <Label htmlFor="feed-description">{t.feed.description}</Label>
             <Input id="feed-description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="feed-favicon">Favicon URL</Label>
+            <Label htmlFor="feed-favicon">{t.feed.faviconUrl}</Label>
             <Input id="feed-favicon" placeholder="https://example.com/favicon.ico" value={faviconUrl} onChange={(e) => setFaviconUrl(e.target.value)} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="feed-refresh">새로고침 간격 (분)</Label>
+            <Label htmlFor="feed-refresh">{t.feed.refreshInterval} ({t.feed.refreshIntervalUnit})</Label>
             <Input id="feed-refresh" type="number" min={1} value={refreshInterval} onChange={(e) => setRefreshInterval(Number(e.target.value))} />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="feed-visible">표시</Label>
+              <Label htmlFor="feed-visible">{t.feed.visible}</Label>
               <p className="text-xs text-muted-foreground">
-                끄면 메인/카테고리 화면에서 글이 보이지 않습니다
+                {t.feed.visibleDescription}
               </p>
             </div>
             <Switch
@@ -267,8 +272,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>취소</Button>
-          <Button onClick={handleSubmit} disabled={submitting}>{submitting ? '저장 중...' : submitLabel}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>{t.common.cancel}</Button>
+          <Button onClick={handleSubmit} disabled={submitting}>{submitting ? `${t.common.save}...` : dialogSubmitLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

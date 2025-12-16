@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { useRSSStore } from '../stores/rssStore';
+import { useTranslation } from '../stores/languageStore';
 import { CategoryItem } from './CategoryItem';
 import {
   feedsRoutersCategoryCreateCategory,
@@ -37,6 +38,7 @@ export const CategoryDrawer: FC<{
   onClose: () => void;
 }> = ({ open, pathname, variant = 'permanent', onClose }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const { categories, setCategories, addCategory, removeCategory, feeds, setFeeds } = useRSSStore();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -192,7 +194,7 @@ export const CategoryDrawer: FC<{
               )}
             >
               <Rss className="h-4 w-4" />
-              <span className="font-medium">메인 스트림</span>
+              <span className="font-medium">{t.nav.home}</span>
             </button>
           </div>
 
@@ -236,7 +238,7 @@ export const CategoryDrawer: FC<{
             size="sm"
           >
             <Plus className="mr-2 h-4 w-4" />
-            카테고리 추가
+            {t.category.add}
           </Button>
         </div>
       </div>
@@ -329,33 +331,33 @@ export const CategoryDrawer: FC<{
       <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
         <DialogContent onClose={() => setAddCategoryOpen(false)}>
           <DialogHeader>
-            <DialogTitle>카테고리 추가</DialogTitle>
+            <DialogTitle>{t.category.add}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">이름</Label>
+              <Label htmlFor="name">{t.category.name}</Label>
               <Input
                 id="name"
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="카테고리 이름"
+                placeholder={t.category.name}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">설명</Label>
+              <Label htmlFor="description">{t.category.description}</Label>
               <Input
                 id="description"
                 value={newCategoryDescription}
                 onChange={(e) => setNewCategoryDescription(e.target.value)}
-                placeholder="카테고리 설명"
+                placeholder={t.category.description}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
-              취소
+              {t.common.cancel}
             </Button>
-            <Button onClick={handleAddCategory}>추가</Button>
+            <Button onClick={handleAddCategory}>{t.common.add}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
