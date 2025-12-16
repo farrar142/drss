@@ -9,9 +9,6 @@ interface RSSStore {
 
   // UI State
   searchQuery: string;
-  filter: 'all' | 'unread' | 'read' | 'favorite';
-  viewMode: 'board' | 'feed';
-  columns: number;
 
   // Actions
   setFeeds: (feeds: RSSFeed[]) => void;
@@ -24,9 +21,6 @@ interface RSSStore {
   removeCategory: (id: number) => void;
 
   setSearchQuery: (query: string) => void;
-  setFilter: (filter: 'all' | 'unread' | 'read' | 'favorite') => void;
-  setViewMode: (mode: 'board' | 'feed') => void;
-  setColumns: (columns: number) => void;
 }
 
 export const useRSSStore = create<RSSStore>((set) => ({
@@ -34,9 +28,6 @@ export const useRSSStore = create<RSSStore>((set) => ({
   feeds: [],
   categories: [],
   searchQuery: '',
-  filter: 'all',
-  viewMode: 'feed',
-  columns: 3,
 
   // Data actions
   setFeeds: (feeds) => set({ feeds }),
@@ -58,7 +49,4 @@ export const useRSSStore = create<RSSStore>((set) => ({
 
   // UI actions
   setSearchQuery: (searchQuery) => set({ searchQuery }),
-  setFilter: (filter) => set({ filter }),
-  setViewMode: (viewMode) => set({ viewMode }),
-  setColumns: (columns) => set({ columns }),
 }));

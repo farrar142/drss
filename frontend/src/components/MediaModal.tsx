@@ -34,10 +34,16 @@ const getFilenameFromUrl = (url: string, index: number, type: 'image' | 'video')
   return `image_${index + 1}.${ext}`;
 };
 
+// 프록시 URL 생성 (CORS 우회)
+const getProxiedUrl = (src: string): string => {
+  return `/api/proxy/image?url=${encodeURIComponent(src)}`;
+};
+
 // 단일 미디어 다운로드
 const downloadSingleMedia = async (src: string, filename: string) => {
   try {
-    const response = await fetch(src);
+    const fetchUrl = getProxiedUrl(src);
+    const response = await fetch(fetchUrl);
     if (!response.ok) throw new Error('Failed to fetch media');
     const blob = await response.blob();
     saveAs(blob, filename);
@@ -67,7 +73,8 @@ const downloadAllAsZip = async (
 
   const fetchPromises = mediaList.map(async (media) => {
     try {
-      const response = await fetch(media.src);
+      const fetchUrl = getProxiedUrl(media.src);
+      const response = await fetch(fetchUrl);
       if (!response.ok) throw new Error(`Failed to fetch: ${media.src}`);
       const blob = await response.blob();
       if (media.type === 'image') {
@@ -119,16 +126,35 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
   // viewMode에 따른 네비게이션 핸들러
   const handleNext = () => {
     if (currentMediaIndex == null) return;
-    const step = viewMode;
-    const next = Math.min(currentMediaIndex + step, mediaListRef.current.length - 1);
-    if (next !== currentMediaIndex) showMediaAt(next);
+    const mediaCount = mediaListRef.current.length;
+    if (viewMode === 2) {
+      // 듀얼 뷰: 현재 짝수 인덱스 기준으로 다음 짝수 인덱스로 이동
+      const currentLeftIndex = Math.floor(currentMediaIndex / 2) * 2;
+      const nextLeftIndex = currentLeftIndex + 2;
+      if (nextLeftIndex < mediaCount) {
+        showMediaAt(nextLeftIndex);
+      }
+    } else {
+      // 싱글 뷰: 1개씩 이동
+      const next = currentMediaIndex + 1;
+      if (next < mediaCount) showMediaAt(next);
+    }
   };
 
   const handlePrev = () => {
     if (currentMediaIndex == null) return;
-    const step = viewMode;
-    const prev = Math.max(currentMediaIndex - step, 0);
-    if (prev !== currentMediaIndex) showMediaAt(prev);
+    if (viewMode === 2) {
+      // 듀얼 뷰: 현재 짝수 인덱스 기준으로 이전 짝수 인덱스로 이동
+      const currentLeftIndex = Math.floor(currentMediaIndex / 2) * 2;
+      const prevLeftIndex = currentLeftIndex - 2;
+      if (prevLeftIndex >= 0) {
+        showMediaAt(prevLeftIndex);
+      }
+    } else {
+      // 싱글 뷰: 1개씩 이동
+      const prev = currentMediaIndex - 1;
+      if (prev >= 0) showMediaAt(prev);
+    }
   };
 
   // 모달이 열릴 때 body 스크롤 막기
@@ -267,6 +293,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           <>
             {modalMedia?.type === 'video' ? (
               <FeedVideo
+                key={modalMedia.src}
                 src={modalMedia.src}
                 controls
                 autoPlay
@@ -293,14 +320,22 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
 
           return (
             <div className="flex items-center justify-center gap-4 w-full h-[calc(90vh-80px)]">
-              {/* Left Image */}
-              <div className="flex-1 h-full flex items-center justify-center">
+              {/* Left Image - 클릭 시 이전으로 */}
+              <div
+                className="flex-1 h-full flex items-center justify-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
+              >
                 {leftIndex != null && mediaList[leftIndex] && (
                   mediaList[leftIndex].type === 'video' ? (
                     <FeedVideo
+                      key={mediaList[leftIndex].src}
                       src={mediaList[leftIndex].src}
                       controls
-                      className="max-w-full max-h-full object-contain rounded-lg"
+                      autoPlay
+                      className="max-w-full max-h-full object-contain rounded-lg pointer-events-auto"
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
@@ -308,12 +343,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
                       src={mediaList[leftIndex].src}
                       alt={`Image ${leftIndex + 1}`}
                       contain
-                      className="max-h-full"
-                      onClick={(e) => {
-                        // e.stopPropagation();
-                        e.preventDefault()
-                        handlePrev();
-                      }}
+                      className="max-h-full pointer-events-none"
                     />
                   )
                 )}
@@ -322,14 +352,22 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
               {/* Divider */}
               <div className="w-px h-3/4 bg-border" />
 
-              {/* Right Image */}
-              <div className="flex-1 h-full flex items-center justify-center">
+              {/* Right Image - 클릭 시 다음으로 */}
+              <div
+                className="flex-1 h-full flex items-center justify-center cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
+              >
                 {rightIndex != null && rightIndex < mediaList.length && mediaList[rightIndex] ? (
                   mediaList[rightIndex].type === 'video' ? (
                     <FeedVideo
+                      key={mediaList[rightIndex].src}
                       src={mediaList[rightIndex].src}
                       controls
-                      className="max-w-full max-h-full object-contain rounded-lg"
+                      autoPlay
+                      className="max-w-full max-h-full object-contain rounded-lg pointer-events-auto"
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
@@ -337,12 +375,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
                       src={mediaList[rightIndex].src}
                       alt={`Image ${rightIndex + 1}`}
                       contain
-                      className="max-h-full"
-                      onClick={(e) => {
-                        // e.stopPropagation();
-                        e.preventDefault()
-                        handleNext();
-                      }}
+                      className="max-h-full pointer-events-none"
                     />
                   )
                 ) : (

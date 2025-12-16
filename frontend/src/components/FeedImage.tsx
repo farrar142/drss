@@ -142,12 +142,10 @@ export const FeedImage: FC<{
           onClick={(e) => {
             console.log("click image")
             e.preventDefault();
-            e.stopPropagation();
             if (onClick) onClick(e as unknown as React.MouseEvent<HTMLImageElement>);
           }}
           onDoubleClick={(e) => {
             e.preventDefault();
-            e.stopPropagation();
             if (onDoubleClick) onDoubleClick(e as unknown as React.MouseEvent<HTMLImageElement>);
           }}
           onLoad={() => setLoaded(true)}

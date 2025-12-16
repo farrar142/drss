@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { FeedViewer } from '@/components/FeedViewer';
-import { useRSSStore } from '@/stores/rssStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { RSSItem } from '@/types/rss';
 import { feedsRoutersItemListItemsByCategory } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
@@ -11,7 +11,7 @@ import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 export default function CategoryPage() {
     const params = useParams();
     const categoryId = parseInt(params.id as string);
-    const { filter } = useRSSStore();
+    const { filter } = useSettingsStore();
 
     const filters: PaginationFilters = useMemo(() => {
         switch (filter) {

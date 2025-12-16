@@ -33,6 +33,7 @@ import { Tooltip } from '@/ui/tooltip';
 import { useAuth } from '../context/AuthContext';
 import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from '../stores/languageStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { cn } from '@/lib/utils';
@@ -50,12 +51,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   // Zustand stores
   const {
     searchQuery,
+    setSearchQuery,
+  } = useRSSStore();
+
+  const {
     filter,
     viewMode,
-    setSearchQuery,
     setFilter,
     setViewMode,
-  } = useRSSStore();
+  } = useSettingsStore();
 
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
 

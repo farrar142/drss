@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { RSSItem } from "../types/rss";
-import { useRSSStore } from "../stores/rssStore";
+import { useSettingsStore } from "../stores/settingsStore";
 import { useMediaQuery } from "./useMediaQuery";
 import { useColumnDistributor } from "./useColumnDistributor";
 import { useMediaModal } from "./useMediaModal";
@@ -68,7 +68,7 @@ export function useFeedViewer({
   newPostsCount: externalNewPostsCount = 0,
   autoRefreshInterval = 60000,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
-  const { viewMode } = useRSSStore();
+  const { viewMode } = useSettingsStore();
   const isMd = useMediaQuery('(max-width: 768px)');
   const isXl = useMediaQuery('(min-width: 1280px)');
 

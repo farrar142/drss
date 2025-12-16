@@ -75,6 +75,18 @@ interface SettingsStore {
   // 미디어 모달 뷰 모드 (1개 또는 2개)
   mediaViewMode: 1 | 2;
   setMediaViewMode: (mode: 1 | 2) => void;
+
+  // 앱바 필터
+  filter: 'all' | 'unread' | 'read' | 'favorite';
+  setFilter: (filter: 'all' | 'unread' | 'read' | 'favorite') => void;
+
+  // 앱바 뷰 모드
+  viewMode: 'board' | 'feed';
+  setViewMode: (mode: 'board' | 'feed') => void;
+
+  // 칼럼 수
+  columns: number;
+  setColumns: (columns: number) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -91,6 +103,18 @@ export const useSettingsStore = create<SettingsStore>()(
       // 미디어 모달 뷰 모드 기본값 1개
       mediaViewMode: 1,
       setMediaViewMode: (mode) => set({ mediaViewMode: mode }),
+
+      // 앱바 필터 기본값 all
+      filter: 'all',
+      setFilter: (filter) => set({ filter }),
+
+      // 앱바 뷰 모드 기본값 feed
+      viewMode: 'feed',
+      setViewMode: (viewMode) => set({ viewMode }),
+
+      // 칼럼 수 기본값 3
+      columns: 3,
+      setColumns: (columns) => set({ columns }),
     }),
     {
       name: 'drss-settings',

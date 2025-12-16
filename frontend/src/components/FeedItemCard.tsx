@@ -5,7 +5,6 @@ import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'htm
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRoutersItemToggleItemFavorite, feedsRoutersItemToggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
-import { useRSSStore } from "../stores/rssStore";
 import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../stores/settingsStore";
 import { RSSItem } from "../types/rss";
 import { FeedImage } from "./FeedImage";
@@ -154,7 +153,7 @@ const renderDescription = (
       return (
         <FeedVideo
           src={resolved}
-          onClick={() => resolved && onMediaClick(resolved, 'video', itemId)}
+          onClick={() => resolved ? onMediaClick(resolved, 'video', itemId) : undefined}
           {...attribs}
         />
       );
@@ -171,8 +170,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   onCollapseChange?: (id: number, collapsed: boolean) => void,
   fontSizeOverride?: FontSizeLevel, // 미리보기용 오버라이드
 }>(({ item, onMediaClick, onCollapseChange, fontSizeOverride }, ref) => {
-  const { viewMode } = useRSSStore()
-  const { fontSizeLevel: storeFontSize } = useSettingsStore();
+  const { viewMode, fontSizeLevel: storeFontSize } = useSettingsStore();
   const fontSizeLevel = fontSizeOverride || storeFontSize;
   const fontSize = fontSizeConfig[fontSizeLevel];
 

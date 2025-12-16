@@ -2,13 +2,13 @@
 
 import React, { useMemo } from 'react';
 import { FeedViewer } from '@/components/FeedViewer';
-import { useRSSStore } from '@/stores/rssStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { RSSItem } from '@/types/rss';
 import { feedsRoutersItemListAllItems } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 
 export default function HomePage() {
-  const { filter } = useRSSStore();
+  const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
     switch (filter) {

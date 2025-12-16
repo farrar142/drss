@@ -27,23 +27,48 @@ export const usePagination = <T extends { id: number }>(
   const [hasNext, setHasNext] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [newestCursor, setNewestCursor] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);  // Track if initial load is done
+  const [initialized, setInitialized] = useState(false);
 
   // Combine key and filters into a single dependency string
   const cacheKey = `${key ?? '__default__'}-${JSON.stringify(filters ?? {})}`;
-  const prevKeyRef = useRef(cacheKey);
+  const prevKeyRef = useRef<string | null>(null);
+  const isFirstRender = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Reset state when key or filters change
   useEffect(() => {
+    // 첫 렌더 시에는 prevKeyRef를 설정만 하고 리셋하지 않음
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevKeyRef.current = cacheKey;
+      return;
+    }
+
     if (prevKeyRef.current !== cacheKey) {
+      // 진행 중인 요청 취소
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+
       setItems([]);
       setHasNext(false);
       setNextCursor(null);
       setNewestCursor(null);
-      setInitialized(false);  // Reset initialized flag
+      setInitialized(false);
+      setLoading(false);
       prevKeyRef.current = cacheKey;
     }
   }, [cacheKey]);
+
+  // 컴포넌트 언마운트 시 요청 취소
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const removeDuplicates = useCallback((items: T[]) => {
     const seen = new Set<number>();
@@ -75,6 +100,16 @@ export const usePagination = <T extends { id: number }>(
 
   const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
     if (loading) return;
+
+    // 이전 요청 취소 마킹
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 새 AbortController 생성 (signal.aborted로 취소 여부 체크)
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setLoading(true);
     try {
       const response = await paginationApi({
@@ -83,6 +118,10 @@ export const usePagination = <T extends { id: number }>(
         direction,
         ...filters
       });
+
+      // 응답이 왔을 때 취소되었으면 무시
+      if (abortController.signal.aborted) return;
+
       const newItems = response.items;
 
       setItems(prev => {
@@ -110,10 +149,15 @@ export const usePagination = <T extends { id: number }>(
         });
       }
     } catch (error) {
+      // 취소된 요청은 무시
+      if (abortController.signal.aborted) return;
       console.error('Failed to load items:', error);
     } finally {
-      setLoading(false);
-      setInitialized(true);  // Mark as initialized after first load attempt
+      // 취소되지 않은 요청만 상태 업데이트
+      if (!abortController.signal.aborted) {
+        setLoading(false);
+        setInitialized(true);
+      }
     }
   }, [loading, paginationApi, removeDuplicates, getCursorField, compareCursors, filters]);
 
@@ -121,7 +165,7 @@ export const usePagination = <T extends { id: number }>(
     if (!initialized && !loading) {
       loadItems(undefined, 'before');  // Initial load - get newest items first
     }
-  }, [initialized, loading, loadItems]);
+  }, [initialized, loading, loadItems, cacheKey]);  // cacheKey 추가하여 필터 변경 시 재fetch
 
   const handleLoadMore = useCallback(() => {
     // 이전 글 불러오기 (older items)
