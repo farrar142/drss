@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { RSSItem } from "../types/rss";
 import { useRSSStore } from "../stores/rssStore";
 import { useMediaQuery } from "./useMediaQuery";
-import { useMasonryLayout } from "./useMasonryLayout";
+import { useColumnDistributor } from "./useColumnDistributor";
 import { useMediaModal } from "./useMediaModal";
 import { useCruising } from "./useCruising";
 
@@ -27,12 +27,6 @@ export interface UseFeedViewerReturn {
   // Column layout
   columns: number;
   columnItems: RSSItem[][];
-  useCSSColumns: boolean;
-  columnSentinelIndexes: number[];
-
-  // Masonry helpers
-  registerHeight: (id: number, height: number) => void;
-  getItemHeight: (id: number) => number;
 
   // Expanded items
   expandedSet: Set<number>;
@@ -45,7 +39,7 @@ export interface UseFeedViewerReturn {
   // Cruising
   cruising: ReturnType<typeof useCruising>;
 
-  // Sentinel refs
+  // Sentinel refs (for column distributor)
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
 
   // Handlers
@@ -59,6 +53,10 @@ export interface UseFeedViewerReturn {
   newPostsCount: number;
   isRefreshing: boolean;
   handleLoadNew: () => void;
+  
+  // Queue info
+  queueLength: number;
+  resetDistributor: () => void;
 }
 
 export function useFeedViewer({
@@ -79,109 +77,30 @@ export function useFeedViewer({
   if (isXl) columns = 3;
   else if (!isMd) columns = 2;
 
-  const { columnItems, registerHeight, getItemHeight } = useMasonryLayout(items, columns);
+  // Use column distributor instead of masonry layout
+  const { 
+    columnItems, 
+    setSentinelRef, 
+    queueLength,
+    reset: resetDistributor 
+  } = useColumnDistributor({
+    items,
+    columns,
+    onLoadMore,
+    hasNext,
+    loading,
+    queueThreshold: 5,
+    initialDelay: 80,
+  });
 
   // Use extracted hooks
   const mediaModal = useMediaModal({ items });
   // 지수 함수 속도: 0%→10px/s, 100%→300px/s (기본 속도는 settingsStore에서 관리)
   const cruising = useCruising({ minSpeed: 10, maxSpeed: 300 });
 
-  // Use fast, CSS-based masonry when possible
-  const useCSSColumns = true;
-
-  // For CSS columns mode, compute sentinel positions
-  const columnSentinelIndexes = useMemo(() => {
-    if (!useCSSColumns) return [] as number[];
-    const n = items.length;
-    if (n === 0) return [] as number[];
-    const idxs: number[] = [];
-    for (let c = 1; c <= columns; c++) {
-      const pos = Math.max(0, Math.min(n - 1, Math.ceil((c * n) / columns) - 1));
-      idxs.push(pos);
-    }
-    return idxs;
-  }, [items.length, columns, useCSSColumns]);
-
-  // Multiple sentinel refs for each column
-  const sentinelRefs = useRef<(HTMLDivElement | null)[]>([]);
-
   // Use ref to always have access to latest callback
-  const onLoadMoreRef = useRef(onLoadMore);
-  onLoadMoreRef.current = onLoadMore;
   const onLoadNewRef = useRef(onLoadNew);
   onLoadNewRef.current = onLoadNew;
-
-  // Callback ref setter for sentinel elements
-  const setSentinelRef = useCallback((index: number) => (el: HTMLDivElement | null) => {
-    sentinelRefs.current[index] = el;
-  }, []);
-
-  // Intersection observer for infinite scroll
-  useEffect(() => {
-    if (!hasNext || loading) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const isAnyIntersecting = entries.some(entry => entry.isIntersecting);
-        if (isAnyIntersecting && onLoadMoreRef.current) {
-          onLoadMoreRef.current();
-          console.log("Loading more items...");
-        }
-      },
-      { threshold: 0.1, rootMargin: '100px' }
-    );
-
-    sentinelRefs.current.forEach(ref => {
-      if (ref) observer.observe(ref);
-    });
-
-    // Fallback scroll handler
-    let rafId: number | null = null;
-    let resizeTimeoutId: NodeJS.Timeout | null = null;
-
-    const checkNearBottom = () => {
-      if (!hasNext || loading) return;
-      const scrollY = window.scrollY || window.pageYOffset;
-      const vh = window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      const threshold = 300;
-      if (scrollY + vh + threshold >= docHeight) {
-        if (onLoadMoreRef.current) {
-          onLoadMoreRef.current();
-          console.log('Loading more items (near-bottom fallback)...');
-        }
-      }
-    };
-
-    const onScroll = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        checkNearBottom();
-        rafId = null;
-      });
-    };
-
-    // Debounced resize handler - only trigger after resize settles
-    const onResize = () => {
-      if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
-      resizeTimeoutId = setTimeout(() => {
-        checkNearBottom();
-        resizeTimeoutId = null;
-      }, 150);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onResize, { passive: true });
-    checkNearBottom();
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onResize);
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
-    };
-  }, [hasNext, loading, columns]);
 
   // Auto-refresh state
   const [refreshProgress, setRefreshProgress] = useState(0);
@@ -296,10 +215,6 @@ export function useFeedViewer({
     viewMode,
     columns,
     columnItems,
-    useCSSColumns,
-    columnSentinelIndexes,
-    registerHeight,
-    getItemHeight,
     expandedSet,
     handleCollapseChange,
     mediaModal,
@@ -314,5 +229,7 @@ export function useFeedViewer({
     newPostsCount,
     isRefreshing,
     handleLoadNew,
+    queueLength,
+    resetDistributor,
   };
 }
