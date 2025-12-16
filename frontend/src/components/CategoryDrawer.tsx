@@ -68,7 +68,10 @@ const DrawerContent = memo(({
   const [dragOverCategoryId, setDragOverCategoryId] = useState<number | null>(null);
 
   const handleCategoryDragStart = useCallback((e: React.DragEvent, category: RSSCategory) => {
-    e.dataTransfer.setData('application/category-reorder', JSON.stringify({ categoryId: category.id }));
+    e.dataTransfer.setData('application/category-reorder', JSON.stringify({
+      categoryId: category.id,
+      categoryName: category.name,
+    }));
     e.dataTransfer.effectAllowed = 'move';
     setDraggingCategoryId(category.id);
   }, []);
@@ -218,20 +221,20 @@ export const CategoryDrawer: FC<{
 
   const handleNavigateCategory = useCallback((category: RSSCategory) => {
     saveCurrentScroll();
-    openTab({ 
-      type: 'category', 
-      title: category.name, 
-      path: `/category/${category.id}`,
-      resourceId: category.id 
+    openTab({
+      type: 'category',
+      title: category.name,
+      path: '/home', // URL 단순화 - 모든 피드 탭은 /home
+      resourceId: category.id
     });
   }, [openTab, saveCurrentScroll]);
 
   const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => {
     saveCurrentScroll();
-    openTab({ 
-      type: 'feed', 
-      title: feedTitle, 
-      path: `/category/${categoryId}/feed/${feedId}`,
+    openTab({
+      type: 'feed',
+      title: feedTitle,
+      path: '/home', // URL 단순화 - 모든 피드 탭은 /home
       resourceId: feedId,
       favicon: faviconUrl
     });

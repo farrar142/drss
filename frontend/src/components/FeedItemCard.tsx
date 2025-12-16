@@ -276,17 +276,38 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         onClick={(e) => {
           // When sticky header is clicked and it's actually stuck at top, scroll the card to top
           if (viewMode === 'feed' || !collapsed) {
-            // 스티키 헤더가 실제로 상단에 고정된 상태인지 확인
-            // 카드의 상단이 헤더 오프셋(92px) 위에 있어야 스크롤
-            const cardRect = localRef.current?.getBoundingClientRect();
-            const headerOffset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-offset') || '92');
-            
-            if (cardRect && cardRect.top < headerOffset) {
-              // 스크롤할 때만 이벤트 전파 중단 (카드 접힘 방지)
-              e.stopPropagation();
-              localRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const cardEl = localRef.current;
+            if (!cardEl) return;
+
+            // 가장 가까운 스크롤 컨테이너 찾기
+            let scrollContainer: HTMLElement | null = cardEl.parentElement;
+            while (scrollContainer) {
+              const overflow = getComputedStyle(scrollContainer).overflowY;
+              if (overflow === 'auto' || overflow === 'scroll') break;
+              scrollContainer = scrollContainer.parentElement;
             }
-            // 스티키 상태가 아니면 이벤트가 부모로 전파되어 카드가 접힘
+
+            if (!scrollContainer) return;
+
+            const cardRect = cardEl.getBoundingClientRect();
+            const containerRect = scrollContainer.getBoundingClientRect();
+
+            // 스티키 헤더의 top 위치 계산 (탭바 높이 약 36px 고려)
+            // --header-offset이 0px이면 sticky top은 컨테이너 상단
+            // 하지만 탭바가 sticky로 상단에 있으므로 실제 스티키 영역은 탭바 아래
+            const tabBarHeight = 36;
+            const stickyAreaTop = containerRect.top + tabBarHeight;
+
+            // 카드 상단이 스티키 영역보다 위에 있으면 (= 스티키 상태)
+            // 카드 상단을 탭바 바로 아래로 스크롤
+            if (cardRect.top < stickyAreaTop + 50) { // 50px 여유로 클릭 감지 영역 확대
+              e.stopPropagation();
+              // 카드 상단을 탭바 바로 아래로 이동
+              const currentScrollTop = scrollContainer.scrollTop;
+              const cardOffsetFromContainer = cardRect.top - containerRect.top;
+              const targetScrollTop = currentScrollTop + cardOffsetFromContainer - tabBarHeight - 8;
+              scrollContainer.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+            }
           }
         }}
       >

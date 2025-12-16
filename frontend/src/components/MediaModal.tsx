@@ -358,8 +358,8 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
             title={readDirection === 'ltr' ? '오른쪽→왼쪽으로 보기' : '왼쪽→오른쪽으로 보기'}
             className={cn(
               "absolute top-4 right-4 z-20 p-2 rounded-full backdrop-blur-sm transition-colors",
-              readDirection === 'rtl' 
-                ? "bg-primary/80 hover:bg-primary" 
+              readDirection === 'rtl'
+                ? "bg-primary/80 hover:bg-primary"
                 : "bg-black/60 hover:bg-black/80"
             )}
           >

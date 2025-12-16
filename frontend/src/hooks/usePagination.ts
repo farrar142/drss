@@ -168,7 +168,7 @@ export const usePagination = <T extends { id: number }>(
   useEffect(() => {
     // enabled가 false이면 로딩하지 않음
     if (!enabled) return;
-    
+
     if (!initialized && !loading) {
       loadItems(undefined, 'before');  // Initial load - get newest items first
     }

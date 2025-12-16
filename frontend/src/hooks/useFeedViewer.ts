@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect, RefObject } from "react";
 import { RSSItem } from "../types/rss";
 import { useSettingsStore } from "../stores/settingsStore";
 import { useMediaQuery } from "./useMediaQuery";
@@ -20,6 +20,10 @@ export interface UseFeedViewerOptions {
   autoRefreshInterval?: number;
   /** 탭 활성화 여부 (비활성 시 IntersectionObserver 비활성화) */
   isActive?: boolean;
+  /** 최대 컬럼 수 (탭별 설정, 기본 3) */
+  maxColumns?: number;
+  /** 스크롤 컨테이너 ref (개별 패널 스크롤용) */
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export interface UseFeedViewerReturn {
@@ -57,6 +61,9 @@ export interface UseFeedViewerReturn {
   // Queue info
   queueLength: number;
   resetDistributor: () => void;
+
+  // 스크롤 컨테이너 (PullToRefresh에서 사용)
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export function useFeedViewer({
@@ -68,15 +75,28 @@ export function useFeedViewer({
   newPostsCount: externalNewPostsCount = 0,
   autoRefreshInterval = 60000,
   isActive = true,
+  maxColumns = 3,
+  scrollContainerRef,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
   const { viewMode } = useSettingsStore();
-  const isMd = useMediaQuery('(max-width: 768px)');
-  const isXl = useMediaQuery('(min-width: 1280px)');
+  // 극도로 작은 화면 (480px 이하): 무조건 1열
+  const isXs = useMediaQuery('(max-width: 480px)');
+  // 작은 화면 (768px 이하): 최대 2열
+  const isSm = useMediaQuery('(max-width: 768px)');
+  // 중간 화면 (1024px 이하): 최대 3열
+  const isMd = useMediaQuery('(max-width: 1024px)');
 
-  // Calculate columns based on screen size
-  let columns = 1;
-  if (isXl) columns = 3;
-  else if (!isMd) columns = 2;
+  // maxColumns 범위 제한 (1-5)
+  const clampedMax = Math.max(1, Math.min(5, maxColumns));
+
+  // 화면 크기에 따른 최대 컬럼 수 제한 (사용자 설정보다 우선)
+  let screenMaxColumns = 5;
+  if (isXs) screenMaxColumns = 1;
+  else if (isSm) screenMaxColumns = 2;
+  else if (isMd) screenMaxColumns = 3;
+
+  // 화면 제한과 사용자 설정 중 작은 값 사용
+  const columns = Math.min(clampedMax, screenMaxColumns);
 
   // Use column distributor instead of masonry layout
   const {
@@ -98,7 +118,8 @@ export function useFeedViewer({
   // Use extracted hooks
   const mediaModal = useMediaModal({ items });
   // 지수 함수 속도: 0%→10px/s, 100%→300px/s (기본 속도는 settingsStore에서 관리)
-  const cruising = useCruising({ minSpeed: 10, maxSpeed: 300 });
+  // 개별 스크롤 컨테이너 전달
+  const cruising = useCruising({ minSpeed: 10, maxSpeed: 300, scrollContainerRef });
 
   // Use ref to always have access to latest callback
   const onLoadNewRef = useRef(onLoadNew);
@@ -196,5 +217,6 @@ export function useFeedViewer({
     handleLoadNew,
     queueLength,
     resetDistributor,
+    scrollContainerRef,
   };
 }

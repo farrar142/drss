@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useMemo, memo } from 'react';
+import React, { useMemo, memo, RefObject } from 'react';
 import { FeedViewer } from './FeedViewer';
 import { SettingsPage } from './SettingsPage';
 import { useSettingsStore } from '../stores/settingsStore';
-import { useTabStore, Tab } from '../stores/tabStore';
+import { useTabStore, Tab, PanelId } from '../stores/tabStore';
 import { RSSItem } from '../types/rss';
 import {
   feedsRoutersItemListAllItems,
@@ -14,7 +14,7 @@ import {
 import { usePagination, PaginationFilters } from '../hooks/usePagination';
 
 // 홈 피드 컴포넌트
-const HomeFeed = memo(({ isActive }: { isActive: boolean }) => {
+const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -46,13 +46,15 @@ const HomeFeed = memo(({ isActive }: { isActive: boolean }) => {
       hasNext={hasNext}
       loading={loading}
       isActive={isActive}
+      maxColumns={maxColumns}
+      scrollContainerRef={scrollContainerRef}
     />
   );
 });
 HomeFeed.displayName = 'HomeFeed';
 
 // 카테고리 피드 컴포넌트
-const CategoryFeed = memo(({ categoryId, isActive }: { categoryId: number; isActive: boolean }) => {
+const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRef }: { categoryId: number; isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -84,13 +86,15 @@ const CategoryFeed = memo(({ categoryId, isActive }: { categoryId: number; isAct
       hasNext={hasNext}
       loading={loading}
       isActive={isActive}
+      maxColumns={maxColumns}
+      scrollContainerRef={scrollContainerRef}
     />
   );
 });
 CategoryFeed.displayName = 'CategoryFeed';
 
 // 개별 피드 컴포넌트
-const SingleFeed = memo(({ feedId, isActive }: { feedId: number; isActive: boolean }) => {
+const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: { feedId: number; isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -122,6 +126,8 @@ const SingleFeed = memo(({ feedId, isActive }: { feedId: number; isActive: boole
       hasNext={hasNext}
       loading={loading}
       isActive={isActive}
+      maxColumns={maxColumns}
+      scrollContainerRef={scrollContainerRef}
     />
   );
 });
@@ -137,18 +143,20 @@ const getTabContentKey = (tab: Tab): string => {
 };
 
 // 탭 컨텐츠 컴포넌트 - isActive에 따라 데이터 로딩 제어
-const TabContentRenderer = memo(({ tab, isActive }: { tab: Tab; isActive: boolean }) => {
+const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: Tab; isActive: boolean; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
+  const maxColumns = tab.columns ?? 3;
+
   switch (tab.type) {
     case 'home':
-      return <HomeFeed isActive={isActive} />;
+      return <HomeFeed isActive={isActive} maxColumns={maxColumns} scrollContainerRef={scrollContainerRef} />;
     case 'category':
       if (tab.resourceId) {
-        return <CategoryFeed categoryId={tab.resourceId} isActive={isActive} />;
+        return <CategoryFeed categoryId={tab.resourceId} isActive={isActive} maxColumns={maxColumns} scrollContainerRef={scrollContainerRef} />;
       }
       return null;
     case 'feed':
       if (tab.resourceId) {
-        return <SingleFeed feedId={tab.resourceId} isActive={isActive} />;
+        return <SingleFeed feedId={tab.resourceId} isActive={isActive} maxColumns={maxColumns} scrollContainerRef={scrollContainerRef} />;
       }
       return null;
     case 'settings':
@@ -160,22 +168,33 @@ const TabContentRenderer = memo(({ tab, isActive }: { tab: Tab; isActive: boolea
 TabContentRenderer.displayName = 'TabContentRenderer';
 
 // 메인 컨텐츠 렌더러 - 각 탭을 직접 렌더링 (컴포넌트 인스턴스 유지)
-export const ContentRenderer = memo(() => {
-  const { tabs, activeTabId } = useTabStore();
+interface ContentRendererProps {
+  panelId?: PanelId;
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
+}
+
+export const ContentRenderer = memo(({ panelId, scrollContainerRef }: ContentRendererProps) => {
+  const { panels, activePanelId } = useTabStore();
+
+  // panelId가 지정되면 해당 패널의 탭만, 아니면 활성 패널의 탭만 렌더링
+  const targetPanelId = panelId ?? activePanelId;
+  const panel = panels.find(p => p.id === targetPanelId);
+
+  if (!panel) return null;
 
   return (
     <>
-      {tabs.map(tab => {
+      {panel.tabs.map(tab => {
         const contentKey = getTabContentKey(tab);
-        const isActive = tab.id === activeTabId;
-        
+        const isActive = tab.id === panel.activeTabId;
+
         return (
           <div
             key={contentKey}
             data-tab-content={tab.id}
             style={{ display: isActive ? 'block' : 'none' }}
           >
-            <TabContentRenderer tab={tab} isActive={isActive} />
+            <TabContentRenderer tab={tab} isActive={isActive} scrollContainerRef={scrollContainerRef} />
           </div>
         );
       })}

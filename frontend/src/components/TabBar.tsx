@@ -1,32 +1,32 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Home, Folder, Rss, Settings, Plus } from 'lucide-react';
+import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTabStore, Tab, TabType } from '../stores/tabStore';
+import { useTabStore, Tab, TabType, PanelId } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
 // 탭 타입별 아이콘
 const TabIcon: React.FC<{ type: TabType; favicon?: string; className?: string }> = ({ type, favicon, className }) => {
   const [faviconError, setFaviconError] = useState(false);
-  
+
   // favicon이 변경되면 에러 상태 리셋
   useEffect(() => {
     setFaviconError(false);
   }, [favicon]);
-  
+
   // 피드 타입이고 favicon이 있고 로드 에러가 없으면 favicon 이미지 표시
   if (type === 'feed' && favicon && !faviconError) {
     return (
-      <img 
-        src={favicon} 
-        alt="" 
+      <img
+        src={favicon}
+        alt=""
         className={cn(className, "rounded-sm object-cover")}
         onError={() => setFaviconError(true)}
       />
     );
   }
-  
+
   switch (type) {
     case 'home':
       return <Home className={className} />;
@@ -43,77 +43,57 @@ const TabIcon: React.FC<{ type: TabType; favicon?: string; className?: string }>
 
 interface TabBarProps {
   className?: string;
+  panelId: PanelId;
+  tabs: Tab[];
+  activeTabId: string | null;
+  onTabClick: (tab: Tab) => void;
+  onTabClose: (tabId: string) => void;
+  onAddTab: () => void;
+  onTabDragStart?: (e: React.DragEvent, tab: Tab) => void;
+  onTabDragOver?: (e: React.DragEvent) => void;
+  onTabDrop?: (e: React.DragEvent, side: 'left' | 'right') => void;
+  canClose?: boolean;
+  showSplitButton?: boolean;
+  onSplitPanel?: (side: 'left' | 'right') => void;
+  onColumnsChange?: (tabId: string, columns: number) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ className }) => {
-  const router = useRouter();
-  const { tabs, activeTabId, setActiveTab, removeTab, openTab, saveScrollPosition, getScrollPosition } = useTabStore();
+export const TabBar: React.FC<TabBarProps> = ({
+  className,
+  panelId,
+  tabs,
+  activeTabId,
+  onTabClick,
+  onTabClose,
+  onAddTab,
+  onTabDragStart,
+  canClose = true,
+  showSplitButton = false,
+  onColumnsChange,
+}) => {
   const tabsContainerRef = useRef<HTMLDivElement>(null);
-  const isRestoringScrollRef = useRef(false);
-  
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const columnMenuRef = useRef<HTMLDivElement>(null);
+
   // 드래그 스크롤 상태
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const hasDraggedRef = useRef(false); // 드래그가 발생했는지 여부 (클릭 방지용)
 
-  // 활성 탭이 변경되면 해당 탭의 경로로 이동 및 스크롤 복원
-  useEffect(() => {
-    const activeTab = tabs.find(t => t.id === activeTabId);
-    if (activeTab) {
-      // URL과 탭 경로가 다를 때만 이동 (무한 루프 방지)
-      const currentPath = window.location.pathname;
-      if (currentPath !== activeTab.path) {
-        router.push(activeTab.path);
-      }
-      
-      // 스크롤 위치 복원 (약간의 딜레이 필요)
-      isRestoringScrollRef.current = true;
-      const savedPosition = getScrollPosition(activeTab.id);
-      setTimeout(() => {
-        window.scrollTo(0, savedPosition);
-        // 복원 완료 후 플래그 해제
-        setTimeout(() => {
-          isRestoringScrollRef.current = false;
-        }, 100);
-      }, 50);
-    }
-  }, [activeTabId, tabs, router, getScrollPosition]);
-
   const handleTabClick = (tab: Tab) => {
-    if (tab.id === activeTabId) return;
-    
-    // 현재 탭의 스크롤 위치 저장
-    if (activeTabId) {
-      saveScrollPosition(activeTabId, window.scrollY);
-    }
-    
-    setActiveTab(tab.id);
+    if (hasDraggedRef.current) return;
+    onTabClick(tab);
   };
 
   const handleTabClose = (e: React.MouseEvent, tabId: string) => {
     e.stopPropagation();
-    removeTab(tabId);
-  };
-
-  const handleAddHomeTab = () => {
-    // 현재 탭의 스크롤 위치 저장
-    if (activeTabId) {
-      saveScrollPosition(activeTabId, window.scrollY);
-    }
-    
-    openTab({
-      type: 'home',
-      title: '메인스트림',
-      path: '/home',
-    });
-  };
-
-  // 드래그 스크롤 핸들러
+    onTabClose(tabId);
+  };  // 드래그 스크롤 핸들러
   const handleMouseDown = (e: React.MouseEvent) => {
     const container = tabsContainerRef.current;
     if (!container) return;
-    
+
     setIsDragging(true);
     setStartX(e.pageX - container.offsetLeft);
     setScrollLeft(container.scrollLeft);
@@ -123,18 +103,18 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging) return;
     e.preventDefault();
-    
+
     const container = tabsContainerRef.current;
     if (!container) return;
-    
+
     const x = e.pageX - container.offsetLeft;
     const walk = (x - startX) * 1.5; // 스크롤 속도 조절
-    
+
     // 일정 거리 이상 드래그하면 드래그로 인식
     if (Math.abs(x - startX) > 5) {
       hasDraggedRef.current = true;
     }
-    
+
     container.scrollLeft = scrollLeft - walk;
   };
 
@@ -150,6 +130,25 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
     setIsDragging(false);
   };
 
+  // 컬럼 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (columnMenuRef.current && !columnMenuRef.current.contains(e.target as Node)) {
+        setShowColumnMenu(false);
+      }
+    };
+    if (showColumnMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showColumnMenu]);
+
+  // 활성 탭 정보
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const activeColumns = activeTab?.columns ?? 3;
+  // settings 탭에서는 컬럼 설정 숨김
+  const showColumnSetting = activeTab && activeTab.type !== 'settings';
+
   // 활성 탭이 보이도록 스크롤
   useEffect(() => {
     const activeTabElement = tabsContainerRef.current?.querySelector(`[data-tab-id="${activeTabId}"]`);
@@ -160,11 +159,11 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
 
   return (
     <div className={cn(
-      "flex items-center h-9 bg-background/80 backdrop-blur-sm border-b border-border overflow-hidden",
+      "flex items-center h-9 bg-background/80 backdrop-blur-sm border-b border-border",
       className
     )}>
       {/* 탭 목록 */}
-      <div 
+      <div
         ref={tabsContainerRef}
         className={cn(
           "flex-1 flex items-center overflow-x-auto scrollbar-none",
@@ -179,6 +178,8 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
           <div
             key={tab.id}
             data-tab-id={tab.id}
+            draggable
+            onDragStart={(e) => onTabDragStart?.(e, tab)}
             onClick={() => !hasDraggedRef.current && handleTabClick(tab)}
             title={tab.title}
             className={cn(
@@ -191,9 +192,9 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
           >
             <TabIcon type={tab.type} favicon={tab.favicon} className="w-3.5 h-3.5 shrink-0" />
             <span className="text-xs font-medium truncate max-w-[120px]">{tab.title}</span>
-            
-            {/* 닫기 버튼 - 탭이 2개 이상일 때만 표시 */}
-            {tabs.length > 1 && (
+
+            {/* 닫기 버튼 - canClose가 true일 때만 표시 */}
+            {canClose && (
               <button
                 onClick={(e) => handleTabClose(e, tab.id)}
                 className={cn(
@@ -212,12 +213,66 @@ export const TabBar: React.FC<TabBarProps> = ({ className }) => {
 
       {/* 새 탭 추가 버튼 */}
       <button
-        onClick={handleAddHomeTab}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddTab();
+        }}
         className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50"
         title="새 탭"
       >
         <Plus className="w-4 h-4 text-muted-foreground" />
       </button>
+
+      {/* 컬럼 수 조절 버튼 */}
+      {showColumnSetting && onColumnsChange && (
+        <div className="relative" ref={columnMenuRef}>
+          <button
+            onClick={(e) => {
+              console.log('컬럼 수 조절 버튼 클릭');
+              e.stopPropagation();
+              e.preventDefault();
+              console.log('현재 showColumnMenu:', showColumnMenu);
+              console.log('현재 활성화된 탭 ID:', activeTabId);
+              setShowColumnMenu(!showColumnMenu);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50 flex items-center gap-0.5"
+            title="컬럼 수 조절"
+          >
+            <Columns2 className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium">{activeColumns}</span>
+            <ChevronDown className="w-3 h-3 text-muted-foreground" />
+          </button>
+
+          {showColumnMenu && activeTabId && (
+            <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-[200] min-w-[100px]">
+              <div className="p-1">
+                <div className="px-2 py-1 text-xs text-muted-foreground font-medium">컬럼 수</div>
+                {[1, 2, 3, 4, 5].map((col) => (
+                  <button
+                    key={col}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      onColumnsChange(activeTabId, col);
+                      setShowColumnMenu(false);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className={cn(
+                      "w-full text-left px-2 py-1.5 text-sm rounded-sm transition-colors",
+                      col === activeColumns
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    {col}열
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

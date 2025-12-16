@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, RefObject } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 
 export interface UseCruisingOptions {
@@ -8,6 +8,8 @@ export interface UseCruisingOptions {
   minSpeed?: number;
   /** Maximum speed in pixels per second */
   maxSpeed?: number;
+  /** 스크롤 컨테이너 ref (개별 패널 스크롤용, 없으면 window 사용) */
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export interface UseCruisingReturn {
@@ -35,6 +37,7 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
   const {
     minSpeed = 10,      // 0%에서의 속도
     maxSpeed = 300,    // 100%에서의 속도
+    scrollContainerRef,
   } = options;
 
   // 설정 스토어에서 속도 가져오기
@@ -104,16 +107,34 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
         const scrollAmount = Math.floor(accumulatedScrollRef.current);
         accumulatedScrollRef.current -= scrollAmount;
 
-        window.scrollBy({
-          top: scrollAmount,
-          behavior: 'instant',
-        });
+        const container = scrollContainerRef?.current;
+        if (container) {
+          // 개별 스크롤 컨테이너 사용
+          container.scrollTop += scrollAmount;
+        } else {
+          // 폴백: window 스크롤
+          window.scrollBy({
+            top: scrollAmount,
+            behavior: 'instant',
+          });
+        }
       }
 
       // Check if we've reached the bottom
-      const scrollY = window.scrollY || window.pageYOffset;
-      const vh = window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
+      const container = scrollContainerRef?.current;
+      let scrollY: number;
+      let vh: number;
+      let docHeight: number;
+
+      if (container) {
+        scrollY = container.scrollTop;
+        vh = container.clientHeight;
+        docHeight = container.scrollHeight;
+      } else {
+        scrollY = window.scrollY || window.pageYOffset;
+        vh = window.innerHeight;
+        docHeight = document.documentElement.scrollHeight;
+      }
 
       if (scrollY + vh >= docHeight - 10) {
         // Reached bottom, stop cruising
@@ -133,11 +154,13 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
         rafRef.current = null;
       }
     };
-  }, [isCruising, speed, stopCruising]);
+  }, [isCruising, speed, stopCruising, scrollContainerRef]);
 
   // Stop cruising on user interaction (click, scroll, keypress)
   useEffect(() => {
     if (!isCruising) return;
+
+    const container = scrollContainerRef?.current;
 
     const handleUserInteraction = (e: Event) => {
       // Don't stop if clicking on cruising controls
@@ -161,19 +184,22 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
       stopCruising();
     };
 
+    // 이벤트 리스너 대상 (컨테이너 또는 window)
+    const target = container || window;
+
     // Use capture phase to catch events before they bubble
-    window.addEventListener('click', handleUserInteraction, { capture: true });
+    target.addEventListener('click', handleUserInteraction, { capture: true });
     window.addEventListener('keydown', handleKeyDown, { capture: true });
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    target.addEventListener('wheel', handleWheel, { passive: true });
+    target.addEventListener('touchstart', handleTouchStart, { passive: true });
 
     return () => {
-      window.removeEventListener('click', handleUserInteraction, { capture: true });
+      target.removeEventListener('click', handleUserInteraction, { capture: true });
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
+      target.removeEventListener('wheel', handleWheel);
+      target.removeEventListener('touchstart', handleTouchStart);
     };
-  }, [isCruising, stopCruising]);
+  }, [isCruising, stopCruising, scrollContainerRef]);
 
   return {
     isCruising,

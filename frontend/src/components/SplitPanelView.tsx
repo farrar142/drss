@@ -1,0 +1,427 @@
+'use client';
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTabStore, Panel, Tab, PanelId } from '../stores/tabStore';
+import { TabBar } from './TabBar';
+import { ContentRenderer } from './ContentRenderer';
+import { cn } from '@/lib/utils';
+
+interface SplitPanelViewProps {
+  headerVisible: boolean;
+  onHeaderVisibilityChange?: (visible: boolean) => void;
+}
+
+// 개별 패널 컴포넌트 - 각자 스크롤 관리
+interface PanelViewProps {
+  panel: Panel;
+  isActive: boolean;
+  panelsCount: number;
+  index: number;
+  headerVisible: boolean;
+  showDropIndicator: boolean;
+  dragOverSide: 'left' | 'right' | null;
+  onPanelClick: () => void;
+  onTabClick: (tab: Tab) => void;
+  onTabClose: (tabId: string) => void;
+  onAddTab: () => void;
+  onDragStart: (e: React.DragEvent, tab: Tab) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  onColumnsChange: (tabId: string, columns: number) => void;
+  onScrollChange: (scrollTop: number) => void;
+  savedScrollPosition: number;
+  onTabBarVisibilityChange?: (visible: boolean) => void;
+}
+
+const PanelView: React.FC<PanelViewProps> = ({
+  panel,
+  isActive,
+  panelsCount,
+  index,
+  headerVisible,
+  showDropIndicator,
+  dragOverSide,
+  onPanelClick,
+  onTabClick,
+  onTabClose,
+  onAddTab,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onColumnsChange,
+  onScrollChange,
+  savedScrollPosition,
+  onTabBarVisibilityChange,
+}) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [tabBarVisible, setTabBarVisible] = useState(true);
+  const lastScrollTop = useRef(0);
+  const isRestoringScroll = useRef(false);
+
+  // 스크롤에 따른 탭바 숨김/표시 (패널 1개일 때만)
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // 패널이 2개 이상이면 항상 표시
+    if (panelsCount > 1) {
+      setTabBarVisible(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      if (isRestoringScroll.current) return;
+
+      const currentScrollTop = container.scrollTop;
+      const scrollThreshold = 50;
+
+      // 맨 위에서는 항상 표시
+      if (currentScrollTop < scrollThreshold) {
+        setTabBarVisible(true);
+        onTabBarVisibilityChange?.(true);
+        lastScrollTop.current = currentScrollTop;
+        return;
+      }
+
+      const scrollDiff = currentScrollTop - lastScrollTop.current;
+
+      // 스크롤 다운: 탭바 숨김
+      if (scrollDiff > 0 && currentScrollTop > scrollThreshold) {
+        setTabBarVisible(false);
+        onTabBarVisibilityChange?.(false);
+      }
+      // 스크롤 업: 탭바 표시
+      else if (scrollDiff < 0) {
+        setTabBarVisible(true);
+        onTabBarVisibilityChange?.(true);
+      }
+
+      lastScrollTop.current = currentScrollTop;
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [panelsCount, onTabBarVisibilityChange]);
+
+  // 탭 변경 시 스크롤 위치 복원
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    isRestoringScroll.current = true;
+    container.scrollTop = savedScrollPosition;
+    lastScrollTop.current = savedScrollPosition;
+
+    // 복원 후 짧은 딜레이 후 스크롤 감지 활성화
+    setTimeout(() => {
+      isRestoringScroll.current = false;
+    }, 100);
+  }, [panel.activeTabId, savedScrollPosition]);
+
+  // 스크롤 위치 저장
+  const handleScroll = useCallback(() => {
+    if (isRestoringScroll.current) return;
+    const container = scrollContainerRef.current;
+    if (container) {
+      onScrollChange(container.scrollTop);
+    }
+  }, [onScrollChange]);
+
+  // 스티키 헤더 오프셋 - 스크롤 컨테이너 내에서 탭바는 sticky로 별도 처리되므로 0px
+  const effectiveHeaderOffset = '0px';
+
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col flex-1 min-w-0 h-full",
+        panelsCount > 1 && index === 0 && "border-r border-border",
+        isActive && panelsCount > 1 && "ring-1 ring-primary/20"
+      )}
+      onClick={onPanelClick}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {/* 드롭 인디케이터 - 패널 1개일 때: 좌우 절반, 패널 2개일 때: 전체 */}
+      {showDropIndicator && (
+        panelsCount === 1 ? (
+          <div className={cn(
+            "absolute inset-y-0 w-1/2 bg-primary/10 pointer-events-none z-50",
+            dragOverSide === 'left' ? "left-0" : "right-0"
+          )} />
+        ) : (
+          <div className="absolute inset-0 bg-primary/10 pointer-events-none z-50 ring-2 ring-primary/30 ring-inset" />
+        )
+      )}
+
+      {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정 */}
+      <div className={cn(
+        "sticky top-0 z-30 transition-all duration-300 ease-in-out",
+        tabBarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+      )}>
+        <TabBar
+          panelId={panel.id}
+          tabs={panel.tabs}
+          activeTabId={panel.activeTabId}
+          onTabClick={onTabClick}
+          onTabClose={onTabClose}
+          onAddTab={onAddTab}
+          onTabDragStart={onDragStart}
+          onColumnsChange={onColumnsChange}
+          canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
+        />
+      </div>
+
+      {/* 컨텐츠 - 개별 스크롤 */}
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto relative z-10"
+        onScroll={handleScroll}
+        style={{
+          ['--header-offset' as string]: effectiveHeaderOffset,
+        }}
+      >
+        <div className="p-1 sm:p-2 md:p-4 lg:p-6">
+          <ContentRenderer panelId={panel.id} scrollContainerRef={scrollContainerRef} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, onHeaderVisibilityChange }) => {
+  const router = useRouter();
+  const {
+    panels,
+    activePanelId,
+    setActivePanel,
+    setActiveTab,
+    removeTab,
+    openTab,
+    saveScrollPosition,
+    getScrollPosition,
+    moveTabToPanel,
+    createSplitPanel,
+    closeSplitPanel,
+    setTabColumns,
+  } = useTabStore();
+
+  const [dragOverPanel, setDragOverPanel] = useState<PanelId | null>(null);
+  const [dragOverSide, setDragOverSide] = useState<'left' | 'right' | null>(null);
+
+  // 패널 1개일 때 스크롤에 따른 헤더 토글
+  const handleTabBarVisibilityChange = useCallback((visible: boolean) => {
+    if (panels.length === 1) {
+      onHeaderVisibilityChange?.(visible);
+    }
+  }, [panels.length, onHeaderVisibilityChange]);
+
+  // 활성 패널의 활성 탭이 변경되면 URL 업데이트 (모든 피드 탭은 /home으로 통일)
+  useEffect(() => {
+    const activePanel = panels.find(p => p.id === activePanelId);
+    const activeTab = activePanel?.tabs.find(t => t.id === activePanel.activeTabId);
+
+    if (activeTab) {
+      // 피드 관련 탭들은 모두 /home URL 사용 (URL 단순화)
+      const targetPath = activeTab.type === 'settings' ? '/settings' : '/home';
+      const currentPath = window.location.pathname;
+
+      if (currentPath !== targetPath) {
+        router.push(targetPath);
+      }
+    }
+  }, [activePanelId, panels, router]);
+
+  const handleTabClick = useCallback((panelId: PanelId, tab: Tab) => {
+    const panel = panels.find(p => p.id === panelId);
+    if (!panel) return;
+
+    setActivePanel(panelId);
+    setActiveTab(tab.id);
+  }, [panels, setActivePanel, setActiveTab]);
+
+  const handleTabClose = useCallback((tabId: string) => {
+    removeTab(tabId);
+  }, [removeTab]);
+
+  const handleAddTab = useCallback((panelId: PanelId) => {
+    setActivePanel(panelId);
+    openTab({
+      type: 'home',
+      title: '메인스트림',
+      path: '/home',
+    });
+  }, [setActivePanel, openTab]);
+
+  const handlePanelClick = useCallback((panelId: PanelId) => {
+    if (activePanelId !== panelId) {
+      setActivePanel(panelId);
+    }
+  }, [activePanelId, setActivePanel]);
+
+  // 드래그 앤 드롭 핸들러
+  const handleDragStart = useCallback((e: React.DragEvent, tab: Tab) => {
+    e.dataTransfer.setData('text/plain', tab.id);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, panelId: PanelId) => {
+    // 탭, 카테고리, 피드 드래그 모두 허용
+    const isTabDrag = e.dataTransfer.types.includes('text/plain');
+    const isFeedDrag = e.dataTransfer.types.includes('application/json');
+    const isCategoryDrag = e.dataTransfer.types.includes('application/category-reorder');
+
+    if (!isTabDrag && !isFeedDrag && !isCategoryDrag) return;
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const side = x < rect.width / 2 ? 'left' : 'right';
+
+    setDragOverPanel(panelId);
+    setDragOverSide(side);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverPanel(null);
+    setDragOverSide(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetPanelId: PanelId) => {
+    e.preventDefault();
+
+    // 1. 탭 드롭 처리
+    const tabId = e.dataTransfer.getData('text/plain');
+    if (tabId && !tabId.startsWith('{')) {
+      // 패널이 1개이고 드래그 오버 사이드가 있으면 분할 생성
+      if (panels.length === 1 && dragOverSide) {
+        createSplitPanel(tabId, dragOverSide);
+      } else if (panels.length === 2) {
+        // 이미 2개의 패널이 있으면 탭을 해당 패널로 이동
+        moveTabToPanel(tabId, targetPanelId);
+      }
+      setDragOverPanel(null);
+      setDragOverSide(null);
+      return;
+    }
+
+    // 2. 피드 드롭 처리 (새 탭으로 열기)
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      try {
+        const data = JSON.parse(jsonData);
+        if (data.feedId) {
+          const tabData = {
+            type: 'feed' as const,
+            title: data.feedTitle || `피드 #${data.feedId}`,
+            path: `/feed/${data.feedId}`,
+            resourceId: data.feedId,
+            favicon: data.faviconUrl,
+          };
+          
+          // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
+          if (panels.length === 1 && dragOverSide) {
+            // 먼저 현재 패널에 탭 추가
+            const newTabId = openTab(tabData, targetPanelId);
+            // 그 탭으로 새 패널 생성
+            if (newTabId) {
+              createSplitPanel(newTabId, dragOverSide);
+            }
+          } else {
+            // 기존 패널에 탭 추가
+            openTab(tabData, targetPanelId);
+          }
+        }
+      } catch {
+        // JSON 파싱 실패 무시
+      }
+      setDragOverPanel(null);
+      setDragOverSide(null);
+      return;
+    }
+
+    // 3. 카테고리 드롭 처리 (새 탭으로 열기)
+    const categoryData = e.dataTransfer.getData('application/category-reorder');
+    if (categoryData) {
+      try {
+        const data = JSON.parse(categoryData);
+        if (data.categoryId) {
+          const tabData = {
+            type: 'category' as const,
+            title: data.categoryName || `카테고리 #${data.categoryId}`,
+            path: `/category/${data.categoryId}`,
+            resourceId: data.categoryId,
+          };
+          
+          // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
+          if (panels.length === 1 && dragOverSide) {
+            const newTabId = openTab(tabData, targetPanelId);
+            if (newTabId) {
+              createSplitPanel(newTabId, dragOverSide);
+            }
+          } else {
+            openTab(tabData, targetPanelId);
+          }
+        }
+      } catch {
+        // JSON 파싱 실패 무시
+      }
+    }
+
+    setDragOverPanel(null);
+    setDragOverSide(null);
+  }, [panels.length, dragOverSide, createSplitPanel, moveTabToPanel, openTab]);
+
+  // 컬럼 수 변경 핸들러
+  const handleColumnsChange = useCallback((tabId: string, columns: number) => {
+    setTabColumns(tabId, columns);
+  }, [setTabColumns]);
+
+  // 스크롤 위치 저장 핸들러
+  const handleScrollChange = useCallback((panelId: PanelId, scrollTop: number) => {
+    const panel = panels.find(p => p.id === panelId);
+    if (panel?.activeTabId) {
+      saveScrollPosition(panel.activeTabId, scrollTop);
+    }
+  }, [panels, saveScrollPosition]);
+
+  return (
+    <div className="flex w-full h-[calc(100vh-3.5rem)]">
+      {panels.map((panel, index) => {
+        const isActive = panel.id === activePanelId;
+        const showDropIndicator = dragOverPanel === panel.id;
+        const savedScrollPosition = panel.activeTabId ? getScrollPosition(panel.activeTabId) : 0;
+
+        return (
+          <PanelView
+            key={panel.id}
+            panel={panel}
+            isActive={isActive}
+            panelsCount={panels.length}
+            index={index}
+            headerVisible={headerVisible}
+            showDropIndicator={showDropIndicator}
+            dragOverSide={dragOverSide}
+            onPanelClick={() => handlePanelClick(panel.id)}
+            onTabClick={(tab) => handleTabClick(panel.id, tab)}
+            onTabClose={handleTabClose}
+            onAddTab={() => handleAddTab(panel.id)}
+            onDragStart={handleDragStart}
+            onDragOver={(e) => handleDragOver(e, panel.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, panel.id)}
+            onColumnsChange={handleColumnsChange}
+            onScrollChange={(scrollTop) => handleScrollChange(panel.id, scrollTop)}
+            savedScrollPosition={savedScrollPosition}
+            onTabBarVisibilityChange={handleTabBarVisibilityChange}
+          />
+        );
+      })}
+    </div>
+  );
+};

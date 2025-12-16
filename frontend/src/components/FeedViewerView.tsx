@@ -67,10 +67,11 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   items,
   handleLoadNew,
   queueLength,
+  scrollContainerRef,
 }) => {
   return (
     <div className="relative">
-      <PullToRefresh onRefresh={handleLoadNew}>
+      <PullToRefresh onRefresh={handleLoadNew} scrollContainerRef={scrollContainerRef}>
         <div className="w-full">
           {/* Content Grid */}
           {viewMode === 'board' ? (
@@ -127,6 +128,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
         speedPercent={cruising.speedPercent}
         onToggle={cruising.toggleCruising}
         onSpeedChange={cruising.setSpeedPercent}
+        scrollContainerRef={scrollContainerRef}
       />
     </div>
   );

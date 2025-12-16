@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState, useRef, useCallback, ReactNode } from 'react';
+import { FC, useEffect, useState, useRef, useCallback, ReactNode, RefObject } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface PullToRefreshProps {
@@ -10,12 +10,15 @@ export interface PullToRefreshProps {
   children: ReactNode;
   /** 당기기 임계값 (px) */
   threshold?: number;
+  /** 스크롤 컨테이너 ref (지정하면 해당 컨테이너에서만 동작) */
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export const PullToRefresh: FC<PullToRefreshProps> = ({
   onRefresh,
   children,
   threshold = 80,
+  scrollContainerRef,
 }) => {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -47,13 +50,24 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
   }, []);
 
   useEffect(() => {
+    const container = scrollContainerRef?.current;
+    const target = container || window;
+
+    // 스크롤 위치 확인 헬퍼
+    const getScrollTop = () => {
+      if (container) {
+        return container.scrollTop;
+      }
+      return window.scrollY;
+    };
+
     // 휠 이벤트 (데스크탑/터치패드)
     let wheelAccumulator = 0;
     let wheelTimeout: NodeJS.Timeout | null = null;
 
     const handleWheel = (e: WheelEvent) => {
       if (isRefreshingRef.current) return;
-      if (window.scrollY > 0) return;
+      if (getScrollTop() > 0) return;
       if (e.deltaY >= 0) return; // 위로 스크롤만
 
       e.preventDefault();
@@ -89,7 +103,7 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
 
       touchStartY = e.touches[0].clientY;
       // 최상단 근처에서 시작하면 pulling 가능
-      isTouchPulling = window.scrollY < 5;
+      isTouchPulling = getScrollTop() < 5;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -146,22 +160,21 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
       isTouchPulling = false;
     };
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', handleTouchCancel, { passive: true });
+    target.addEventListener('wheel', handleWheel as EventListener, { passive: false });
+    target.addEventListener('touchstart', handleTouchStart as EventListener, { passive: true });
+    target.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
+    target.addEventListener('touchend', handleTouchEnd as EventListener, { passive: true });
+    target.addEventListener('touchcancel', handleTouchCancel as EventListener, { passive: true });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-      window.removeEventListener('touchcancel', handleTouchCancel);
-      window.removeEventListener('touchend', handleTouchEnd);
+      target.removeEventListener('wheel', handleWheel as EventListener);
+      target.removeEventListener('touchstart', handleTouchStart as EventListener);
+      target.removeEventListener('touchmove', handleTouchMove as EventListener);
+      target.removeEventListener('touchend', handleTouchEnd as EventListener);
+      target.removeEventListener('touchcancel', handleTouchCancel as EventListener);
       if (wheelTimeout) clearTimeout(wheelTimeout);
     };
-  }, [threshold, executeRefresh]);
+  }, [threshold, executeRefresh, scrollContainerRef]);
 
   // 스피너 표시
   const showIndicator = pullDistance > 10 || isRefreshing;
@@ -169,18 +182,42 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
   const canTrigger = pullDistance >= threshold;
   const indicatorSize = 32 + progress * 8; // 32px ~ 40px
 
+  // 스크롤 컨테이너 기준 위치 계산
+  const [containerRect, setContainerRect] = useState<{ left: number; width: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const container = scrollContainerRef?.current;
+    if (container && showIndicator) {
+      const rect = container.getBoundingClientRect();
+      setContainerRect({ left: rect.left, width: rect.width, top: rect.top });
+    }
+  }, [scrollContainerRef, showIndicator, pullDistance]);
+
+  // 스피너 위치 계산: 컨테이너 기준 또는 윈도우 기준
+  const spinnerStyle = scrollContainerRef?.current && containerRect
+    ? {
+      position: 'fixed' as const,
+      left: containerRect.left + containerRect.width / 2,
+      top: containerRect.top + 16,
+      transform: 'translateX(-50%)',
+    }
+    : {
+      position: 'fixed' as const,
+      left: '50%',
+      top: 'var(--pull-spinner-top, 88px)',
+      transform: 'translateX(-50%)',
+    };
+
   return (
     <div className="relative">
-      {/* 인디케이터 - 트위터처럼 fixed 위치 */}
+      {/* 인디케이터 - 스크롤 컨테이너 기준 또는 윈도우 기준 */}
       <div
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 z-50",
+          "z-50",
           "transition-opacity duration-150",
           showIndicator ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
-        style={{
-          top: 'var(--pull-spinner-top, 88px)',
-        }}
+        style={spinnerStyle}
       >
         <div
           className="rounded-full bg-background shadow-lg border flex items-center justify-center"

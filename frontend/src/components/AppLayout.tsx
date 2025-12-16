@@ -36,8 +36,7 @@ import { useThemeStore } from '../stores/themeStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from '../stores/languageStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
-import { TabBar } from './TabBar';
-import { ContentRenderer } from './ContentRenderer';
+import { SplitPanelView } from './SplitPanelView';
 import { useTabStore } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
@@ -71,41 +70,9 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+
+  // 헤더 가시성 - 패널 1개일 때 스크롤에 따라 변경됨
   const [headerVisible, setHeaderVisible] = useState(true);
-  
-  // Refs for scroll tracking
-  const lastScrollY = useRef(0);
-  const scrollThreshold = 50; // 스크롤 감지 임계값
-
-  // 스크롤에 따른 헤더 숨김/표시
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      
-      // 맨 위에서는 항상 표시
-      if (currentScrollY < scrollThreshold) {
-        setHeaderVisible(true);
-        lastScrollY.current = currentScrollY;
-        return;
-      }
-      
-      const scrollDiff = currentScrollY - lastScrollY.current;
-      
-      // 스크롤 다운: 헤더 숨김 (즉시 반응)
-      if (scrollDiff > 0 && currentScrollY > scrollThreshold) {
-        setHeaderVisible(false);
-      }
-      // 스크롤 업: 헤더 표시 (즉시 반응)
-      else if (scrollDiff < 0) {
-        setHeaderVisible(true);
-      }
-      
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
@@ -167,7 +134,7 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header 
+      <header
         className={cn(
           "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
           "transition-transform duration-300 ease-in-out",
@@ -291,20 +258,6 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Tab Bar */}
-      <div 
-        className={cn(
-          "fixed left-0 right-0 z-40",
-          "transition-all duration-300 ease-in-out"
-        )}
-        style={{ 
-          // 헤더가 숨겨지면 탭바도 위로 이동 (앱바 높이만큼)
-          top: headerVisible ? '3.5rem' : '-2.25rem', // h-14 or negative h-9
-          marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0 
-        }}
-      >
-        <TabBar />
-      </div>
       {/* Sidebar */}
       <CategoryDrawer
         open={drawerOpen}
@@ -313,21 +266,17 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         onClose={toggleDrawer}
       />
 
-      {/* Main Content */}
+      {/* Main Content with Split Panel View */}
       <main
         className={cn(
           "min-h-screen transition-all duration-300"
         )}
         style={{
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
-          paddingTop: 'calc(3.5rem + 2.25rem)', // h-14 (앱바) + h-9 (탭바)
-          // CSS 변수로 sticky header 오프셋 전달
-          ['--header-offset' as string]: headerVisible ? '92px' : '0px',
+          paddingTop: '3.5rem', // h-14 (앱바만)
         }}
       >
-        <div className="p-1 sm:p-2 md:p-4 lg:p-6">
-          <ContentRenderer />
-        </div>
+        <SplitPanelView headerVisible={headerVisible} onHeaderVisibilityChange={setHeaderVisible} />
       </main>
     </div>
   );

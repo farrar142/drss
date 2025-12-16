@@ -97,7 +97,12 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   };
 
   const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('application/json', JSON.stringify({ feedId: feed.id, fromCategoryId: categoryId }));
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      feedId: feed.id,
+      fromCategoryId: categoryId,
+      feedTitle: feed.title,
+      faviconUrl: feed.favicon_url,
+    }));
     e.dataTransfer.effectAllowed = 'move';
     onDragStart?.(feed);
   };

@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useRef, useCallback } from 'react';
+import { FC, useState, useRef, useCallback, RefObject } from 'react';
 import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/ui/slider';
@@ -11,6 +11,7 @@ export interface CruisingControlsProps {
   speedPercent: number;
   onToggle: () => void;
   onSpeedChange: (percent: number) => void;
+  scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
 export const CruisingControls: FC<CruisingControlsProps> = ({
@@ -18,6 +19,7 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
   speedPercent,
   onToggle,
   onSpeedChange,
+  scrollContainerRef,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isTouchEventRef = useRef(false);
@@ -48,14 +50,20 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2"
+      className="sticky bottom-6 ml-auto mr-6 w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
       data-cruising-control
     >
       {/* Scroll-to-top button - top row, right aligned */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => {
+          if (scrollContainerRef?.current) {
+            scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
         className={cn(
-          "p-3 rounded-full shadow-lg transition-all",
+          "p-3 rounded-full shadow-lg transition-all pointer-events-auto",
           "bg-primary hover:bg-primary/80 text-primary-foreground",
           "hover:scale-105 active:scale-95"
         )}
@@ -67,7 +75,7 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
       </button>
 
       {/* Bottom row: Settings + Play/Pause */}
-      <div className="relative flex items-center gap-2" data-cruising-control>
+      <div className="relative flex items-center gap-2 pointer-events-auto" data-cruising-control>
         {/* Speed Slider - positioned above the bottom row */}
         {isExpanded && (
           <div
