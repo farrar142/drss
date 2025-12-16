@@ -35,7 +35,7 @@ services:
     volumes:
       - ./frontend:/usr/src/app
       - node_modules:/usr/src/app/node_modules # node_modules는 named volume으로 유지
-      - next_cache:/usr/src/app/.next/cache # next.js 캐시를 위한 named volume
+      - next_cache:/usr/src/app/.next # next.js 캐시를 위한 named volume
     ports:
       - "3000:3000"
     environment:

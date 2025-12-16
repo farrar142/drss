@@ -12,7 +12,7 @@ test.describe('Settings theme integration', () => {
     // Set primary color to red
     await page.fill('#primary-hex', '#ff0000');
     // Trigger input event to ensure React picks up change
-    await page.evalOnSelector('#primary-hex', 'el => el.dispatchEvent(new Event("input", { bubbles: true }))');
+    await page.locator('#primary-hex').evaluate((el: Element) => el.dispatchEvent(new Event('input', { bubbles: true })));
 
     // Give React a moment to propagate state and update CSS vars
     await page.waitForTimeout(300);

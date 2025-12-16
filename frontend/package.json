@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "get-api": "curl -o ./openapi.json http://localhost:8000/api/openapi.json",
+    "get-api": "curl -o ./openapi.json http://django:8000/api/openapi.json",
     "generate-api": "orval",
     "api": "npm run get-api && npm run generate-api"
   },
@@ -19,7 +19,7 @@
     "clsx": "^2.1.1",
     "html-react-parser": "^5.2.10",
     "lucide-react": "^0.561.0",
-    "next": "15.1.0",
+    "next": "^16.0.10",
     "postcss": "^8.5.6",
     "react": "19.2.1",
     "react-dom": "19.2.1",

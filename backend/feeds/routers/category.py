@@ -9,13 +9,13 @@ from ..schemas import *
 router = Router()
 
 
-@router.get("/", response=list[CategorySchema], auth=JWTAuth())
+@router.get("", response=list[CategorySchema], auth=JWTAuth())
 def list_categories(request):
     categories = RSSCategory.objects.filter(user=request.auth)
     return categories
 
 
-@router.post("/", response=CategorySchema, auth=JWTAuth())
+@router.post("", response=CategorySchema, auth=JWTAuth())
 def create_category(request, data: CategoryCreateSchema):
     category = RSSCategory.objects.create(
         user=request.auth,

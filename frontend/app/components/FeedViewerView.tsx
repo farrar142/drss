@@ -169,76 +169,76 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   return (
     <>
       <PullToRefresh onRefresh={handleLoadNew}>
-      <div className="w-full space-y-4">
-        {/* Content Grid */}
-        {viewMode === 'board' ? (
-          <div className="w-full space-y-3 px-1">
-            {items.map((item) => (
-              <FeedItemCard key={item.id} item={item} onMediaClick={handleMediaClick} />
-            ))}
-            {hasNext && (
-              <div ref={setSentinelRef(0)} className="h-px w-full" />
-            )}
-          </div>
-        ) : (
-          useCSSColumns ? (
-            <div
-              className={cn(
-                "w-full",
-                columns === 1 && "columns-1",
-                columns === 2 && "md:columns-2",
-                columns === 3 && "xl:columns-3",
-                "gap-4"
-              )}
-            >
-              {items.map((item, idx) => (
-                <div key={item.id} className="mb-4" style={{ breakInside: 'avoid' }}>
-                  <MeasuredItem
-                    item={item}
-                    onMediaClick={handleMediaClick}
-                    onHeightChange={registerHeight}
-                    isForcedVisible={expandedSet.has(item.id)}
-                    estimateHeight={getItemHeight(item.id)}
-                    onCollapseChange={handleCollapseChange}
-                    Renderer={FeedItemCard}
-                  />
-                  {hasNext && columnSentinelIndexes.includes(idx) && (
-                    <div
-                      key={`sentinel-${idx}`}
-                      data-sentinel-index={columnSentinelIndexes.indexOf(idx)}
-                      ref={setSentinelRef(columnSentinelIndexes.indexOf(idx))}
-                      className="h-px w-full"
-                      style={{ display: 'block', breakInside: 'avoid' }}
-                    />
-                  )}
-                </div>
+        <div className="w-full space-y-4">
+          {/* Content Grid */}
+          {viewMode === 'board' ? (
+            <div className="w-full space-y-3 px-1">
+              {items.map((item) => (
+                <FeedItemCard key={item.id} item={item} onMediaClick={handleMediaClick} />
               ))}
+              {hasNext && (
+                <div ref={setSentinelRef(0)} className="h-px w-full" />
+              )}
             </div>
           ) : (
-            <div className={cn(
-              "grid gap-4",
-              columns === 1 && "grid-cols-1",
-              columns === 2 && "grid-cols-2",
-              columns === 3 && "grid-cols-3"
-            )}>
-              {columnItems.map((columnData, columnIndex) => (
-                <ColumnVirtual
-                  key={columnIndex}
-                  columnIndex={columnIndex}
-                  columnData={columnData}
-                  getItemHeight={getItemHeight}
-                  registerHeight={registerHeight}
-                  expandedSet={expandedSet}
-                  handleCollapseChange={handleCollapseChange}
-                  handleMediaClick={handleMediaClick}
-                  hasNext={hasNext}
-                  setSentinelRef={setSentinelRef}
-                />
-              ))}
-            </div>
-          )
-        )}
-      </div>
+            useCSSColumns ? (
+              <div
+                className={cn(
+                  "w-full",
+                  columns === 1 && "columns-1",
+                  columns === 2 && "md:columns-2",
+                  columns === 3 && "xl:columns-3",
+                  "gap-4"
+                )}
+              >
+                {items.map((item, idx) => (
+                  <div key={item.id} className="mb-4" style={{ breakInside: 'avoid' }}>
+                    <MeasuredItem
+                      item={item}
+                      onMediaClick={handleMediaClick}
+                      onHeightChange={registerHeight}
+                      isForcedVisible={expandedSet.has(item.id)}
+                      estimateHeight={getItemHeight(item.id)}
+                      onCollapseChange={handleCollapseChange}
+                      Renderer={FeedItemCard}
+                    />
+                    {hasNext && columnSentinelIndexes.includes(idx) && (
+                      <div
+                        key={`sentinel-${idx}`}
+                        data-sentinel-index={columnSentinelIndexes.indexOf(idx)}
+                        ref={setSentinelRef(columnSentinelIndexes.indexOf(idx))}
+                        className="h-px w-full"
+                        style={{ display: 'block', breakInside: 'avoid' }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={cn(
+                "grid gap-4",
+                columns === 1 && "grid-cols-1",
+                columns === 2 && "grid-cols-2",
+                columns === 3 && "grid-cols-3"
+              )}>
+                {columnItems.map((columnData, columnIndex) => (
+                  <ColumnVirtual
+                    key={columnIndex}
+                    columnIndex={columnIndex}
+                    columnData={columnData}
+                    getItemHeight={getItemHeight}
+                    registerHeight={registerHeight}
+                    expandedSet={expandedSet}
+                    handleCollapseChange={handleCollapseChange}
+                    handleMediaClick={handleMediaClick}
+                    hasNext={hasNext}
+                    setSentinelRef={setSentinelRef}
+                  />
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </PullToRefresh>
 
       {/* Scroll-to-top button that appears after user scrolls down */}
@@ -246,14 +246,14 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
         onClick={scrollToTop}
         aria-label="맨 위로"
         className={cn(
-          "fixed left-1/2 -translate-x-1/2 z-50",
+          "fixed z-50",
           "flex items-center justify-center",
           // wider pill, shorter vertical padding, primary background, white icon + small text
           "rounded-full bg-primary text-white px-6 py-1 shadow-lg transition-all duration-150 hover:shadow-xl",
           showScrollTop ? 'opacity-100' : 'opacity-0 pointer-events-none'
         )}
-        // move a bit higher than the spinner baseline
-        style={{ top: 'calc(var(--pull-spinner-top, 88px) - 12px)' }}
+        // center relative to viewport and move a bit higher than spinner baseline
+        style={{ top: 'calc(var(--pull-spinner-top, 88px) - 12px)', left: '50vw', transform: 'translateX(-50%)' }}
       >
         <ArrowUp className="w-6 h-6 text-white" />
       </button>

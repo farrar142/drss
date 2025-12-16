@@ -8,7 +8,7 @@ test('static test page reflects theme variable updates', async ({ page }) => {
   // set to red
   await page.fill('#color', '#ff0000');
   // dispatch input event
-  await page.evalOnSelector('#color', 'el => el.dispatchEvent(new Event("input", { bubbles: true }))');
+  await page.locator('#color').evaluate((el: Element) => el.dispatchEvent(new Event('input', { bubbles: true })));
 
   // small wait for CSS vars
   await page.waitForTimeout(200);
@@ -19,6 +19,7 @@ test('static test page reflects theme variable updates', async ({ page }) => {
   // check that the sample element's background-color is set (computed)
   const bg = await page.evaluate(() => {
     const el = document.getElementById('sample');
+    if (!el) return '';
     return window.getComputedStyle(el).backgroundColor;
   });
   expect(bg).toBeTruthy();

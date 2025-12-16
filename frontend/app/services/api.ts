@@ -201,7 +201,7 @@ export const feedsRoutersFeedListFeeds = (
     
  ) => {
       return axiosInstance<FeedSchema[]>(
-      {url: `/api/feeds/feeds`, method: 'GET'
+      {url: `/api/feeds`, method: 'GET'
     },
       );
     }
@@ -213,7 +213,7 @@ export const feedsRoutersFeedCreateFeed = (
     feedCreateSchema: FeedCreateSchema,
  ) => {
       return axiosInstance<FeedSchema>(
-      {url: `/api/feeds/feeds`, method: 'POST',
+      {url: `/api/feeds`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: feedCreateSchema
     },
@@ -290,7 +290,7 @@ export const feedsRoutersCategoryListCategories = (
     
  ) => {
       return axiosInstance<CategorySchema[]>(
-      {url: `/api/categories/`, method: 'GET'
+      {url: `/api/categories`, method: 'GET'
     },
       );
     }
@@ -302,7 +302,7 @@ export const feedsRoutersCategoryCreateCategory = (
     categoryCreateSchema: CategoryCreateSchema,
  ) => {
       return axiosInstance<CategorySchema>(
-      {url: `/api/categories/`, method: 'POST',
+      {url: `/api/categories`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: categoryCreateSchema
     },
@@ -391,7 +391,7 @@ export const feedsRoutersItemListAllItems = (
     params?: FeedsRoutersItemListAllItemsParams,
  ) => {
       return axiosInstance<PaginatedResponseItemSchema>(
-      {url: `/api/items/`, method: 'GET',
+      {url: `/api/items`, method: 'GET',
         params
     },
       );

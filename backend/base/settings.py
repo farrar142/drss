@@ -221,3 +221,4 @@ CSRF_COOKIE_SECURE = False
 
 # Cache configuration - prefer explicit REDIS_CACHE_URL, fallback to broker URL
 # Cache configuration removed (image caching feature removed). Use Django's default cache.
+APPEND_SLASH = False

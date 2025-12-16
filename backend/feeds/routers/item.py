@@ -77,7 +77,7 @@ def get_paginated_items[T: Model](
     }
 
 
-@router.get("/", response=PaginatedResponse[ItemSchema])
+@router.get("", response=PaginatedResponse[ItemSchema])
 def list_all_items(
     request,
     is_read: Optional[bool] = None,

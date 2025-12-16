@@ -1,3 +1,4 @@
+from time import struct_time
 from ninja import Router
 from django.shortcuts import get_object_or_404
 from django.db import models
@@ -9,7 +10,6 @@ from feeds.utils import fetch_feed_data, extract_favicon_url
 from ..schemas import *
 
 router = Router()
-
 
 
 @router.post("/validate", response=FeedValidationResponse, auth=JWTAuth())
@@ -28,8 +28,12 @@ def validate_feed(request, data: FeedValidationRequest):
             dates = []
             for entry in feed.entries:
                 if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    if not isinstance(entry.published_parsed, struct_time):
+                        continue
                     dates.append(datetime(*entry.published_parsed[:6]))
                 elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
+                    if not isinstance(entry.updated_parsed, struct_time):
+                        continue
                     dates.append(datetime(*entry.updated_parsed[:6]))
 
             if dates:
@@ -48,7 +52,7 @@ def validate_feed(request, data: FeedValidationRequest):
         raise HttpError(400, f"Failed to validate feed: {str(e)}")
 
 
-@router.get("/feeds", response=list[FeedSchema], auth=JWTAuth())
+@router.get("", response=list[FeedSchema], auth=JWTAuth())
 def list_feeds(request):
     from django.db.models import Count
 
@@ -58,7 +62,7 @@ def list_feeds(request):
     return feeds
 
 
-@router.post("/feeds", response=FeedSchema, auth=JWTAuth())
+@router.post("", response=FeedSchema, auth=JWTAuth())
 def create_feed(request, data: FeedCreateSchema):
     from feeds.tasks import update_feed_items
 

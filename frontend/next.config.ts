@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        destination: 'http://django:8000/api/:path*',
       },
     ];
   },
@@ -32,6 +32,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // trailingSlash: true,
+  // Ensure Turbopack can be used by providing an (empty) turbopack config.
+  // This silences the build error when a webpack config is present and
+  // allows Next 16's default Turbopack optimizations to run.
+  turbopack: {},
+  // Disable automatic trailing slash handling to avoid slash/no-slash
+  // redirect behavior that can conflict with proxied backend endpoints.
+  trailingSlash: false,
 };
 
 export default withAnalyzer(nextConfig);
