@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useState, useEffect, useCallback } from 'react';
+import { FC, useState, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Rss, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/ui/button';
@@ -30,6 +30,156 @@ import {
 } from '../services/api';
 
 export const DRAWER_WIDTH = 240;
+
+// DrawerContent를 외부 컴포넌트로 분리하여 리렌더 시 상태 초기화 방지
+type DrawerContentProps = {
+  pathname: string;
+  categories: RSSCategory[];
+  feeds: RSSFeed[];
+  onNavigateHome: () => void;
+  onOpenAdd: () => void;
+  onDeleteCategory: (category: RSSCategory) => Promise<void>;
+  draggingFeed: FeedSchema | null;
+  onDragStart: (feed: FeedSchema) => void;
+  onDragEnd: () => void;
+  onReorderCategories: (categories: RSSCategory[]) => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+const DrawerContent = memo(({
+  pathname,
+  categories,
+  feeds,
+  onNavigateHome,
+  onOpenAdd,
+  onDeleteCategory,
+  draggingFeed,
+  onDragStart,
+  onDragEnd,
+  onReorderCategories,
+  t
+}: DrawerContentProps) => {
+  const [draggingCategoryId, setDraggingCategoryId] = useState<number | null>(null);
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<number | null>(null);
+
+  const handleCategoryDragStart = useCallback((e: React.DragEvent, category: RSSCategory) => {
+    e.dataTransfer.setData('application/category-reorder', JSON.stringify({ categoryId: category.id }));
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggingCategoryId(category.id);
+  }, []);
+
+  const handleCategoryDragOver = useCallback((e: React.DragEvent, category: RSSCategory) => {
+    // 카테고리 재정렬인 경우에만 처리
+    if (!e.dataTransfer.types.includes('application/category-reorder')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCategoryId(category.id);
+  }, []);
+
+  const handleCategoryDragLeave = useCallback(() => {
+    setDragOverCategoryId(null);
+  }, []);
+
+  const handleCategoryDrop = useCallback((e: React.DragEvent, targetCategory: RSSCategory) => {
+    e.preventDefault();
+    setDragOverCategoryId(null);
+    setDraggingCategoryId(null);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/category-reorder'));
+      const { categoryId } = data;
+
+      if (categoryId === targetCategory.id) return;
+
+      // 카테고리 순서 재배열
+      const draggedIndex = categories.findIndex(c => c.id === categoryId);
+      const targetIndex = categories.findIndex(c => c.id === targetCategory.id);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      const newCategories = [...categories];
+      const [draggedCategory] = newCategories.splice(draggedIndex, 1);
+      newCategories.splice(targetIndex, 0, draggedCategory);
+
+      // order 값 업데이트
+      const reorderedCategories = newCategories.map((cat, idx) => ({ ...cat, order: idx }));
+      onReorderCategories(reorderedCategories);
+    } catch (error) {
+      console.error('Failed to reorder categories:', error);
+    }
+  }, [categories, onReorderCategories]);
+
+  const handleCategoryDragEnd = useCallback(() => {
+    setDraggingCategoryId(null);
+    setDragOverCategoryId(null);
+  }, []);
+
+  return (
+    <div className="flex h-full flex-col">
+      <ScrollArea className="flex-1 py-2">
+        {/* Main Stream */}
+        <div className="px-2">
+          <button
+            onClick={onNavigateHome}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+              'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              pathname === '/home' && 'bg-sidebar-primary text-sidebar-primary-foreground'
+            )}
+          >
+            <Rss className="h-4 w-4" />
+            <span className="font-medium">{t.nav.home}</span>
+          </button>
+        </div>
+
+        {/* Categories */}
+        <div className="mt-2 space-y-1">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              draggable
+              onDragStart={(e) => handleCategoryDragStart(e, category)}
+              onDragOver={(e) => handleCategoryDragOver(e, category)}
+              onDragLeave={handleCategoryDragLeave}
+              onDrop={(e) => handleCategoryDrop(e, category)}
+              onDragEnd={handleCategoryDragEnd}
+              className={cn(
+                'transition-all duration-150',
+                draggingCategoryId === category.id && 'opacity-50',
+                dragOverCategoryId === category.id && draggingCategoryId !== category.id && 'border-t-2 border-primary'
+              )}
+            >
+              <CategoryItem
+                feeds={feeds}
+                category={category}
+                pathname={pathname}
+                deleteCategory={onDeleteCategory}
+                draggingFeed={draggingFeed}
+                onFeedMoved={() => onDragEnd()}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+              />
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+
+      {/* Add Category Button */}
+      <div className="border-t border-sidebar-border p-3">
+        <Button
+          onClick={onOpenAdd}
+          className="w-full"
+          size="sm"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          {t.category.add}
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+DrawerContent.displayName = 'DrawerContent';
 
 export const CategoryDrawer: FC<{
   open: boolean;
@@ -108,142 +258,6 @@ export const CategoryDrawer: FC<{
     }
   }, [setCategories]);
 
-  // Move Drawer content into a stable component to avoid creating it during each render
-
-
-  type DrawerContentProps = {
-    pathname: string;
-    categories: RSSCategory[];
-    feeds: RSSFeed[];
-    onNavigateHome: () => void;
-    onOpenAdd: () => void;
-    onDeleteCategory: (category: RSSCategory) => Promise<void>;
-    draggingFeed: FeedSchema | null;
-    onDragStart: (feed: FeedSchema) => void;
-    onDragEnd: () => void;
-    onReorderCategories: (categories: RSSCategory[]) => void;
-  };
-
-  const DrawerContent = ({ pathname, categories, feeds, onNavigateHome, onOpenAdd, onDeleteCategory, draggingFeed, onDragStart, onDragEnd, onReorderCategories }: DrawerContentProps) => {
-    const [draggingCategoryId, setDraggingCategoryId] = useState<number | null>(null);
-    const [dragOverCategoryId, setDragOverCategoryId] = useState<number | null>(null);
-
-    const handleCategoryDragStart = useCallback((e: React.DragEvent, category: RSSCategory) => {
-      e.dataTransfer.setData('application/category-reorder', JSON.stringify({ categoryId: category.id }));
-      e.dataTransfer.effectAllowed = 'move';
-      setDraggingCategoryId(category.id);
-    }, []);
-
-    const handleCategoryDragOver = useCallback((e: React.DragEvent, category: RSSCategory) => {
-      // 카테고리 재정렬인 경우에만 처리
-      if (!e.dataTransfer.types.includes('application/category-reorder')) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      setDragOverCategoryId(category.id);
-    }, []);
-
-    const handleCategoryDragLeave = useCallback(() => {
-      setDragOverCategoryId(null);
-    }, []);
-
-    const handleCategoryDrop = useCallback((e: React.DragEvent, targetCategory: RSSCategory) => {
-      e.preventDefault();
-      setDragOverCategoryId(null);
-      setDraggingCategoryId(null);
-
-      try {
-        const data = JSON.parse(e.dataTransfer.getData('application/category-reorder'));
-        const { categoryId } = data;
-
-        if (categoryId === targetCategory.id) return;
-
-        // 카테고리 순서 재배열
-        const draggedIndex = categories.findIndex(c => c.id === categoryId);
-        const targetIndex = categories.findIndex(c => c.id === targetCategory.id);
-
-        if (draggedIndex === -1 || targetIndex === -1) return;
-
-        const newCategories = [...categories];
-        const [draggedCategory] = newCategories.splice(draggedIndex, 1);
-        newCategories.splice(targetIndex, 0, draggedCategory);
-
-        // order 값 업데이트
-        const reorderedCategories = newCategories.map((cat, idx) => ({ ...cat, order: idx }));
-        onReorderCategories(reorderedCategories);
-      } catch (error) {
-        console.error('Failed to reorder categories:', error);
-      }
-    }, [categories, onReorderCategories]);
-
-    const handleCategoryDragEnd = useCallback(() => {
-      setDraggingCategoryId(null);
-      setDragOverCategoryId(null);
-    }, []);
-
-    return (
-      <div className="flex h-full flex-col">
-        <ScrollArea className="flex-1 py-2">
-          {/* Main Stream */}
-          <div className="px-2">
-            <button
-              onClick={onNavigateHome}
-              className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-                'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                pathname === '/home' && 'bg-sidebar-primary text-sidebar-primary-foreground'
-              )}
-            >
-              <Rss className="h-4 w-4" />
-              <span className="font-medium">{t.nav.home}</span>
-            </button>
-          </div>
-
-          {/* Categories */}
-          <div className="mt-2 space-y-1">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                draggable
-                onDragStart={(e) => handleCategoryDragStart(e, category)}
-                onDragOver={(e) => handleCategoryDragOver(e, category)}
-                onDragLeave={handleCategoryDragLeave}
-                onDrop={(e) => handleCategoryDrop(e, category)}
-                onDragEnd={handleCategoryDragEnd}
-                className={cn(
-                  'transition-all duration-150',
-                  draggingCategoryId === category.id && 'opacity-50',
-                  dragOverCategoryId === category.id && draggingCategoryId !== category.id && 'border-t-2 border-primary'
-                )}
-              >
-                <CategoryItem
-                  feeds={feeds}
-                  category={category}
-                  pathname={pathname}
-                  deleteCategory={onDeleteCategory}
-                  draggingFeed={draggingFeed}
-                  onFeedMoved={() => onDragEnd()}
-                  onDragStart={onDragStart}
-                  onDragEnd={onDragEnd}
-                />
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-
-        {/* Add Category Button */}
-        <div className="border-t border-sidebar-border p-3">
-          <Button
-            onClick={onOpenAdd}
-            className="w-full"
-            size="sm"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {t.category.add}
-          </Button>
-        </div>
-      </div>
-    );
-  };
   // Temporary (mobile) drawer
   if (variant === 'temporary') {
     return (
@@ -261,6 +275,7 @@ export const CategoryDrawer: FC<{
               onDragStart={setDraggingFeed}
               onDragEnd={() => setDraggingFeed(null)}
               onReorderCategories={handleReorderCategories}
+              t={t}
             />
           </SheetContent>
         </Sheet>
@@ -324,6 +339,7 @@ export const CategoryDrawer: FC<{
           onDragStart={setDraggingFeed}
           onDragEnd={() => setDraggingFeed(null)}
           onReorderCategories={handleReorderCategories}
+          t={t}
         />
       </aside>
 
