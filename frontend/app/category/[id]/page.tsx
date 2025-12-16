@@ -2,11 +2,11 @@
 
 import React, { useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { FeedViewer } from '../../components/FeedViewer';
-import { useRSSStore } from '../../stores/rssStore';
-import { RSSItem } from '../../types/rss';
-import { feedsRoutersItemListItemsByCategory } from '../../services/api';
-import { usePagination, PaginationFilters } from '../../hooks/usePagination';
+import { FeedViewer } from '@/components/FeedViewer';
+import { useRSSStore } from '@/stores/rssStore';
+import { RSSItem } from '@/types/rss';
+import { feedsRoutersItemListItemsByCategory } from '@/services/api';
+import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 
 export default function CategoryPage() {
     const params = useParams();

@@ -3,7 +3,7 @@
 import { FC, useState } from 'react';
 import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Slider } from '@/components/ui/slider';
+import { Slider } from '@/ui/slider';
 
 export interface CruisingControlsProps {
   isCruising: boolean;

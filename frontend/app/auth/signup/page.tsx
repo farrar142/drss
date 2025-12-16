@@ -4,11 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '../../context/AuthContext';
-import { useTranslation } from '../../stores/languageStore';
+import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { useAuth } from '@/context/AuthContext';
+import { useTranslation } from '@/stores/languageStore';
 
 export default function SignUp() {
     const { user, signup, loading } = useAuth();

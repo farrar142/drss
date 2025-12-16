@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/ui/dropdown-menu';
 import FeedDialog from './FeedDialog';
 import { useRSSStore } from '../stores/rssStore';
 import {

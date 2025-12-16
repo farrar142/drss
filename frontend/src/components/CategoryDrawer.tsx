@@ -3,18 +3,18 @@
 import { FC, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Rss, Plus, GripVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { ScrollArea } from '@/ui/scroll-area';
+import { Sheet, SheetContent } from '@/ui/sheet';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from '@/ui/dialog';
 import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { useRSSStore } from '../stores/rssStore';

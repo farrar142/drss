@@ -18,8 +18,8 @@ import {
   LogOut,
   Palette,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -27,9 +27,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Tooltip } from '@/components/ui/tooltip';
+} from '@/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/ui/toggle-group';
+import { Tooltip } from '@/ui/tooltip';
 import { useAuth } from '../context/AuthContext';
 import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';

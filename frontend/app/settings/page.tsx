@@ -3,16 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
-import { useThemeStore, applyThemeColors } from '../stores/themeStore';
-import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '../stores/settingsStore';
-import { useTranslation, languageNames, availableLanguages } from '../stores/languageStore';
-import { FeedItemCard } from '../components/FeedItemCard';
-import { RSSItem } from '../types/rss';
+import { Button } from '@/ui/button';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
+import { Slider } from '@/ui/slider';
+import { useThemeStore, applyThemeColors } from '@/stores/themeStore';
+import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '@/stores/settingsStore';
+import { useTranslation, languageNames, availableLanguages } from '@/stores/languageStore';
+import { FeedItemCard } from '@/components/FeedItemCard';
+import { RSSItem } from '@/types/rss';
 
 // 더미 피드 아이템
 const dummyItem: RSSItem = {

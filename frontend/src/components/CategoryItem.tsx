@@ -4,24 +4,24 @@ import { ChevronRight, Eye, EyeOff, FolderOpen, GripVertical, MoreVertical, Penc
 import Link from 'next/link';
 import { FC, useEffect, useMemo, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+} from '@/ui/dialog';
+import { Input } from '@/ui/input';
+import { Label } from '@/ui/label';
+import { Switch } from '@/ui/switch';
 import FeedDialog from './FeedDialog';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { FeedListItem } from './FeedListItem';
