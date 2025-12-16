@@ -24,7 +24,7 @@ services:
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -60,6 +60,7 @@ services:
       - TZ=Asia/Seoul
       - WATCHPACK_POLLING=true
       - HOST=0.0.0.0
+      - BACKEND_HOST=django
     env_file:
       - .env
     command: npm run dev

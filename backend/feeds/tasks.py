@@ -56,12 +56,12 @@ def update_feed_items(feed_id):
 
         if guid in existing_guids:
             continue
-        guid = str(guid)[:500]
+        guid = str(guid)[:499]
         # 제목 추출
         title = getattr(entry, "title", "No Title")
         if not isinstance(title, str):
             continue
-        title = title[:200]
+        title = title[:199]
         # 설명 추출
         description = ""
         if hasattr(entry, "description"):
