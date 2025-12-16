@@ -96,12 +96,12 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
       
       const scrollDiff = currentScrollY - lastScrollY.current;
       
-      // 스크롤 다운: 헤더 숨김 (일정량 이상 스크롤했을 때)
-      if (scrollDiff > 10 && currentScrollY > scrollThreshold) {
+      // 스크롤 다운: 헤더 숨김 (즉시 반응)
+      if (scrollDiff > 0 && currentScrollY > scrollThreshold) {
         setHeaderVisible(false);
       }
-      // 스크롤 업: 헤더 표시
-      else if (scrollDiff < -10) {
+      // 스크롤 업: 헤더 표시 (즉시 반응)
+      else if (scrollDiff < 0) {
         setHeaderVisible(true);
       }
       

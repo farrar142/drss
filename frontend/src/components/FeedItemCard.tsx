@@ -274,10 +274,19 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           top: (viewMode === 'feed' || !collapsed) ? 'var(--header-offset, 92px)' : undefined,
         }}
         onClick={(e) => {
-          // When sticky header is clicked, scroll the card to top (below app bar)
+          // When sticky header is clicked and it's actually stuck at top, scroll the card to top
           if (viewMode === 'feed' || !collapsed) {
-            e.stopPropagation();
-            localRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // 스티키 헤더가 실제로 상단에 고정된 상태인지 확인
+            // 카드의 상단이 헤더 오프셋(92px) 위에 있어야 스크롤
+            const cardRect = localRef.current?.getBoundingClientRect();
+            const headerOffset = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-offset') || '92');
+            
+            if (cardRect && cardRect.top < headerOffset) {
+              // 스크롤할 때만 이벤트 전파 중단 (카드 접힘 방지)
+              e.stopPropagation();
+              localRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            // 스티키 상태가 아니면 이벤트가 부모로 전파되어 카드가 접힘
           }
         }}
       >

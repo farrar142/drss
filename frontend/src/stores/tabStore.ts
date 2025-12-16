@@ -146,8 +146,9 @@ export const useTabStore = create<TabStore>()(
       name: 'drss-tabs',
       storage: createJSONStorage(() => localStorage),
       // 탭 수가 너무 많아지지 않도록 저장 시 최대 10개로 제한
+      // scrollPosition은 새로고침 시 데이터를 처음부터 로드하므로 저장하지 않음
       partialize: (state) => ({
-        tabs: state.tabs.slice(0, 10),
+        tabs: state.tabs.slice(0, 10).map(({ scrollPosition, ...tab }) => tab),
         activeTabId: state.activeTabId,
       }),
     }
