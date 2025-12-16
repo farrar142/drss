@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useState } from 'react';
-import { ChevronDown, Pause, Ship } from 'lucide-react';
+import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 
@@ -69,6 +69,21 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
           aria-label="크루징 설정"
         >
           <Ship className="w-5 h-5" />
+        </button>
+
+        {/* Scroll-to-top button (placed above Play/Pause) */}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={cn(
+            "p-3 rounded-full shadow-lg transition-all",
+            "bg-primary hover:bg-primary/90 text-primary-foreground",
+            "hover:scale-105 active:scale-95"
+          )}
+          data-cruising-control
+          title="맨 위로"
+          aria-label="맨 위로"
+        >
+          <ChevronsUp className="w-5 h-5 -mt-0.5" />
         </button>
 
         {/* Play/Pause button */}
