@@ -4,11 +4,23 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 const withAnalyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
 
 const nextConfig: NextConfig = {
+  webpack: (config, { isServer }) => {
+    // isServer가 false인 경우에만 (클라이언트 측) 설정을 적용하거나
+    // 필요에 따라 조건 없이 적용할 수 있습니다.
+
+    // Webpack watchOptions 설정 (대부분의 경우 이것으로 충분합니다.)
+    config.watchOptions = {
+      poll: 1000, // 1초 간격으로 폴링 (밀리초 단위)
+      aggregateTimeout: 300,
+    };
+
+    return config;
+  },
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://django:8000/api/:path*',
+        destination: `http://${process.env.BACKEND_HOST || "localhost"}:8000/api/:path*`,
       },
     ];
   },

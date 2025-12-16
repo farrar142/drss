@@ -140,6 +140,7 @@ export const FeedImage: FC<{
             transition: 'opacity 0.2s'
           }}
           onClick={(e) => {
+            console.log("click image")
             e.preventDefault();
             e.stopPropagation();
             if (onClick) onClick(e as unknown as React.MouseEvent<HTMLImageElement>);
