@@ -174,7 +174,7 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   };
 
   const handleSearch = async () => {
-    console.log('Search:', searchQuery);
+    // TODO: Implement search
   };
 
   const getThemeIcon = () => {

@@ -12,6 +12,8 @@ interface UseColumnDistributorOptions<T> {
   queueThreshold?: number;
   /** 초기 로딩 시 각 컬럼에 배분할 때 딜레이 (ms) */
   initialDelay?: number;
+  /** 활성화 여부 (비활성 시 IntersectionObserver 비활성화) */
+  enabled?: boolean;
 }
 
 interface UseColumnDistributorReturn<T> {
@@ -33,6 +35,7 @@ export function useColumnDistributor<T extends { id: number }>({
   loading = false,
   queueThreshold = 5,
   initialDelay = 50,
+  enabled = true,
 }: UseColumnDistributorOptions<T>): UseColumnDistributorReturn<T> {
   // 각 컬럼에 배분된 아이템
   const [columnItems, setColumnItems] = useState<T[][]>(() =>
@@ -151,15 +154,12 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 새 아이템이 들어오면 대기열에 추가
   useEffect(() => {
-    console.log('[useColumnDistributor] Effect 1 (items):', { itemsLength: items.length, distributedSize: distributedIdsRef.current.size, queueLength: queueRef.current.length });
     // items가 비어있으면 모든 것을 초기화 (필터 변경 등)
     if (items.length === 0) {
       // 이미 비어있으면 다시 초기화하지 않음 (무한 루프 방지)
       if (distributedIdsRef.current.size === 0 && queueRef.current.length === 0) {
-        console.log('[useColumnDistributor] Effect 1: Already empty, skipping');
         return;
       }
-      console.log('[useColumnDistributor] Effect 1: Clearing all');
       queueRef.current = [];
       distributedIdsRef.current.clear();
       setColumnItems(Array.from({ length: columns }, () => []));
@@ -190,9 +190,7 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 컬럼 수 변경 시 리셋
   useEffect(() => {
-    console.log('[useColumnDistributor] Effect 2 (columns):', { prevColumns: prevColumnsRef.current, columns });
     if (prevColumnsRef.current !== columns) {
-      console.log('[useColumnDistributor] Effect 2: Columns changed, resetting');
       prevColumnsRef.current = columns;
 
       // 모든 아이템을 다시 대기열에 (items 기준으로)
@@ -210,7 +208,8 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // IntersectionObserver로 sentinel 감지
   useEffect(() => {
-    console.log('[useColumnDistributor] Effect 3 (IntersectionObserver):', { isInitialDistributing: isInitialDistributingRef.current, columns });
+    // 비활성 탭이면 observer 설정 안함
+    if (!enabled) return;
     // 초기 배분 중이면 observer 설정 안함
     if (isInitialDistributingRef.current) return;
 
@@ -249,11 +248,10 @@ export function useColumnDistributor<T extends { id: number }>({
     return () => {
       observers.forEach(obs => obs.disconnect());
     };
-  }, [addItemToColumn, columns, fillVisibleSentinels]);
+  }, [enabled, addItemToColumn, columns, fillVisibleSentinels]);
 
   // 스크롤 이벤트로 보충 (observer가 놓칠 수 있는 경우 대비)
   useEffect(() => {
-    console.log('[useColumnDistributor] Effect 4 (scroll listener)');
     let rafId: number | null = null;
 
     const onScroll = () => {

@@ -18,6 +18,8 @@ export interface UseFeedViewerOptions {
   newPostsCount?: number;
   /** 자동 새로고침 간격 (ms), 기본 60초 */
   autoRefreshInterval?: number;
+  /** 탭 활성화 여부 (비활성 시 IntersectionObserver 비활성화) */
+  isActive?: boolean;
 }
 
 export interface UseFeedViewerReturn {
@@ -66,9 +68,8 @@ export function useFeedViewer({
   loading,
   newPostsCount: externalNewPostsCount = 0,
   autoRefreshInterval = 60000,
+  isActive = true,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
-  console.log('[useFeedViewer] render:', { itemsLength: items.length, hasNext, loading });
-
   const { viewMode } = useSettingsStore();
   const isMd = useMediaQuery('(max-width: 768px)');
   const isXl = useMediaQuery('(min-width: 1280px)');
@@ -77,8 +78,6 @@ export function useFeedViewer({
   let columns = 1;
   if (isXl) columns = 3;
   else if (!isMd) columns = 2;
-
-  console.log('[useFeedViewer] columns:', { isMd, isXl, columns });
 
   // Use column distributor instead of masonry layout
   const {
@@ -94,6 +93,7 @@ export function useFeedViewer({
     loading,
     queueThreshold: 5,
     initialDelay: 80,
+    enabled: isActive,
   });
 
   // Use extracted hooks
@@ -112,13 +112,11 @@ export function useFeedViewer({
 
   // Update newPostsCount when external value changes
   useEffect(() => {
-    console.log('[useFeedViewer] Effect 1 (externalNewPostsCount):', externalNewPostsCount);
     setNewPostsCount(externalNewPostsCount);
   }, [externalNewPostsCount]);
 
   // Auto-refresh
   useEffect(() => {
-    console.log('[useFeedViewer] Effect 2 (auto-refresh):', { onLoadNew: !!onLoadNew, autoRefreshInterval });
     if (!onLoadNew || autoRefreshInterval <= 0) return;
 
     // 자동 새로고침 실행

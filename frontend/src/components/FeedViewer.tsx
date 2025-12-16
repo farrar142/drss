@@ -11,11 +11,11 @@ export interface FeedViewerProps {
   onLoadNew?: () => void;
   hasNext?: boolean;
   loading?: boolean;
+  /** 탭이 활성화된 상태인지 (비활성 시 IntersectionObserver 비활성화) */
+  isActive?: boolean;
 }
 
 export const FeedViewer: FC<FeedViewerProps> = (props) => {
-  console.log('[FeedViewer] render:', { itemsLength: props.items.length });
   const viewerState = useFeedViewer(props);
-  console.log('[FeedViewer] after useFeedViewer');
   return <FeedViewerView {...viewerState} />;
 };
