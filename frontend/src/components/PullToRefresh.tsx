@@ -114,7 +114,7 @@ export const PullToRefresh: FC<PullToRefreshProps> = ({
         isTouchPulling = false;
         return;
       }
-      
+
       if (!isTouchPulling) {
         touchStartY = 0;
         return;
