@@ -44,6 +44,12 @@ from .task_result import (
     TaskResultListResponse,
     TaskStatsSchema,
 )
+from .periodic_task import (
+    IntervalScheduleSchema,
+    PeriodicTaskSchema,
+    PeriodicTaskListResponse,
+    PeriodicTaskUpdateSchema,
+)
 
 __all__ = [
     # Category
@@ -83,4 +89,9 @@ __all__ = [
     "TaskResultSchema",
     "TaskResultListResponse",
     "TaskStatsSchema",
+    # Periodic Task
+    "IntervalScheduleSchema",
+    "PeriodicTaskSchema",
+    "PeriodicTaskListResponse",
+    "PeriodicTaskUpdateSchema",
 ]

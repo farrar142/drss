@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe, ClipboardList } from 'lucide-react';
+import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe, ClipboardList, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -86,6 +86,14 @@ export function SettingsPage() {
     });
   };
 
+  const handleOpenPeriodicTasks = () => {
+    openTab({
+      type: 'periodic-tasks',
+      title: 'Periodic Tasks',
+      path: '/periodic-tasks',
+    });
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-1">
       <div className="flex items-center justify-between mb-8">
@@ -93,10 +101,16 @@ export function SettingsPage() {
           <Palette className="w-8 h-8 text-primary" />
           <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
         </div>
-        <Button variant="outline" size="sm" onClick={handleOpenTaskResults}>
-          <ClipboardList className="w-4 h-4 mr-2" />
-          Task Results
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleOpenPeriodicTasks}>
+            <Timer className="w-4 h-4 mr-2" />
+            Periodic Tasks
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleOpenTaskResults}>
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Task Results
+          </Button>
+        </div>
       </div>
 
       {/* Language */}

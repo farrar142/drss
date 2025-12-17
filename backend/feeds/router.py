@@ -12,6 +12,7 @@ from feeds.services import (
     ItemService,
     SourceService,
     TaskResultService,
+    PeriodicTaskService,
 )
 from feeds.schemas import (
     # Category
@@ -49,6 +50,10 @@ from feeds.schemas import (
     TaskResultSchema,
     TaskResultListResponse,
     TaskStatsSchema,
+    # Periodic Task
+    PeriodicTaskSchema,
+    PeriodicTaskListResponse,
+    PeriodicTaskUpdateSchema,
 )
 
 
@@ -59,6 +64,7 @@ feed_router = Router(tags=["feeds"])
 item_router = Router(tags=["items"], auth=JWTAuth())
 source_router = Router(tags=["rss-everything"])
 task_result_router = Router(tags=["task-results"])
+periodic_task_router = Router(tags=["periodic-tasks"])
 
 
 # ============== Category Endpoints ==============
@@ -419,3 +425,63 @@ def clear_task_results(
     """Task 결과 일괄 삭제"""
     deleted_count = TaskResultService.clear_task_results(request.auth, feed_id, status)
     return {"success": True, "deleted": deleted_count}
+
+
+# ============== Periodic Task Endpoints ==============
+
+
+@periodic_task_router.get("", response=PeriodicTaskListResponse, auth=JWTAuth())
+def list_periodic_tasks(
+    request,
+    feed_id: Optional[int] = None,
+    enabled: Optional[bool] = None,
+    limit: int = 20,
+    offset: int = 0,
+):
+    """주기적 태스크 목록 조회"""
+    result = PeriodicTaskService.list_periodic_tasks(
+        request.auth, feed_id, enabled, limit, offset
+    )
+    return PeriodicTaskListResponse(
+        items=[
+            PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
+            for task, feed_id, feed_title in result["items"]
+        ],
+        total=result["total"],
+    )
+
+
+@periodic_task_router.get("/stats", auth=JWTAuth())
+def get_periodic_task_stats(request):
+    """주기적 태스크 통계 조회"""
+    return PeriodicTaskService.get_task_stats(request.auth)
+
+
+@periodic_task_router.get("/{task_id}", response=PeriodicTaskSchema, auth=JWTAuth())
+def get_periodic_task(request, task_id: int):
+    """특정 주기적 태스크 상세 조회"""
+    task, feed_id, feed_title = PeriodicTaskService.get_periodic_task(request.auth, task_id)
+    return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
+
+
+@periodic_task_router.put("/{task_id}", response=PeriodicTaskSchema, auth=JWTAuth())
+def update_periodic_task(request, task_id: int, data: PeriodicTaskUpdateSchema):
+    """주기적 태스크 업데이트"""
+    task, feed_id, feed_title = PeriodicTaskService.update_periodic_task(
+        request.auth, task_id, data.enabled, data.interval_minutes
+    )
+    return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
+
+
+@periodic_task_router.post("/{task_id}/toggle", response=PeriodicTaskSchema, auth=JWTAuth())
+def toggle_periodic_task(request, task_id: int):
+    """주기적 태스크 활성화/비활성화 토글"""
+    task, feed_id, feed_title = PeriodicTaskService.toggle_periodic_task(request.auth, task_id)
+    return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
+
+
+@periodic_task_router.delete("/{task_id}", auth=JWTAuth())
+def delete_periodic_task(request, task_id: int):
+    """주기적 태스크 삭제"""
+    PeriodicTaskService.delete_periodic_task(request.auth, task_id)
+    return {"success": True}

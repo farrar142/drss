@@ -5,6 +5,7 @@ import { FeedViewer } from './FeedViewer';
 import { SettingsPage } from './SettingsPage';
 import RSSEverythingPage from './RSSEverythingPage';
 import TaskResultsPage from './TaskResultsPage';
+import PeriodicTasksPage from './PeriodicTasksPage';
 import FeedEditPage from './FeedEditPage';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTabStore, Tab, PanelId } from '../stores/tabStore';
@@ -143,6 +144,7 @@ const getTabContentKey = (tab: Tab): string => {
   if (tab.type === 'rss-everything') return `rss-everything-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'feed-edit') return `feed-edit-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'task-results') return 'task-results';
+  if (tab.type === 'periodic-tasks') return 'periodic-tasks';
   if (tab.type === 'category' && tab.resourceId) return `category-${tab.resourceId}`;
   if (tab.type === 'feed' && tab.resourceId) return `feed-${tab.resourceId}`;
   return tab.id;
@@ -173,6 +175,8 @@ const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: T
       return <FeedEditPage context={tab.feedEditContext} />;
     case 'task-results':
       return <TaskResultsPage />;
+    case 'periodic-tasks':
+      return <PeriodicTasksPage />;
     default:
       return null;
   }

@@ -2,6 +2,7 @@
 Source Schemas - RSS Everything 소스 관련 스키마
 """
 
+from datetime import datetime
 from typing import Optional, Literal
 from ninja import Schema
 from pydantic import BaseModel, Field
@@ -44,7 +45,7 @@ class SourceSchema(Schema):
     wait_selector: str = ""
     timeout: int = 30000
 
-    last_crawled_at: Optional[str] = None
+    last_crawled_at: Optional[datetime] = None
     last_error: str = ""
 
 

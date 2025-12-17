@@ -40,6 +40,8 @@ const TabIcon: React.FC<{ type: TabType; favicon?: string; className?: string }>
       return <Globe className={className} />;
     case 'task-results':
       return <ClipboardList className={className} />;
+    case 'periodic-tasks':
+      return <ClipboardList className={className} />;
     default:
       return null;
   }
@@ -163,8 +165,8 @@ export const TabBar: React.FC<TabBarProps> = ({
   // 활성 탭 정보
   const activeTab = tabs.find(t => t.id === activeTabId);
   const activeColumns = activeTab?.columns ?? 3;
-  // settings, rss-everything, feed-edit, task-results 탭 또는 작은 화면에서는 컬럼 설정 숨김 (1열 강제)
-  const showColumnSetting = activeTab && !isSmallScreen && !['settings', 'rss-everything', 'feed-edit', 'task-results'].includes(activeTab.type);
+  // settings, rss-everything, feed-edit, task-results, periodic-tasks 탭 또는 작은 화면에서는 컬럼 설정 숨김 (1열 강제)
+  const showColumnSetting = activeTab && !isSmallScreen && !['settings', 'rss-everything', 'feed-edit', 'task-results', 'periodic-tasks'].includes(activeTab.type);
 
   // 활성 탭이 보이도록 스크롤
   useEffect(() => {

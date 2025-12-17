@@ -646,6 +646,60 @@ export interface TaskStatsSchema {
   running: number;
 }
 
+/**
+ * 인터벌 스케줄 스키마
+ */
+export interface IntervalScheduleSchema {
+  every: number;
+  period: string;
+}
+
+/**
+ * 주기적 태스크 목록 응답
+ */
+export interface PeriodicTaskListResponse {
+  items: PeriodicTaskSchema[];
+  total: number;
+}
+
+export type PeriodicTaskSchemaFeedId = number | null;
+
+export type PeriodicTaskSchemaFeedTitle = string | null;
+
+export type PeriodicTaskSchemaInterval = IntervalScheduleSchema | null;
+
+export type PeriodicTaskSchemaLastRunAt = string | null;
+
+export type PeriodicTaskSchemaDateChanged = string | null;
+
+/**
+ * 주기적 태스크 스키마
+ */
+export interface PeriodicTaskSchema {
+  id: number;
+  name: string;
+  task: string;
+  feed_id: PeriodicTaskSchemaFeedId;
+  feed_title: PeriodicTaskSchemaFeedTitle;
+  enabled: boolean;
+  interval: PeriodicTaskSchemaInterval;
+  last_run_at: PeriodicTaskSchemaLastRunAt;
+  total_run_count: number;
+  date_changed: PeriodicTaskSchemaDateChanged;
+}
+
+export type PeriodicTaskUpdateSchemaEnabled = boolean | null;
+
+export type PeriodicTaskUpdateSchemaIntervalMinutes = number | null;
+
+/**
+ * 주기적 태스크 업데이트 스키마
+ */
+export interface PeriodicTaskUpdateSchema {
+  enabled?: PeriodicTaskUpdateSchemaEnabled;
+  interval_minutes?: PeriodicTaskUpdateSchemaIntervalMinutes;
+}
+
 export type FeedsRouterListAllItemsParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
@@ -687,6 +741,13 @@ status?: string | null;
 
 export type FeedsRouterGetTaskStatsParams = {
 feed_id?: number | null;
+};
+
+export type FeedsRouterListPeriodicTasksParams = {
+feed_id?: number | null;
+enabled?: boolean | null;
+limit?: number;
+offset?: number;
 };
 
 /**
@@ -1275,6 +1336,88 @@ export const feedsRouterDeleteTaskResult = (
       );
     }
   
+/**
+ * 주기적 태스크 목록 조회
+ * @summary List Periodic Tasks
+ */
+export const feedsRouterListPeriodicTasks = (
+    params?: FeedsRouterListPeriodicTasksParams,
+ ) => {
+      return axiosInstance<PeriodicTaskListResponse>(
+      {url: `/api/periodic-tasks`, method: 'GET',
+        params
+    },
+      );
+    }
+  
+/**
+ * 주기적 태스크 통계 조회
+ * @summary Get Periodic Task Stats
+ */
+export const feedsRouterGetPeriodicTaskStats = (
+    
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/periodic-tasks/stats`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * 특정 주기적 태스크 상세 조회
+ * @summary Get Periodic Task
+ */
+export const feedsRouterGetPeriodicTask = (
+    taskId: number,
+ ) => {
+      return axiosInstance<PeriodicTaskSchema>(
+      {url: `/api/periodic-tasks/${taskId}`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * 주기적 태스크 업데이트
+ * @summary Update Periodic Task
+ */
+export const feedsRouterUpdatePeriodicTask = (
+    taskId: number,
+    periodicTaskUpdateSchema: PeriodicTaskUpdateSchema,
+ ) => {
+      return axiosInstance<PeriodicTaskSchema>(
+      {url: `/api/periodic-tasks/${taskId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: periodicTaskUpdateSchema
+    },
+      );
+    }
+  
+/**
+ * 주기적 태스크 삭제
+ * @summary Delete Periodic Task
+ */
+export const feedsRouterDeletePeriodicTask = (
+    taskId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/periodic-tasks/${taskId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
+ * 주기적 태스크 활성화/비활성화 토글
+ * @summary Toggle Periodic Task
+ */
+export const feedsRouterTogglePeriodicTask = (
+    taskId: number,
+ ) => {
+      return axiosInstance<PeriodicTaskSchema>(
+      {url: `/api/periodic-tasks/${taskId}/toggle`, method: 'POST'
+    },
+      );
+    }
+  
 export type BaseApiHealthCheckResult = NonNullable<Awaited<ReturnType<typeof baseApiHealthCheck>>>
 export type FeedsRouterValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterValidateFeed>>>
 export type FeedsRouterListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeeds>>>
@@ -1317,3 +1460,9 @@ export type FeedsRouterClearTaskResultsResult = NonNullable<Awaited<ReturnType<t
 export type FeedsRouterGetTaskStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetTaskStats>>>
 export type FeedsRouterGetTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetTaskResult>>>
 export type FeedsRouterDeleteTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteTaskResult>>>
+export type FeedsRouterListPeriodicTasksResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListPeriodicTasks>>>
+export type FeedsRouterGetPeriodicTaskStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetPeriodicTaskStats>>>
+export type FeedsRouterGetPeriodicTaskResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetPeriodicTask>>>
+export type FeedsRouterUpdatePeriodicTaskResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdatePeriodicTask>>>
+export type FeedsRouterDeletePeriodicTaskResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeletePeriodicTask>>>
+export type FeedsRouterTogglePeriodicTaskResult = NonNullable<Awaited<ReturnType<typeof feedsRouterTogglePeriodicTask>>>

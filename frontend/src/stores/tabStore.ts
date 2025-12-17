@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'feed-edit';
+export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'periodic-tasks' | 'feed-edit';
 
 // RSSEverything 탭 컨텍스트 (소스 편집용)
 export interface RSSEverythingContext {
