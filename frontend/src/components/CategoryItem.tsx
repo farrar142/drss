@@ -28,9 +28,9 @@ import { useRSSStore } from '../stores/rssStore';
 import { useTabStore } from '../stores/tabStore';
 import { useTranslation, interpolate } from '../stores/languageStore';
 import {
-  feedsRoutersCategoryUpdateCategory,
-  feedsRoutersCategoryRefreshCategoryFeeds,
-  feedsRoutersFeedUpdateFeed,
+  feedsRouterUpdateCategory,
+  feedsRouterRefreshCategoryFeeds,
+  feedsRouterUpdateFeed,
   FeedSchema,
 } from '../services/api';
 
@@ -112,7 +112,7 @@ export const CategoryItem: FC<{
 
     const handleEditSave = async () => {
       try {
-        const updated = await feedsRoutersCategoryUpdateCategory(category.id, ({
+        const updated = await feedsRouterUpdateCategory(category.id, ({
           name: editName,
           description: editDescription,
           visible: editVisible,
@@ -126,7 +126,7 @@ export const CategoryItem: FC<{
 
     const handleToggleVisible = async () => {
       try {
-        const updated = await feedsRoutersCategoryUpdateCategory(category.id, ({
+        const updated = await feedsRouterUpdateCategory(category.id, ({
           visible: !category.visible,
         } as any));
         updateCategory({ ...(updated as any), visible: (updated as any).visible ?? true });
@@ -137,7 +137,7 @@ export const CategoryItem: FC<{
 
     const handleRefresh = async () => {
       try {
-        await feedsRoutersCategoryRefreshCategoryFeeds(category.id);
+        await feedsRouterRefreshCategoryFeeds(category.id);
         alert(t.category.refreshing);
       } catch (error) {
         console.error('Failed to refresh category feeds', error);
@@ -174,7 +174,7 @@ export const CategoryItem: FC<{
         if (fromCategoryId === category.id) return;
 
         // API 호출로 카테고리 변경
-        const updated = await feedsRoutersFeedUpdateFeed(feedId, { category_id: category.id });
+        const updated = await feedsRouterUpdateFeed(feedId, { category_id: category.id });
         updateFeed(updated);
         onFeedMoved?.(feedId, category.id);
       } catch (error) {

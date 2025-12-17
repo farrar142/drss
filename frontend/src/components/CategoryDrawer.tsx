@@ -22,11 +22,11 @@ import { useTranslation } from '../stores/languageStore';
 import { useTabStore } from '../stores/tabStore';
 import { CategoryItem } from './CategoryItem';
 import {
-  feedsRoutersCategoryCreateCategory,
-  feedsRoutersCategoryDeleteCategory,
-  feedsRoutersCategoryListCategories,
-  feedsRoutersCategoryReorderCategories,
-  feedsRoutersFeedListFeeds,
+  feedsRouterCreateCategory,
+  feedsRouterDeleteCategory,
+  feedsRouterListCategories,
+  feedsRouterReorderCategories,
+  feedsRouterListFeeds,
   FeedSchema,
 } from '../services/api';
 
@@ -241,14 +241,14 @@ export const CategoryDrawer: FC<{
   }, [openTab, saveCurrentScroll]);
 
   useEffect(() => {
-    feedsRoutersFeedListFeeds().then(setFeeds);
+    feedsRouterListFeeds().then(setFeeds);
   }, [setFeeds]);
 
   useEffect(() => {
     // The backend OpenAPI/types may not always include the `visible` field
     // (older specs). Ensure we normalize the response to `RSSCategory` by
     // defaulting `visible` to `true` when absent.
-    feedsRoutersCategoryListCategories().then((cats) => {
+    feedsRouterListCategories().then((cats) => {
       const normalized = (cats || []).map((c: any) => ({
         ...c,
         visible: (c.visible ?? true),
@@ -262,7 +262,7 @@ export const CategoryDrawer: FC<{
 
   const handleAddCategory = async () => {
     try {
-      const newCategory = await feedsRoutersCategoryCreateCategory({
+      const newCategory = await feedsRouterCreateCategory({
         name: newCategoryName,
         description: newCategoryDescription,
       });
@@ -278,7 +278,7 @@ export const CategoryDrawer: FC<{
 
   const handleDeleteCategory = async (category: RSSCategory) => {
     try {
-      await feedsRoutersCategoryDeleteCategory(category.id);
+      await feedsRouterDeleteCategory(category.id);
       removeCategory(category.id);
     } catch (error) {
       console.error(error);
@@ -291,13 +291,13 @@ export const CategoryDrawer: FC<{
 
     try {
       // 서버에 순서 저장
-      await feedsRoutersCategoryReorderCategories({
+      await feedsRouterReorderCategories({
         category_ids: reorderedCategories.map(c => c.id)
       });
     } catch (error) {
       console.error('Failed to save category order:', error);
       // 실패 시 원래 순서로 복구
-      feedsRoutersCategoryListCategories().then((cats) =>
+      feedsRouterListCategories().then((cats) =>
         setCategories((cats || []).map((c: any) => ({ ...c, visible: (c.visible ?? true), order: (c.order ?? 0) })))
       );
     }

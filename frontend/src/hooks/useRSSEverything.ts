@@ -4,12 +4,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRSSStore } from '@/stores/rssStore';
 import { useTabStore, RSSEverythingContext } from '@/stores/tabStore';
 import {
-  feedsRoutersRssEverythingFetchHtml,
-  feedsRoutersRssEverythingPreviewItems,
-  feedsRoutersRssEverythingCreateSource,
-  feedsRoutersRssEverythingGetSource,
-  feedsRoutersRssEverythingUpdateSource,
-  feedsRoutersCategoryListCategories,
+  feedsRouterFetchHtml,
+  feedsRouterPreviewItems,
+  feedsRouterCreateSource,
+  feedsRouterGetSource,
+  feedsRouterUpdateSourceRss,
+  feedsRouterListCategories,
   FetchHTMLRequest,
   PreviewItemRequest,
   RSSEverythingCreateRequest,
@@ -135,7 +135,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       if (context?.mode === 'edit' && context.sourceId) {
         setIsLoading(true);
         try {
-          const source = await feedsRoutersRssEverythingGetSource(context.sourceId);
+          const source = await feedsRouterGetSource(context.sourceId);
           setEditingSourceId(source.id);
 
           // 기본 정보 설정
@@ -201,7 +201,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // 카테고리 로드
   useEffect(() => {
     if (categories.length === 0) {
-      feedsRoutersCategoryListCategories().then((data) => {
+      feedsRouterListCategories().then((data) => {
         setCategories(data);
       });
     }
@@ -309,7 +309,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           custom_headers: customHeaders,
         };
 
-        await feedsRoutersRssEverythingUpdateSource(editingSourceId, updateData);
+        await feedsRouterUpdateSourceRss(editingSourceId, updateData);
 
         // 성공 메시지 후 탭 닫기
         alert('소스가 업데이트되었습니다.');
@@ -322,10 +322,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           custom_headers: customHeaders,
         };
 
-        await feedsRoutersRssEverythingCreateSource(sourceData);
+        await feedsRouterCreateSource(sourceData);
 
         // 카테고리 새로고침 (피드 목록도 함께 갱신됨)
-        const updatedCategories = await feedsRoutersCategoryListCategories();
+        const updatedCategories = await feedsRouterListCategories();
         setCategories(updatedCategories);
       }
 
@@ -359,7 +359,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         custom_headers: customHeaders,
       };
 
-      const response = await feedsRoutersRssEverythingFetchHtml(request);
+      const response = await feedsRouterFetchHtml(request);
 
       if (response.success && response.html) {
         setListHtml(response.html);
@@ -393,7 +393,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         custom_headers: customHeaders,
       };
 
-      const response = await feedsRoutersRssEverythingFetchHtml(request);
+      const response = await feedsRouterFetchHtml(request);
 
       if (response.success && response.html) {
         setDetailHtml(response.html);
@@ -576,7 +576,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detail_image_selector: detailSelectors.detailImageSelector,
       };
 
-      const response = await feedsRoutersRssEverythingPreviewItems(request);
+      const response = await feedsRouterPreviewItems(request);
 
       if (response.success) {
         setPreviewItems(response.items || []);
@@ -604,7 +604,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
     try {
       const sourceType = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
-      
+
       const request: RSSEverythingCreateRequest = {
         feed_id: context.feedId,
         url,
@@ -627,10 +627,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         exclude_selectors: excludeSelectors,
       };
 
-      await feedsRoutersRssEverythingCreateSource(request);
+      await feedsRouterCreateSource(request);
 
       // 카테고리 & 피드 새로고침
-      const updatedCategories = await feedsRoutersCategoryListCategories();
+      const updatedCategories = await feedsRouterListCategories();
       setCategories(updatedCategories);
 
       // 현재 탭 닫고 홈으로

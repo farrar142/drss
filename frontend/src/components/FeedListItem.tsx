@@ -24,10 +24,10 @@ import { useRSSStore } from '../stores/rssStore';
 import { useTabStore } from '../stores/tabStore';
 import {
   FeedSchema,
-  feedsRoutersFeedDeleteFeed,
-  feedsRoutersFeedMarkAllFeedItemsRead,
-  feedsRoutersFeedRefreshFeed,
-  feedsRoutersFeedUpdateFeed,
+  feedsRouterDeleteFeed,
+  feedsRouterMarkAllFeedItemsRead,
+  feedsRouterRefreshFeed,
+  feedsRouterUpdateFeed,
 } from '../services/api';
 
 interface FeedListItemProps {
@@ -58,7 +58,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
   const handleRefresh = async () => {
     try {
-      await feedsRoutersFeedRefreshFeed(feed.id);
+      await feedsRouterRefreshFeed(feed.id);
       alert('피드 새로고침이 예약되었습니다.');
     } catch (error) {
       console.error(error);
@@ -68,7 +68,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   const handleDelete = async () => {
     if (!confirm('정말로 이 피드를 삭제하시겠습니까?')) return;
     try {
-      await feedsRoutersFeedDeleteFeed(feed.id);
+      await feedsRouterDeleteFeed(feed.id);
       removeFeed(feed.id);
       // 삭제된 피드와 관련된 모든 탭 닫기
       closeTabsByFeedId(feed.id);
@@ -79,7 +79,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
   const handleMarkAllRead = async () => {
     try {
-      await feedsRoutersFeedMarkAllFeedItemsRead(feed.id);
+      await feedsRouterMarkAllFeedItemsRead(feed.id);
       alert('모든 아이템을 읽음으로 표시했습니다.');
     } catch (error) {
       console.error(error);
@@ -88,7 +88,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
   const handleToggleVisible = async () => {
     try {
-      const updated = await feedsRoutersFeedUpdateFeed(feed.id, {
+      const updated = await feedsRouterUpdateFeed(feed.id, {
         visible: !feed.visible,
       });
       updateFeed(updated);

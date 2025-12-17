@@ -7,6 +7,9 @@
 import { axiosInstance } from '../utils/axiosInstance';
 export type FeedValidationResponseLatestItemDate = string | null;
 
+/**
+ * 피드 검증 응답
+ */
 export interface FeedValidationResponse {
   title: string;
   description: string;
@@ -16,11 +19,17 @@ export interface FeedValidationResponse {
 
 export type FeedValidationRequestCustomHeaders = { [key: string]: unknown };
 
+/**
+ * 피드 검증 요청
+ */
 export interface FeedValidationRequest {
   url: string;
   custom_headers?: FeedValidationRequestCustomHeaders;
 }
 
+/**
+ * 피드 스키마
+ */
 export interface FeedSchema {
   id: number;
   category_id: number;
@@ -143,6 +152,9 @@ export type FeedUpdateSchemaVisible = boolean | null;
 
 export type FeedUpdateSchemaRefreshInterval = number | null;
 
+/**
+ * 피드 수정 스키마
+ */
 export interface FeedUpdateSchema {
   category_id?: FeedUpdateSchemaCategoryId;
   title?: FeedUpdateSchemaTitle;
@@ -223,6 +235,9 @@ export interface SourceUpdateSchema {
   timeout?: SourceUpdateSchemaTimeout;
 }
 
+/**
+ * 카테고리 스키마
+ */
 export interface CategorySchema {
   id: number;
   name: string;
@@ -231,6 +246,9 @@ export interface CategorySchema {
   order: number;
 }
 
+/**
+ * 카테고리 생성 스키마
+ */
 export interface CategoryCreateSchema {
   name: string;
   description?: string;
@@ -245,6 +263,9 @@ export type CategoryUpdateSchemaVisible = boolean | null;
 
 export type CategoryUpdateSchemaOrder = number | null;
 
+/**
+ * 카테고리 수정 스키마
+ */
 export interface CategoryUpdateSchema {
   name?: CategoryUpdateSchemaName;
   description?: CategoryUpdateSchemaDescription;
@@ -252,10 +273,16 @@ export interface CategoryUpdateSchema {
   order?: CategoryUpdateSchemaOrder;
 }
 
+/**
+ * 카테고리 순서 변경 스키마
+ */
 export interface CategoryReorderSchema {
   category_ids: number[];
 }
 
+/**
+ * 아이템 스키마
+ */
 export interface ItemSchema {
   id: number;
   feed_id: number;
@@ -396,7 +423,7 @@ export interface PreviewItemResponse {
 export type PreviewItemRequestCustomHeaders = { [key: string]: unknown };
 
 /**
- * 아이템 미리보기 요청 - 선택한 셀렉터로 아이템 추출 테스트
+ * 아이템 미리보기 요청
  */
 export interface PreviewItemRequest {
   url: string;
@@ -459,7 +486,7 @@ export interface RSSEverythingSchema {
 export type RSSEverythingCreateRequestCustomHeaders = { [key: string]: unknown };
 
 /**
- * RSSEverything 소스 생성 요청 - 기존 피드에 소스 추가
+ * RSSEverything 소스 생성 요청
  */
 export interface RSSEverythingCreateRequest {
   feed_id: number;
@@ -578,7 +605,7 @@ export interface FeedInfo {
 }
 
 /**
- * Task 결과 목록 응답
+ * 태스크 결과 목록 응답
  */
 export interface TaskResultListResponse {
   items: TaskResultSchema[];
@@ -592,7 +619,7 @@ export type TaskResultSchemaCompletedAt = string | null;
 export type TaskResultSchemaDurationSeconds = number | null;
 
 /**
- * Task 결과 스키마
+ * 태스크 결과 스키마
  */
 export interface TaskResultSchema {
   id: number;
@@ -609,7 +636,7 @@ export interface TaskResultSchema {
 }
 
 /**
- * Task 통계
+ * 태스크 통계
  */
 export interface TaskStatsSchema {
   total: number;
@@ -619,7 +646,7 @@ export interface TaskStatsSchema {
   running: number;
 }
 
-export type FeedsRoutersItemListAllItemsParams = {
+export type FeedsRouterListAllItemsParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
@@ -628,7 +655,7 @@ cursor?: string | null;
 direction?: string;
 };
 
-export type FeedsRoutersItemListItemsByCategoryParams = {
+export type FeedsRouterListItemsByCategoryParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
@@ -637,7 +664,7 @@ cursor?: string | null;
 direction?: string;
 };
 
-export type FeedsRoutersItemListItemsByFeedParams = {
+export type FeedsRouterListItemsByFeedParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
@@ -646,19 +673,19 @@ cursor?: string | null;
 direction?: string;
 };
 
-export type FeedsRoutersTaskResultsListTaskResultsParams = {
+export type FeedsRouterListTaskResultsParams = {
 feed_id?: number | null;
 status?: string | null;
 limit?: number;
 offset?: number;
 };
 
-export type FeedsRoutersTaskResultsClearTaskResultsParams = {
+export type FeedsRouterClearTaskResultsParams = {
 feed_id?: number | null;
 status?: string | null;
 };
 
-export type FeedsRoutersTaskResultsGetTaskStatsParams = {
+export type FeedsRouterGetTaskStatsParams = {
 feed_id?: number | null;
 };
 
@@ -675,9 +702,10 @@ export const baseApiHealthCheck = (
     }
   
 /**
+ * RSS 피드 URL 검증
  * @summary Validate Feed
  */
-export const feedsRoutersFeedValidateFeed = (
+export const feedsRouterValidateFeed = (
     feedValidationRequest: FeedValidationRequest,
  ) => {
       return axiosInstance<FeedValidationResponse>(
@@ -689,9 +717,10 @@ export const feedsRoutersFeedValidateFeed = (
     }
   
 /**
+ * 피드 목록 조회
  * @summary List Feeds
  */
-export const feedsRoutersFeedListFeeds = (
+export const feedsRouterListFeeds = (
     
  ) => {
       return axiosInstance<FeedSchema[]>(
@@ -701,9 +730,10 @@ export const feedsRoutersFeedListFeeds = (
     }
   
 /**
+ * 피드 생성
  * @summary Create Feed
  */
-export const feedsRoutersFeedCreateFeed = (
+export const feedsRouterCreateFeed = (
     feedCreateSchema: FeedCreateSchema,
  ) => {
       return axiosInstance<FeedSchema>(
@@ -715,9 +745,10 @@ export const feedsRoutersFeedCreateFeed = (
     }
   
 /**
+ * 피드 수정
  * @summary Update Feed
  */
-export const feedsRoutersFeedUpdateFeed = (
+export const feedsRouterUpdateFeed = (
     feedId: number,
     feedUpdateSchema: FeedUpdateSchema,
  ) => {
@@ -730,9 +761,10 @@ export const feedsRoutersFeedUpdateFeed = (
     }
   
 /**
+ * 피드 삭제
  * @summary Delete Feed
  */
-export const feedsRoutersFeedDeleteFeed = (
+export const feedsRouterDeleteFeed = (
     feedId: number,
  ) => {
       return axiosInstance<void>(
@@ -742,10 +774,49 @@ export const feedsRoutersFeedDeleteFeed = (
     }
   
 /**
+ * 피드 새로고침
+ * @summary Refresh Feed
+ */
+export const feedsRouterRefreshFeed = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/refresh`, method: 'POST'
+    },
+      );
+    }
+  
+/**
+ * 피드의 모든 아이템을 읽음 처리
+ * @summary Mark All Feed Items Read
+ */
+export const feedsRouterMarkAllFeedItemsRead = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/mark-all-read`, method: 'PUT'
+    },
+      );
+    }
+  
+/**
+ * 피드의 모든 아이템 삭제
+ * @summary Delete All Feed Items
+ */
+export const feedsRouterDeleteAllFeedItems = (
+    feedId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/feeds/${feedId}/items`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
  * 피드에 새 소스 추가
  * @summary Add Source
  */
-export const feedsRoutersFeedAddSource = (
+export const feedsRouterAddSource = (
     feedId: number,
     sourceCreateSchema: SourceCreateSchema,
  ) => {
@@ -761,7 +832,7 @@ export const feedsRoutersFeedAddSource = (
  * 소스 업데이트
  * @summary Update Source
  */
-export const feedsRoutersFeedUpdateSource = (
+export const feedsRouterUpdateSource = (
     feedId: number,
     sourceId: number,
     sourceUpdateSchema: SourceUpdateSchema,
@@ -778,7 +849,7 @@ export const feedsRoutersFeedUpdateSource = (
  * 소스 삭제
  * @summary Delete Source
  */
-export const feedsRoutersFeedDeleteSource = (
+export const feedsRouterDeleteSource = (
     feedId: number,
     sourceId: number,
  ) => {
@@ -789,45 +860,10 @@ export const feedsRoutersFeedDeleteSource = (
     }
   
 /**
- * @summary Refresh Feed
- */
-export const feedsRoutersFeedRefreshFeed = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/refresh`, method: 'POST'
-    },
-      );
-    }
-  
-/**
- * @summary Mark All Feed Items Read
- */
-export const feedsRoutersFeedMarkAllFeedItemsRead = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/mark-all-read`, method: 'PUT'
-    },
-      );
-    }
-  
-/**
- * @summary Delete All Feed Items
- */
-export const feedsRoutersFeedDeleteAllFeedItems = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/items`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
+ * 카테고리 목록 조회
  * @summary List Categories
  */
-export const feedsRoutersCategoryListCategories = (
+export const feedsRouterListCategories = (
     
  ) => {
       return axiosInstance<CategorySchema[]>(
@@ -837,9 +873,10 @@ export const feedsRoutersCategoryListCategories = (
     }
   
 /**
+ * 카테고리 생성
  * @summary Create Category
  */
-export const feedsRoutersCategoryCreateCategory = (
+export const feedsRouterCreateCategory = (
     categoryCreateSchema: CategoryCreateSchema,
  ) => {
       return axiosInstance<CategorySchema>(
@@ -851,9 +888,10 @@ export const feedsRoutersCategoryCreateCategory = (
     }
   
 /**
+ * 카테고리 수정
  * @summary Update Category
  */
-export const feedsRoutersCategoryUpdateCategory = (
+export const feedsRouterUpdateCategory = (
     categoryId: number,
     categoryUpdateSchema: CategoryUpdateSchema,
  ) => {
@@ -866,9 +904,10 @@ export const feedsRoutersCategoryUpdateCategory = (
     }
   
 /**
+ * 카테고리 삭제
  * @summary Delete Category
  */
-export const feedsRoutersCategoryDeleteCategory = (
+export const feedsRouterDeleteCategory = (
     categoryId: number,
  ) => {
       return axiosInstance<void>(
@@ -881,7 +920,7 @@ export const feedsRoutersCategoryDeleteCategory = (
  * 카테고리 순서 일괄 변경
  * @summary Reorder Categories
  */
-export const feedsRoutersCategoryReorderCategories = (
+export const feedsRouterReorderCategories = (
     categoryReorderSchema: CategoryReorderSchema,
  ) => {
       return axiosInstance<CategorySchema[]>(
@@ -893,9 +932,10 @@ export const feedsRoutersCategoryReorderCategories = (
     }
   
 /**
+ * 카테고리의 모든 피드 새로고침
  * @summary Refresh Category Feeds
  */
-export const feedsRoutersCategoryRefreshCategoryFeeds = (
+export const feedsRouterRefreshCategoryFeeds = (
     categoryId: number,
  ) => {
       return axiosInstance<void>(
@@ -905,9 +945,10 @@ export const feedsRoutersCategoryRefreshCategoryFeeds = (
     }
   
 /**
+ * 카테고리 통계 조회
  * @summary Get Category Stats
  */
-export const feedsRoutersCategoryGetCategoryStats = (
+export const feedsRouterGetCategoryStats = (
     categoryId: number,
  ) => {
       return axiosInstance<void>(
@@ -917,9 +958,10 @@ export const feedsRoutersCategoryGetCategoryStats = (
     }
   
 /**
+ * 아이템 즐겨찾기 토글
  * @summary Toggle Item Favorite
  */
-export const feedsRoutersItemToggleItemFavorite = (
+export const feedsRouterToggleItemFavorite = (
     itemId: number,
  ) => {
       return axiosInstance<void>(
@@ -929,9 +971,10 @@ export const feedsRoutersItemToggleItemFavorite = (
     }
   
 /**
+ * 아이템 읽음 상태 토글
  * @summary Toggle Item Read
  */
-export const feedsRoutersItemToggleItemRead = (
+export const feedsRouterToggleItemRead = (
     itemId: number,
  ) => {
       return axiosInstance<void>(
@@ -941,10 +984,11 @@ export const feedsRoutersItemToggleItemRead = (
     }
   
 /**
+ * 메인 화면 아이템 목록
  * @summary List All Items
  */
-export const feedsRoutersItemListAllItems = (
-    params?: FeedsRoutersItemListAllItemsParams,
+export const feedsRouterListAllItems = (
+    params?: FeedsRouterListAllItemsParams,
  ) => {
       return axiosInstance<PaginatedResponseItemSchema>(
       {url: `/api/items`, method: 'GET',
@@ -954,11 +998,12 @@ export const feedsRoutersItemListAllItems = (
     }
   
 /**
+ * 카테고리별 아이템 목록
  * @summary List Items By Category
  */
-export const feedsRoutersItemListItemsByCategory = (
+export const feedsRouterListItemsByCategory = (
     categoryId: number,
-    params?: FeedsRoutersItemListItemsByCategoryParams,
+    params?: FeedsRouterListItemsByCategoryParams,
  ) => {
       return axiosInstance<PaginatedResponseItemSchema>(
       {url: `/api/items/category/${categoryId}`, method: 'GET',
@@ -968,11 +1013,12 @@ export const feedsRoutersItemListItemsByCategory = (
     }
   
 /**
+ * 피드별 아이템 목록
  * @summary List Items By Feed
  */
-export const feedsRoutersItemListItemsByFeed = (
+export const feedsRouterListItemsByFeed = (
     feedId: number,
-    params?: FeedsRoutersItemListItemsByFeedParams,
+    params?: FeedsRouterListItemsByFeedParams,
  ) => {
       return axiosInstance<PaginatedResponseItemSchema>(
       {url: `/api/items/feed/${feedId}`, method: 'GET',
@@ -1034,11 +1080,10 @@ export const usersRouterMe = (
     }
   
 /**
- * URL에서 HTML을 가져옵니다.
-브라우저 렌더링을 사용하여 JavaScript로 생성된 콘텐츠도 가져올 수 있습니다.
+ * URL에서 HTML을 가져옴
  * @summary Fetch Html
  */
-export const feedsRoutersRssEverythingFetchHtml = (
+export const feedsRouterFetchHtml = (
     fetchHTMLRequest: FetchHTMLRequest,
  ) => {
       return axiosInstance<FetchHTMLResponse>(
@@ -1050,11 +1095,10 @@ export const feedsRoutersRssEverythingFetchHtml = (
     }
   
 /**
- * HTML에서 CSS 셀렉터로 요소들을 추출합니다.
-프론트엔드에서 사용자가 선택한 요소의 정보를 확인하는 데 사용됩니다.
+ * HTML에서 CSS 셀렉터로 요소들을 추출
  * @summary Extract Elements
  */
-export const feedsRoutersRssEverythingExtractElements = (
+export const feedsRouterExtractElements = (
     extractElementsRequest: ExtractElementsRequest,
  ) => {
       return axiosInstance<ExtractElementsResponse>(
@@ -1066,15 +1110,10 @@ export const feedsRoutersRssEverythingExtractElements = (
     }
   
 /**
- * 설정된 셀렉터로 아이템들을 미리보기합니다.
-실제 저장하기 전에 셀렉터가 올바르게 작동하는지 확인할 수 있습니다.
-
-follow_links=True인 경우:
-- 목록 페이지에서 링크 수집
-- 각 상세 페이지에서 detail_*_selector로 내용 추출
+ * 설정된 셀렉터로 아이템들을 미리보기
  * @summary Preview Items
  */
-export const feedsRoutersRssEverythingPreviewItems = (
+export const feedsRouterPreviewItems = (
     previewItemRequest: PreviewItemRequest,
  ) => {
       return axiosInstance<PreviewItemResponse>(
@@ -1089,7 +1128,7 @@ export const feedsRoutersRssEverythingPreviewItems = (
  * 사용자의 RSSEverything 소스 목록 조회
  * @summary List Sources
  */
-export const feedsRoutersRssEverythingListSources = (
+export const feedsRouterListSources = (
     
  ) => {
       return axiosInstance<RSSEverythingSchema[]>(
@@ -1102,7 +1141,7 @@ export const feedsRoutersRssEverythingListSources = (
  * 기존 피드에 새 RSSEverything 소스 추가
  * @summary Create Source
  */
-export const feedsRoutersRssEverythingCreateSource = (
+export const feedsRouterCreateSource = (
     rSSEverythingCreateRequest: RSSEverythingCreateRequest,
  ) => {
       return axiosInstance<RSSEverythingSchema>(
@@ -1117,7 +1156,7 @@ export const feedsRoutersRssEverythingCreateSource = (
  * RSSEverything 소스 상세 조회
  * @summary Get Source
  */
-export const feedsRoutersRssEverythingGetSource = (
+export const feedsRouterGetSource = (
     sourceId: number,
  ) => {
       return axiosInstance<RSSEverythingSchema>(
@@ -1128,9 +1167,9 @@ export const feedsRoutersRssEverythingGetSource = (
   
 /**
  * RSSEverything 소스 수정
- * @summary Update Source
+ * @summary Update Source Rss
  */
-export const feedsRoutersRssEverythingUpdateSource = (
+export const feedsRouterUpdateSourceRss = (
     sourceId: number,
     rSSEverythingUpdateRequest: RSSEverythingUpdateRequest,
  ) => {
@@ -1143,10 +1182,10 @@ export const feedsRoutersRssEverythingUpdateSource = (
     }
   
 /**
- * RSSEverything 소스 삭제 - 연결된 RSSFeed도 함께 삭제됩니다.
- * @summary Delete Source
+ * RSSEverything 소스 삭제 - 연결된 RSSFeed도 함께 삭제
+ * @summary Delete Source Rss
  */
-export const feedsRoutersRssEverythingDeleteSource = (
+export const feedsRouterDeleteSourceRss = (
     sourceId: number,
  ) => {
       return axiosInstance<void>(
@@ -1156,11 +1195,10 @@ export const feedsRoutersRssEverythingDeleteSource = (
     }
   
 /**
- * RSSEverything 소스를 새로고침하여 아이템들을 업데이트합니다.
-Task 결과 ID를 반환하여 진행 상황을 추적할 수 있습니다.
+ * RSSEverything 소스를 새로고침
  * @summary Refresh Source
  */
-export const feedsRoutersRssEverythingRefreshSource = (
+export const feedsRouterRefreshSource = (
     sourceId: number,
  ) => {
       return axiosInstance<RefreshResponse>(
@@ -1171,16 +1209,10 @@ export const feedsRoutersRssEverythingRefreshSource = (
   
 /**
  * Task 결과 목록 조회
-
-Parameters:
-- feed_id: 특정 피드의 결과만 조회
-- status: 상태 필터 (pending, running, success, failure)
-- limit: 페이지당 항목 수 (기본 20)
-- offset: 오프셋
  * @summary List Task Results
  */
-export const feedsRoutersTaskResultsListTaskResults = (
-    params?: FeedsRoutersTaskResultsListTaskResultsParams,
+export const feedsRouterListTaskResults = (
+    params?: FeedsRouterListTaskResultsParams,
  ) => {
       return axiosInstance<TaskResultListResponse>(
       {url: `/api/task-results`, method: 'GET',
@@ -1191,14 +1223,10 @@ export const feedsRoutersTaskResultsListTaskResults = (
   
 /**
  * Task 결과 일괄 삭제
-
-Parameters:
-- feed_id: 특정 피드의 결과만 삭제
-- status: 특정 상태의 결과만 삭제
  * @summary Clear Task Results
  */
-export const feedsRoutersTaskResultsClearTaskResults = (
-    params?: FeedsRoutersTaskResultsClearTaskResultsParams,
+export const feedsRouterClearTaskResults = (
+    params?: FeedsRouterClearTaskResultsParams,
  ) => {
       return axiosInstance<void>(
       {url: `/api/task-results`, method: 'DELETE',
@@ -1209,13 +1237,10 @@ export const feedsRoutersTaskResultsClearTaskResults = (
   
 /**
  * Task 통계 조회
-
-Parameters:
-- feed_id: 특정 피드의 통계만 조회
  * @summary Get Task Stats
  */
-export const feedsRoutersTaskResultsGetTaskStats = (
-    params?: FeedsRoutersTaskResultsGetTaskStatsParams,
+export const feedsRouterGetTaskStats = (
+    params?: FeedsRouterGetTaskStatsParams,
  ) => {
       return axiosInstance<TaskStatsSchema>(
       {url: `/api/task-results/stats`, method: 'GET',
@@ -1228,7 +1253,7 @@ export const feedsRoutersTaskResultsGetTaskStats = (
  * 특정 Task 결과 상세 조회
  * @summary Get Task Result
  */
-export const feedsRoutersTaskResultsGetTaskResult = (
+export const feedsRouterGetTaskResult = (
     resultId: number,
  ) => {
       return axiosInstance<TaskResultSchema>(
@@ -1241,7 +1266,7 @@ export const feedsRoutersTaskResultsGetTaskResult = (
  * 특정 Task 결과 삭제
  * @summary Delete Task Result
  */
-export const feedsRoutersTaskResultsDeleteTaskResult = (
+export const feedsRouterDeleteTaskResult = (
     resultId: number,
  ) => {
       return axiosInstance<void>(
@@ -1251,44 +1276,44 @@ export const feedsRoutersTaskResultsDeleteTaskResult = (
     }
   
 export type BaseApiHealthCheckResult = NonNullable<Awaited<ReturnType<typeof baseApiHealthCheck>>>
-export type FeedsRoutersFeedValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedValidateFeed>>>
-export type FeedsRoutersFeedListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedListFeeds>>>
-export type FeedsRoutersFeedCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedCreateFeed>>>
-export type FeedsRoutersFeedUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedUpdateFeed>>>
-export type FeedsRoutersFeedDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedDeleteFeed>>>
-export type FeedsRoutersFeedAddSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedAddSource>>>
-export type FeedsRoutersFeedUpdateSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedUpdateSource>>>
-export type FeedsRoutersFeedDeleteSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedDeleteSource>>>
-export type FeedsRoutersFeedRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedRefreshFeed>>>
-export type FeedsRoutersFeedMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedMarkAllFeedItemsRead>>>
-export type FeedsRoutersFeedDeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersFeedDeleteAllFeedItems>>>
-export type FeedsRoutersCategoryListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryListCategories>>>
-export type FeedsRoutersCategoryCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryCreateCategory>>>
-export type FeedsRoutersCategoryUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryUpdateCategory>>>
-export type FeedsRoutersCategoryDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryDeleteCategory>>>
-export type FeedsRoutersCategoryReorderCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryReorderCategories>>>
-export type FeedsRoutersCategoryRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryRefreshCategoryFeeds>>>
-export type FeedsRoutersCategoryGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersCategoryGetCategoryStats>>>
-export type FeedsRoutersItemToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemFavorite>>>
-export type FeedsRoutersItemToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemToggleItemRead>>>
-export type FeedsRoutersItemListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListAllItems>>>
-export type FeedsRoutersItemListItemsByCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListItemsByCategory>>>
-export type FeedsRoutersItemListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersItemListItemsByFeed>>>
+export type FeedsRouterValidateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterValidateFeed>>>
+export type FeedsRouterListFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListFeeds>>>
+export type FeedsRouterCreateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateFeed>>>
+export type FeedsRouterUpdateFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateFeed>>>
+export type FeedsRouterDeleteFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteFeed>>>
+export type FeedsRouterRefreshFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshFeed>>>
+export type FeedsRouterMarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterMarkAllFeedItemsRead>>>
+export type FeedsRouterDeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteAllFeedItems>>>
+export type FeedsRouterAddSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterAddSource>>>
+export type FeedsRouterUpdateSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateSource>>>
+export type FeedsRouterDeleteSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteSource>>>
+export type FeedsRouterListCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListCategories>>>
+export type FeedsRouterCreateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateCategory>>>
+export type FeedsRouterUpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateCategory>>>
+export type FeedsRouterDeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteCategory>>>
+export type FeedsRouterReorderCategoriesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterReorderCategories>>>
+export type FeedsRouterRefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshCategoryFeeds>>>
+export type FeedsRouterGetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetCategoryStats>>>
+export type FeedsRouterToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemFavorite>>>
+export type FeedsRouterToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof feedsRouterToggleItemRead>>>
+export type FeedsRouterListAllItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListAllItems>>>
+export type FeedsRouterListItemsByCategoryResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListItemsByCategory>>>
+export type FeedsRouterListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListItemsByFeed>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
 export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
-export type FeedsRoutersRssEverythingFetchHtmlResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingFetchHtml>>>
-export type FeedsRoutersRssEverythingExtractElementsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingExtractElements>>>
-export type FeedsRoutersRssEverythingPreviewItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingPreviewItems>>>
-export type FeedsRoutersRssEverythingListSourcesResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingListSources>>>
-export type FeedsRoutersRssEverythingCreateSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingCreateSource>>>
-export type FeedsRoutersRssEverythingGetSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingGetSource>>>
-export type FeedsRoutersRssEverythingUpdateSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingUpdateSource>>>
-export type FeedsRoutersRssEverythingDeleteSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingDeleteSource>>>
-export type FeedsRoutersRssEverythingRefreshSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersRssEverythingRefreshSource>>>
-export type FeedsRoutersTaskResultsListTaskResultsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersTaskResultsListTaskResults>>>
-export type FeedsRoutersTaskResultsClearTaskResultsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersTaskResultsClearTaskResults>>>
-export type FeedsRoutersTaskResultsGetTaskStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersTaskResultsGetTaskStats>>>
-export type FeedsRoutersTaskResultsGetTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersTaskResultsGetTaskResult>>>
-export type FeedsRoutersTaskResultsDeleteTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRoutersTaskResultsDeleteTaskResult>>>
+export type FeedsRouterFetchHtmlResult = NonNullable<Awaited<ReturnType<typeof feedsRouterFetchHtml>>>
+export type FeedsRouterExtractElementsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterExtractElements>>>
+export type FeedsRouterPreviewItemsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterPreviewItems>>>
+export type FeedsRouterListSourcesResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListSources>>>
+export type FeedsRouterCreateSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterCreateSource>>>
+export type FeedsRouterGetSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetSource>>>
+export type FeedsRouterUpdateSourceRssResult = NonNullable<Awaited<ReturnType<typeof feedsRouterUpdateSourceRss>>>
+export type FeedsRouterDeleteSourceRssResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteSourceRss>>>
+export type FeedsRouterRefreshSourceResult = NonNullable<Awaited<ReturnType<typeof feedsRouterRefreshSource>>>
+export type FeedsRouterListTaskResultsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterListTaskResults>>>
+export type FeedsRouterClearTaskResultsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterClearTaskResults>>>
+export type FeedsRouterGetTaskStatsResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetTaskStats>>>
+export type FeedsRouterGetTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRouterGetTaskResult>>>
+export type FeedsRouterDeleteTaskResultResult = NonNullable<Awaited<ReturnType<typeof feedsRouterDeleteTaskResult>>>
