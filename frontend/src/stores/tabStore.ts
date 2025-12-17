@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { subscribeWithSelector } from 'zustand/middleware';
 
 export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'periodic-tasks' | 'feed-edit';
 
@@ -47,7 +47,16 @@ export interface Panel {
   activeTabId: string | null;
 }
 
+// 영속화할 상태
+interface PersistedState {
+  panels: Panel[];
+  activePanelId: PanelId;
+}
+
 interface TabStore {
+  // 현재 유저 ID (영속화 키로 사용)
+  _userId: number | null;
+
   // 패널 기반 구조
   panels: Panel[];
   activePanelId: PanelId;
@@ -55,6 +64,10 @@ interface TabStore {
   // 기존 호환성을 위한 computed 값들
   tabs: Tab[];
   activeTabId: string | null;
+
+  // 유저별 초기화
+  initializeForUser: (userId: number) => void;
+  clearForLogout: () => void;
 
   // 패널 액션
   setActivePanel: (panelId: PanelId) => void;
@@ -128,330 +141,374 @@ const getActiveTabId = (panels: Panel[], activePanelId: PanelId): string | null 
   return panel?.activeTabId || null;
 };
 
+// 스토리지 키 생성
+const getStorageKey = (userId: number) => `drss-tabs-user-${userId}`;
+
+// localStorage에서 상태 로드
+const loadFromStorage = (userId: number): PersistedState | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const key = getStorageKey(userId);
+    const stored = localStorage.getItem(key);
+    if (!stored) return null;
+    
+    const parsed = JSON.parse(stored);
+    
+    // 마이그레이션: 기존 tabs 구조에서 panels 구조로
+    if (parsed.tabs && !parsed.panels) {
+      return {
+        panels: [{
+          id: 'left' as PanelId,
+          tabs: parsed.tabs,
+          activeTabId: parsed.activeTabId || parsed.tabs[0]?.id || null,
+        }],
+        activePanelId: 'left' as PanelId,
+      };
+    }
+    
+    return parsed as PersistedState;
+  } catch {
+    return null;
+  }
+};
+
+// localStorage에 상태 저장
+const saveToStorage = (userId: number, state: PersistedState) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const key = getStorageKey(userId);
+    // 탭 수 제한 및 scrollPosition 제외
+    const toSave: PersistedState = {
+      panels: state.panels.map(panel => ({
+        ...panel,
+        tabs: panel.tabs.slice(0, 10).map(({ scrollPosition, ...tab }) => tab),
+      })),
+      activePanelId: state.activePanelId,
+    };
+    localStorage.setItem(key, JSON.stringify(toSave));
+  } catch (e) {
+    console.error('Failed to save tab state:', e);
+  }
+};
+
 export const useTabStore = create<TabStore>()(
-  persist(
-    (set, get) => ({
-      panels: [DEFAULT_LEFT_PANEL],
-      activePanelId: 'left' as PanelId,
+  subscribeWithSelector((set, get) => ({
+    _userId: null,
+    panels: [DEFAULT_LEFT_PANEL],
+    activePanelId: 'left' as PanelId,
 
-      // computed 값들 (기존 호환성)
-      get tabs() {
-        return getAllTabs(get().panels);
-      },
-      get activeTabId() {
-        return getActiveTabId(get().panels, get().activePanelId);
-      },
+    // computed 값들 (기존 호환성)
+    get tabs() {
+      return getAllTabs(get().panels);
+    },
+    get activeTabId() {
+      return getActiveTabId(get().panels, get().activePanelId);
+    },
 
-      setActivePanel: (panelId) => {
-        const panel = get().panels.find(p => p.id === panelId);
-        if (panel) {
-          set({ activePanelId: panelId });
-        }
-      },
-
-      moveTabToPanel: (tabId, targetPanelId) => {
-        const { panels } = get();
-        const found = findTabInPanels(panels, tabId);
-        if (!found) return;
-
-        const { panel: sourcePanel, tab, index } = found;
-        if (sourcePanel.id === targetPanelId) return;
-
-        const targetPanel = panels.find(p => p.id === targetPanelId);
-        if (!targetPanel) return;
-
-        // 소스 패널에서 탭이 1개뿐이면 이동 후 패널 닫기
-        if (sourcePanel.tabs.length <= 1) {
-          // 탭을 타겟 패널로 이동하고, 소스 패널을 제거
-          // closeSplitPanel을 사용하면 탭이 중복 추가되므로 직접 처리
-          set({
-            panels: [{
-              ...targetPanel,
-              id: 'left',
-              tabs: [...targetPanel.tabs, tab],
-              activeTabId: tab.id,
-            }],
-            activePanelId: 'left',
-          });
-          return;
-        }
-
-        set((state) => ({
-          panels: state.panels.map(p => {
-            if (p.id === sourcePanel.id) {
-              const newTabs = p.tabs.filter(t => t.id !== tabId);
-              return {
-                ...p,
-                tabs: newTabs,
-                activeTabId: p.activeTabId === tabId
-                  ? newTabs[Math.min(index, newTabs.length - 1)]?.id || null
-                  : p.activeTabId,
-              };
-            }
-            if (p.id === targetPanelId) {
-              return {
-                ...p,
-                tabs: [...p.tabs, tab],
-                activeTabId: tab.id,
-              };
-            }
-            return p;
-          }),
-          activePanelId: targetPanelId,
-        }));
-      },
-
-      createSplitPanel: (tabId, side) => {
-        const { panels } = get();
-
-        // 이미 2개의 패널이 있으면 생성 불가
-        if (panels.length >= 2) return;
-
-        const found = findTabInPanels(panels, tabId);
-        if (!found) return;
-
-        const { panel: sourcePanel, tab, index } = found;
-
-        // 소스 패널에서 탭이 1개뿐이면 분할 불가
-        if (sourcePanel.tabs.length <= 1) return;
-
-        const newPanelId: PanelId = side === 'left' ? 'left' : 'right';
-        const existingPanelId: PanelId = side === 'left' ? 'right' : 'left';
-
-        // 기존 패널 ID 업데이트
-        const updatedSourcePanel: Panel = {
-          ...sourcePanel,
-          id: existingPanelId,
-          tabs: sourcePanel.tabs.filter(t => t.id !== tabId),
-          activeTabId: sourcePanel.activeTabId === tabId
-            ? sourcePanel.tabs.filter(t => t.id !== tabId)[Math.min(index, sourcePanel.tabs.length - 2)]?.id || null
-            : sourcePanel.activeTabId,
-        };
-
-        const newPanel: Panel = {
-          id: newPanelId,
-          tabs: [tab],
-          activeTabId: tab.id,
-        };
-
-        const newPanels = side === 'left'
-          ? [newPanel, updatedSourcePanel]
-          : [updatedSourcePanel, newPanel];
-
+    // 유저별 초기화
+    initializeForUser: (userId) => {
+      const stored = loadFromStorage(userId);
+      if (stored) {
         set({
-          panels: newPanels,
-          activePanelId: newPanelId,
+          _userId: userId,
+          panels: stored.panels,
+          activePanelId: stored.activePanelId,
         });
-      },
+      } else {
+        set({
+          _userId: userId,
+          panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }] }],
+          activePanelId: 'left',
+        });
+      }
+    },
 
-      closeSplitPanel: (panelId) => {
-        const { panels } = get();
+    // 로그아웃 시 초기화
+    clearForLogout: () => {
+      set({
+        _userId: null,
+        panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }] }],
+        activePanelId: 'left',
+      });
+    },
 
-        // 패널이 1개뿐이면 닫기 불가
-        if (panels.length <= 1) return;
+    setActivePanel: (panelId) => {
+      const panel = get().panels.find(p => p.id === panelId);
+      if (panel) {
+        set({ activePanelId: panelId });
+      }
+    },
 
-        const panelToClose = panels.find(p => p.id === panelId);
-        const remainingPanel = panels.find(p => p.id !== panelId);
-        if (!panelToClose || !remainingPanel) return;
+    moveTabToPanel: (tabId, targetPanelId) => {
+      const { panels } = get();
+      const found = findTabInPanels(panels, tabId);
+      if (!found) return;
 
-        // 닫히는 패널의 탭들을 남은 패널로 이동
+      const { panel: sourcePanel, tab, index } = found;
+      if (sourcePanel.id === targetPanelId) return;
+
+      const targetPanel = panels.find(p => p.id === targetPanelId);
+      if (!targetPanel) return;
+
+      // 소스 패널에서 탭이 1개뿐이면 이동 후 패널 닫기
+      if (sourcePanel.tabs.length <= 1) {
         set({
           panels: [{
-            ...remainingPanel,
+            ...targetPanel,
             id: 'left',
-            tabs: [...remainingPanel.tabs, ...panelToClose.tabs],
+            tabs: [...targetPanel.tabs, tab],
+            activeTabId: tab.id,
           }],
           activePanelId: 'left',
         });
-      },
+        return;
+      }
 
-      addTab: (tabData, panelId) => {
-        const { activePanelId, panels } = get();
-        const targetPanelId = panelId || activePanelId;
+      set((state) => ({
+        panels: state.panels.map(p => {
+          if (p.id === sourcePanel.id) {
+            const newTabs = p.tabs.filter(t => t.id !== tabId);
+            return {
+              ...p,
+              tabs: newTabs,
+              activeTabId: p.activeTabId === tabId
+                ? newTabs[Math.min(index, newTabs.length - 1)]?.id || null
+                : p.activeTabId,
+            };
+          }
+          if (p.id === targetPanelId) {
+            return {
+              ...p,
+              tabs: [...p.tabs, tab],
+              activeTabId: tab.id,
+            };
+          }
+          return p;
+        }),
+        activePanelId: targetPanelId,
+      }));
+    },
 
-        const id = generateId();
-        const newTab: Tab = { ...tabData, id, columns: tabData.columns ?? 3 };
+    createSplitPanel: (tabId, side) => {
+      const { panels } = get();
 
-        set((state) => ({
-          panels: state.panels.map(p =>
-            p.id === targetPanelId
-              ? { ...p, tabs: [...p.tabs, newTab], activeTabId: id }
-              : p
+      // 이미 2개의 패널이 있으면 생성 불가
+      if (panels.length >= 2) return;
+
+      const found = findTabInPanels(panels, tabId);
+      if (!found) return;
+
+      const { panel: sourcePanel, tab, index } = found;
+
+      // 소스 패널에서 탭이 1개뿐이면 분할 불가
+      if (sourcePanel.tabs.length <= 1) return;
+
+      const newPanelId: PanelId = side === 'left' ? 'left' : 'right';
+      const existingPanelId: PanelId = side === 'left' ? 'right' : 'left';
+
+      const updatedSourcePanel: Panel = {
+        ...sourcePanel,
+        id: existingPanelId,
+        tabs: sourcePanel.tabs.filter(t => t.id !== tabId),
+        activeTabId: sourcePanel.activeTabId === tabId
+          ? sourcePanel.tabs.filter(t => t.id !== tabId)[Math.min(index, sourcePanel.tabs.length - 2)]?.id || null
+          : sourcePanel.activeTabId,
+      };
+
+      const newPanel: Panel = {
+        id: newPanelId,
+        tabs: [tab],
+        activeTabId: tab.id,
+      };
+
+      const newPanels = side === 'left'
+        ? [newPanel, updatedSourcePanel]
+        : [updatedSourcePanel, newPanel];
+
+      set({
+        panels: newPanels,
+        activePanelId: newPanelId,
+      });
+    },
+
+    closeSplitPanel: (panelId) => {
+      const { panels } = get();
+
+      if (panels.length <= 1) return;
+
+      const panelToClose = panels.find(p => p.id === panelId);
+      const remainingPanel = panels.find(p => p.id !== panelId);
+      if (!panelToClose || !remainingPanel) return;
+
+      set({
+        panels: [{
+          ...remainingPanel,
+          id: 'left',
+          tabs: [...remainingPanel.tabs, ...panelToClose.tabs],
+        }],
+        activePanelId: 'left',
+      });
+    },
+
+    addTab: (tabData, panelId) => {
+      const { activePanelId, panels } = get();
+      const targetPanelId = panelId || activePanelId;
+
+      const id = generateId();
+      const newTab: Tab = { ...tabData, id, columns: tabData.columns ?? 3 };
+
+      set((state) => ({
+        panels: state.panels.map(p =>
+          p.id === targetPanelId
+            ? { ...p, tabs: [...p.tabs, newTab], activeTabId: id }
+            : p
+        ),
+        activePanelId: targetPanelId,
+      }));
+      return id;
+    },
+
+    removeTab: (tabId) => {
+      const { panels } = get();
+      const found = findTabInPanels(panels, tabId);
+      if (!found) return;
+
+      const { panel, index } = found;
+
+      const totalTabs = getAllTabs(panels).length;
+      if (totalTabs <= 1) return;
+
+      if (panel.tabs.length <= 1 && panels.length > 1) {
+        get().closeSplitPanel(panel.id);
+        return;
+      }
+
+      const newTabs = panel.tabs.filter(t => t.id !== tabId);
+      let newActiveId = panel.activeTabId;
+
+      if (panel.activeTabId === tabId) {
+        const newIndex = Math.min(index, newTabs.length - 1);
+        newActiveId = newTabs[newIndex]?.id || null;
+      }
+
+      set((state) => ({
+        panels: state.panels.map(p =>
+          p.id === panel.id
+            ? { ...p, tabs: newTabs, activeTabId: newActiveId }
+            : p
+        ),
+      }));
+    },
+
+    setActiveTab: (tabId) => {
+      const { panels } = get();
+      const found = findTabInPanels(panels, tabId);
+      if (!found) return;
+
+      set((state) => ({
+        panels: state.panels.map(p =>
+          p.id === found.panel.id
+            ? { ...p, activeTabId: tabId }
+            : p
+        ),
+        activePanelId: found.panel.id,
+      }));
+    },
+
+    updateTab: (tabId, updates) => {
+      set((state) => ({
+        panels: state.panels.map(p => ({
+          ...p,
+          tabs: p.tabs.map(tab =>
+            tab.id === tabId ? { ...tab, ...updates } : tab
           ),
-          activePanelId: targetPanelId,
-        }));
-        return id;
-      },
+        })),
+      }));
+    },
 
-      removeTab: (tabId) => {
-        const { panels } = get();
-        const found = findTabInPanels(panels, tabId);
-        if (!found) return;
+    findTabByPath: (path) => {
+      return getAllTabs(get().panels).find(t => t.path === path);
+    },
 
-        const { panel, index } = found;
+    findTabByResource: (type, resourceId) => {
+      return getAllTabs(get().panels).find(t => {
+        if (t.type !== type) return false;
+        if (resourceId !== undefined) return t.resourceId === resourceId;
+        return true;
+      });
+    },
 
-        // 전체 탭이 1개면 삭제 불가
-        const totalTabs = getAllTabs(panels).length;
-        if (totalTabs <= 1) return;
+    openTab: (tabData, panelId) => {
+      const { addTab, setActiveTab, findTabByResource } = get();
 
-        // 해당 패널의 마지막 탭이면 패널도 닫기
-        if (panel.tabs.length <= 1 && panels.length > 1) {
-          get().closeSplitPanel(panel.id);
-          return;
-        }
+      const existingTab = findTabByResource(tabData.type, tabData.resourceId);
+      if (existingTab) {
+        setActiveTab(existingTab.id);
+        return existingTab.id;
+      }
 
-        const newTabs = panel.tabs.filter(t => t.id !== tabId);
-        let newActiveId = panel.activeTabId;
+      return addTab(tabData, panelId);
+    },
 
-        if (panel.activeTabId === tabId) {
-          const newIndex = Math.min(index, newTabs.length - 1);
-          newActiveId = newTabs[newIndex]?.id || null;
-        }
+    saveScrollPosition: (tabId, position) => {
+      get().updateTab(tabId, { scrollPosition: position });
+    },
 
-        set((state) => ({
-          panels: state.panels.map(p =>
-            p.id === panel.id
-              ? { ...p, tabs: newTabs, activeTabId: newActiveId }
-              : p
-          ),
-        }));
-      },
+    getScrollPosition: (tabId) => {
+      const found = findTabInPanels(get().panels, tabId);
+      return found?.tab.scrollPosition || 0;
+    },
 
-      setActiveTab: (tabId) => {
-        const { panels } = get();
-        const found = findTabInPanels(panels, tabId);
-        if (!found) return;
+    setTabColumns: (tabId, columns) => {
+      const clampedColumns = Math.max(1, Math.min(5, columns));
+      get().updateTab(tabId, { columns: clampedColumns });
+    },
 
-        set((state) => ({
-          panels: state.panels.map(p =>
-            p.id === found.panel.id
-              ? { ...p, activeTabId: tabId }
-              : p
-          ),
-          activePanelId: found.panel.id,
-        }));
-      },
+    getTabColumns: (tabId) => {
+      const found = findTabInPanels(get().panels, tabId);
+      return found?.tab.columns ?? 3;
+    },
 
-      updateTab: (tabId, updates) => {
-        set((state) => ({
-          panels: state.panels.map(p => ({
-            ...p,
-            tabs: p.tabs.map(tab =>
-              tab.id === tabId ? { ...tab, ...updates } : tab
-            ),
-          })),
-        }));
-      },
+    closeTabsByFeedId: (feedId) => {
+      const { panels, removeTab } = get();
 
-      findTabByPath: (path) => {
-        return getAllTabs(get().panels).find(t => t.path === path);
-      },
+      const tabsToClose: string[] = [];
 
-      findTabByResource: (type, resourceId) => {
-        return getAllTabs(get().panels).find(t => {
-          if (t.type !== type) return false;
-          if (resourceId !== undefined) return t.resourceId === resourceId;
-          return true;
-        });
-      },
-
-      openTab: (tabData, panelId) => {
-        const { addTab, setActiveTab, findTabByResource } = get();
-
-        // 이미 같은 타입+리소스의 탭이 있으면 해당 탭으로 전환
-        const existingTab = findTabByResource(tabData.type, tabData.resourceId);
-        if (existingTab) {
-          setActiveTab(existingTab.id);
-          return existingTab.id;
-        }
-
-        // 새 탭 추가 (panelId 전달)
-        return addTab(tabData, panelId);
-      },
-
-      saveScrollPosition: (tabId, position) => {
-        get().updateTab(tabId, { scrollPosition: position });
-      },
-
-      getScrollPosition: (tabId) => {
-        const found = findTabInPanels(get().panels, tabId);
-        return found?.tab.scrollPosition || 0;
-      },
-
-      setTabColumns: (tabId, columns) => {
-        // 컬럼 수 제한 (1-5)
-        const clampedColumns = Math.max(1, Math.min(5, columns));
-        get().updateTab(tabId, { columns: clampedColumns });
-      },
-
-      getTabColumns: (tabId) => {
-        const found = findTabInPanels(get().panels, tabId);
-        return found?.tab.columns ?? 3;
-      },
-
-      closeTabsByFeedId: (feedId) => {
-        const { panels, removeTab } = get();
-
-        // 모든 패널에서 해당 피드와 관련된 탭 찾기
-        const tabsToClose: string[] = [];
-
-        for (const panel of panels) {
-          for (const tab of panel.tabs) {
-            // feed 타입 탭: resourceId가 feedId와 일치
-            if (tab.type === 'feed' && tab.resourceId === feedId) {
-              tabsToClose.push(tab.id);
-            }
-            // feed-edit 타입 탭: feedEditContext.feedId가 일치
-            if (tab.type === 'feed-edit' && tab.feedEditContext?.feedId === feedId) {
-              tabsToClose.push(tab.id);
-            }
-            // rss-everything 타입 탭: context.feedId가 일치
-            if (tab.type === 'rss-everything' && tab.context?.feedId === feedId) {
-              tabsToClose.push(tab.id);
-            }
+      for (const panel of panels) {
+        for (const tab of panel.tabs) {
+          if (tab.type === 'feed' && tab.resourceId === feedId) {
+            tabsToClose.push(tab.id);
+          }
+          if (tab.type === 'feed-edit' && tab.feedEditContext?.feedId === feedId) {
+            tabsToClose.push(tab.id);
+          }
+          if (tab.type === 'rss-everything' && tab.context?.feedId === feedId) {
+            tabsToClose.push(tab.id);
           }
         }
+      }
 
-        // 찾은 탭들 닫기 (역순으로 닫아야 인덱스 문제 없음)
-        for (const tabId of tabsToClose.reverse()) {
-          removeTab(tabId);
-        }
-      },
-    }),
-    {
-      name: 'drss-tabs',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        panels: state.panels.map(panel => ({
-          ...panel,
-          tabs: panel.tabs.slice(0, 10).map(({ scrollPosition, ...tab }) => tab),
-        })),
-        activePanelId: state.activePanelId,
-      }),
-      // 마이그레이션: 기존 tabs 구조에서 panels 구조로
-      migrate: (persistedState: unknown, version: number) => {
-        const state = persistedState as { tabs?: Tab[]; activeTabId?: string; panels?: Panel[] };
-
-        // 이미 panels 구조면 그대로 반환
-        if (state.panels) {
-          return state as TabStore;
-        }
-
-        // 기존 tabs 구조를 panels로 마이그레이션
-        if (state.tabs) {
-          return {
-            panels: [{
-              id: 'left' as PanelId,
-              tabs: state.tabs,
-              activeTabId: state.activeTabId || state.tabs[0]?.id || null,
-            }],
-            activePanelId: 'left' as PanelId,
-          } as unknown as TabStore;
-        }
-
-        return state as TabStore;
-      },
-      version: 1,
-    }
-  )
+      for (const tabId of tabsToClose.reverse()) {
+        removeTab(tabId);
+      }
+    },
+  }))
 );
+
+// 상태 변경 시 자동 저장 (구독)
+if (typeof window !== 'undefined') {
+  useTabStore.subscribe(
+    (state) => ({ panels: state.panels, activePanelId: state.activePanelId, _userId: state._userId }),
+    (current) => {
+      if (current._userId) {
+        saveToStorage(current._userId, {
+          panels: current.panels,
+          activePanelId: current.activePanelId,
+        });
+      }
+    },
+    { equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
+  );
+}

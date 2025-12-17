@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '../services/api';
 import { AxiosError } from 'axios';
-import { error } from 'console';
+import { useTabStore } from '../stores/tabStore';
 
 interface User {
   id: number;
@@ -36,6 +36,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { initializeForUser, clearForLogout } = useTabStore();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,6 +46,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+  // 유저가 변경되면 탭스토어 초기화
+  useEffect(() => {
+    if (user) {
+      initializeForUser(user.id);
+    }
+  }, [user, initializeForUser]);
 
   const fetchUser = async () => {
     try {
@@ -95,6 +103,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('token');
     // 쿠키에서도 제거
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // 탭스토어 초기화
+    clearForLogout();
     setUser(null);
   };
 
