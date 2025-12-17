@@ -7,7 +7,6 @@ import {
   feedsRouterFetchHtml,
   feedsRouterPreviewItems,
   feedsRouterCreateSource,
-  feedsRouterCreateFeed,
   feedsRouterGetSource,
   feedsRouterUpdateSourceRss,
   feedsRouterListCategories,
@@ -16,8 +15,6 @@ import {
   RSSEverythingCreateRequest,
   RSSEverythingUpdateRequest,
   PreviewItem,
-  FeedCreateSchema,
-  SourceCreateSchema,
 } from '@/services/api';
 import { ListSelectors, DetailSelectors } from '@/components/SelectorBuilder';
 import { SourceConfig } from '@/components/rss-everything/SourceTypeStep';
@@ -62,7 +59,7 @@ export interface UseRSSEverythingOptions {
 
 export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   const { context } = options;
-  const { categories, setCategories } = useRSSStore();
+  const { setCategories } = useRSSStore();
   const { openTab, removeTab, panels, activePanelId } = useTabStore();
 
   // Context에 따라 초기 스텝 결정
@@ -111,7 +108,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // Save step
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [customHeaders, setCustomHeaders] = useState<Record<string, string>>({});
   const [dateFormats, setDateFormats] = useState<string[]>([]);
@@ -200,15 +196,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
     loadSourceData();
   }, [context?.mode, context?.sourceId]);
-
-  // 카테고리 로드
-  useEffect(() => {
-    if (categories.length === 0) {
-      feedsRouterListCategories().then((data) => {
-        setCategories(data);
-      });
-    }
-  }, [categories.length, setCategories]);
 
   // 소스 타입 선택 후 다음 단계로
   const handleSourceTypeSelect = (type: SourceType, rssUrl?: string, config?: SourceConfig) => {
@@ -596,16 +583,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
   // Save RSS Everything source (page_scraping / detail_page_scraping)
   const handleSave = useCallback(async () => {
-    // 새 피드 생성 시에만 카테고리/이름 필수
+    // feedId는 필수 (기존 피드에 소스 추가)
     if (!context?.feedId) {
-      if (!selectedCategoryId) {
-        setError('Category is required');
-        return;
-      }
-      if (!name) {
-        setError('Feed name is required');
-        return;
-      }
+      setError('Feed ID is required');
+      return;
     }
 
     setIsSaving(true);
@@ -614,64 +595,30 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     try {
       const sourceTypeValue = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
 
-      if (context?.feedId) {
-        // 기존 피드에 소스 추가
-        const request: RSSEverythingCreateRequest = {
-          feed_id: context.feedId,
-          url,
-          source_type: sourceTypeValue,
-          item_selector: listSelectors.itemSelector,
-          title_selector: listSelectors.titleSelector,
-          link_selector: listSelectors.linkSelector,
-          description_selector: listSelectors.descriptionSelector,
-          date_selector: listSelectors.dateSelector,
-          image_selector: listSelectors.imageSelector,
-          follow_links: parseMode === 'detail',
-          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
-          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
-          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
-          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
-          use_browser: useBrowser,
-          wait_selector: waitSelector,
-          date_formats: dateFormats,
-          exclude_selectors: excludeSelectors,
-          custom_headers: customHeaders,
-        };
+      const request: RSSEverythingCreateRequest = {
+        feed_id: context.feedId,
+        url,
+        source_type: sourceTypeValue,
+        item_selector: listSelectors.itemSelector,
+        title_selector: listSelectors.titleSelector,
+        link_selector: listSelectors.linkSelector,
+        description_selector: listSelectors.descriptionSelector,
+        date_selector: listSelectors.dateSelector,
+        image_selector: listSelectors.imageSelector,
+        follow_links: parseMode === 'detail',
+        detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
+        detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
+        detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
+        detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
+        detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
+        use_browser: useBrowser,
+        wait_selector: waitSelector,
+        date_formats: dateFormats,
+        exclude_selectors: excludeSelectors,
+        custom_headers: customHeaders,
+      };
 
-        await feedsRouterCreateSource(request);
-      } else {
-        // 새 피드 + 소스 함께 생성
-        const sourceData: SourceCreateSchema = {
-          source_type: sourceTypeValue,
-          url,
-          item_selector: listSelectors.itemSelector,
-          title_selector: listSelectors.titleSelector,
-          link_selector: listSelectors.linkSelector,
-          description_selector: listSelectors.descriptionSelector,
-          date_selector: listSelectors.dateSelector,
-          image_selector: listSelectors.imageSelector,
-          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
-          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
-          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
-          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
-          use_browser: useBrowser,
-          wait_selector: waitSelector,
-          date_formats: dateFormats,
-          exclude_selectors: excludeSelectors,
-          custom_headers: customHeaders,
-        };
-
-        const feedData: FeedCreateSchema = {
-          category_id: selectedCategoryId!,
-          title: name,
-          refresh_interval: refreshInterval,
-          source: sourceData,
-        };
-
-        await feedsRouterCreateFeed(feedData);
-      }
+      await feedsRouterCreateSource(request);
 
       // 카테고리 & 피드 새로고침
       const updatedCategories = await feedsRouterListCategories();
@@ -689,7 +636,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, customHeaders, name, selectedCategoryId, refreshInterval, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {
@@ -709,7 +656,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     setPreviewItems([]);
     setName('');
     setDescription('');
-    setSelectedCategoryId(null);
     setRefreshInterval(60);
     setCustomHeaders({});
     setDateFormats([]);
@@ -811,9 +757,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     detailSelectors,
     previewItems,
     previewLoading,
-    name,
-    description,
-    selectedCategoryId,
     refreshInterval,
     customHeaders,
     dateFormats,
@@ -821,7 +764,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     isSaving,
     activeListField,
     activeDetailField,
-    categories,
     // Validation state
     selectorValidation,
     isValidating,
@@ -835,9 +777,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     setListSelectors,
     setDetailUrl,
     setDetailSelectors,
-    setName,
-    setDescription,
-    setSelectedCategoryId,
     setRefreshInterval,
     setCustomHeaders,
     setDateFormats,

@@ -34,8 +34,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     detailSelectors,
     previewItems,
     previewLoading,
-    name,
-    selectedCategoryId,
     refreshInterval,
     customHeaders,
     dateFormats,
@@ -43,7 +41,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     isSaving,
     activeListField,
     activeDetailField,
-    categories,
     currentStepIndex,
     // Validation
     selectorValidation,
@@ -54,8 +51,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     handleSourceTypeSelect,
 
     // RSS specific
-    description,
-    setDescription,
     rssValidationResult,
     handleSaveRssFeed,
     handleValidateRss,
@@ -71,8 +66,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     setListSelectors,
     setDetailUrl,
     setDetailSelectors,
-    setName,
-    setSelectedCategoryId,
     setRefreshInterval,
     setCustomHeaders,
     setDateFormats,
@@ -119,18 +112,11 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
         {currentStep === 'rss-save' && (
           <RssSaveStep
             url={url}
-            name={name}
-            description={description}
-            selectedCategoryId={selectedCategoryId}
             refreshInterval={refreshInterval}
-            categories={categories}
             isSaving={isSaving}
             isEditMode={isEditMode}
             validationResult={rssValidationResult}
             onUrlChange={setUrl}
-            onNameChange={setName}
-            onDescriptionChange={setDescription}
-            onCategoryChange={setSelectedCategoryId}
             onRefreshIntervalChange={setRefreshInterval}
             onBack={goBack}
             onSave={handleSaveRssFeed}
@@ -210,15 +196,9 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
 
         {currentStep === 'save' && (
           <SaveStep
-            name={name}
-            selectedCategoryId={selectedCategoryId}
             refreshInterval={refreshInterval}
             customHeaders={customHeaders}
-            categories={categories}
             isSaving={isSaving}
-            isAddingToExistingFeed={!!context?.feedId}
-            onNameChange={setName}
-            onCategoryChange={setSelectedCategoryId}
             onRefreshIntervalChange={setRefreshInterval}
             onCustomHeadersChange={setCustomHeaders}
             onBack={goBack}
