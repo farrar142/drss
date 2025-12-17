@@ -28,7 +28,9 @@ class PeriodicTaskSchema(BaseModel):
     date_changed: Optional[str]
 
     @staticmethod
-    def from_orm(obj, feed_id: Optional[int] = None, feed_title: Optional[str] = None) -> "PeriodicTaskSchema":
+    def from_orm(
+        obj, feed_id: Optional[int] = None, feed_title: Optional[str] = None
+    ) -> "PeriodicTaskSchema":
         interval = None
         if obj.interval:
             interval = IntervalScheduleSchema(

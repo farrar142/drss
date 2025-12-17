@@ -92,7 +92,10 @@ class PeriodicTaskService:
 
     @staticmethod
     def update_periodic_task(
-        user, task_id: int, enabled: Optional[bool] = None, interval_minutes: Optional[int] = None
+        user,
+        task_id: int,
+        enabled: Optional[bool] = None,
+        interval_minutes: Optional[int] = None,
     ) -> tuple:
         """주기적 태스크 업데이트"""
         task, feed_id, feed_title = PeriodicTaskService.get_periodic_task(user, task_id)

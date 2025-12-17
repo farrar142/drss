@@ -387,9 +387,11 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
     """각 아이템의 상세 페이지를 크롤링하여 아이템 추출"""
     from .models import RSSItem
     from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
-    from feeds.routers.rss_everything import extract_html_with_css
+    from feeds.services.source import SourceService
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
+
+    extract_html_with_css = SourceService.extract_html_with_css
 
     new_items = []
     links_to_fetch = []

@@ -460,7 +460,9 @@ def get_periodic_task_stats(request):
 @periodic_task_router.get("/{task_id}", response=PeriodicTaskSchema, auth=JWTAuth())
 def get_periodic_task(request, task_id: int):
     """특정 주기적 태스크 상세 조회"""
-    task, feed_id, feed_title = PeriodicTaskService.get_periodic_task(request.auth, task_id)
+    task, feed_id, feed_title = PeriodicTaskService.get_periodic_task(
+        request.auth, task_id
+    )
     return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
 
 
@@ -473,10 +475,14 @@ def update_periodic_task(request, task_id: int, data: PeriodicTaskUpdateSchema):
     return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
 
 
-@periodic_task_router.post("/{task_id}/toggle", response=PeriodicTaskSchema, auth=JWTAuth())
+@periodic_task_router.post(
+    "/{task_id}/toggle", response=PeriodicTaskSchema, auth=JWTAuth()
+)
 def toggle_periodic_task(request, task_id: int):
     """주기적 태스크 활성화/비활성화 토글"""
-    task, feed_id, feed_title = PeriodicTaskService.toggle_periodic_task(request.auth, task_id)
+    task, feed_id, feed_title = PeriodicTaskService.toggle_periodic_task(
+        request.auth, task_id
+    )
     return PeriodicTaskSchema.from_orm(task, feed_id, feed_title)
 
 
