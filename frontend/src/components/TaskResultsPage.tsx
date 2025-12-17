@@ -23,15 +23,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  Filter,
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/select';
 
 const STATUS_CONFIG: Record<TaskResultStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-500', icon: <Clock className="h-4 w-4" /> },
@@ -193,26 +185,24 @@ export default function TaskResultsPage() {
 
       {/* 필터 및 액션 */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value as TaskResultStatus | 'all');
-              setPage(0);
-            }}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="상태 필터" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
-              <SelectItem value="failure">Failure</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="running">Running</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-1">
+          {(['all', 'success', 'failure', 'pending', 'running'] as const).map((status) => (
+            <Button
+              key={status}
+              variant={statusFilter === status ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                setStatusFilter(status);
+                setPage(0);
+              }}
+            >
+              {status === 'all' && 'All'}
+              {status === 'success' && <><CheckCircle2 className="h-3 w-3 mr-1" />Success</>}
+              {status === 'failure' && <><XCircle className="h-3 w-3 mr-1" />Failure</>}
+              {status === 'pending' && <><Clock className="h-3 w-3 mr-1" />Pending</>}
+              {status === 'running' && <><Loader2 className="h-3 w-3 mr-1" />Running</>}
+            </Button>
+          ))}
         </div>
         <div className="flex items-center gap-2">
           {stats && stats.failure > 0 && (
