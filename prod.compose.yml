@@ -43,6 +43,11 @@ services:
         limits:
           cpus: '2'
           memory: 1G
+    depends_on:
+      browserless:
+        condition: service_healthy
+      real-browser:
+        condition: service_healthy
 
   # ===================
   # Celery Worker
