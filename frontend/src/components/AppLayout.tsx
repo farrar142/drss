@@ -17,6 +17,7 @@ import {
   Heart,
   LogOut,
   Palette,
+  Ship,
 } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -31,6 +32,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/ui/toggle-group';
 import { Tooltip } from '@/ui/tooltip';
 import { useAuth } from '../context/AuthContext';
+import { useAppBar } from '../context/AppBarContext';
 import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -38,6 +40,7 @@ import { useTranslation } from '../stores/languageStore';
 import { useMediaModalStore } from '../stores/mediaModalStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { SplitPanelView } from './SplitPanelView';
+import { FloatingAppBarToggle } from './FloatingAppBarToggle';
 import { useTabStore } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
@@ -60,8 +63,10 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   const {
     filter,
     viewMode,
+    showCruisingControls,
     setFilter,
     setViewMode,
+    setShowCruisingControls,
   } = useSettingsStore();
 
   const { openTab } = useTabStore();
@@ -69,6 +74,9 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
 
   const { isMediaModalOpen } = useMediaModalStore();
+
+  // AppBar visibility context
+  const { isAppBarHidden, toggleAppBar } = useAppBar();
 
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -133,11 +141,11 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - hidden when media modal is open */}
+      {/* Header - hidden when media modal is open or on mobile when app bar is hidden */}
       <header
         className={cn(
           "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-transform duration-200",
-          isMediaModalOpen && "-translate-y-full"
+          (isMediaModalOpen || (isMobile && isAppBarHidden)) && "-translate-y-full"
         )}
         style={{ top: 0 }}
       >
@@ -208,6 +216,18 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
             </Button>
           </Tooltip>
 
+          {/* Cruise Controls Toggle */}
+          <Tooltip content={showCruisingControls ? '크루즈 버튼 숨기기' : '크루즈 버튼 보이기'}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowCruisingControls(!showCruisingControls)}
+              className={cn(!showCruisingControls && "text-muted-foreground")}
+            >
+              <Ship className={cn("h-4 w-4", !showCruisingControls && "opacity-50")} />
+            </Button>
+          </Tooltip>
+
           {/* Theme Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -272,11 +292,19 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         )}
         style={{
           marginLeft: drawerOpen && !isMobile && !isMediaModalOpen ? DRAWER_WIDTH : 0,
-          paddingTop: isMediaModalOpen ? 0 : '3.5rem',
+          paddingTop: isMediaModalOpen ? 0 : (isMobile && isAppBarHidden) ? 0 : '3.5rem',
         }}
       >
         <SplitPanelView isMediaModalOpen={isMediaModalOpen} />
       </main>
+
+      {/* Floating App Bar Toggle - 모바일에서만 표시 */}
+      {isMobile && !isMediaModalOpen && (
+        <FloatingAppBarToggle
+          isAppBarHidden={isAppBarHidden}
+          onToggle={toggleAppBar}
+        />
+      )}
     </div>
   );
 }

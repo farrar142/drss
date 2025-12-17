@@ -21,7 +21,6 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
   scrollContainerRef,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const isTouchEventRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -32,15 +31,15 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
 
       if (scrollContainerRef?.current) {
         const rect = scrollContainerRef.current.getBoundingClientRect();
-        containerRef.current.style.right = `${window.innerWidth - rect.right + 24}px`;
-        containerRef.current.style.bottom = `${window.innerHeight - rect.bottom + 24}px`;
+        containerRef.current.style.right = `${window.innerWidth - rect.right + 16}px`;
+        containerRef.current.style.bottom = `${window.innerHeight - rect.bottom + 16}px`;
       } else {
-        containerRef.current.style.right = '24px';
-        containerRef.current.style.bottom = '24px';
+        containerRef.current.style.right = '16px';
+        containerRef.current.style.bottom = '16px';
       }
     };
 
-    // 디바운싱 - 리사이징이 끝난 후 200ms 뒤에 한 번만 실행
+    // 디바운싱 - 리사이징이 끝난 후 100ms 뒤에 한 번만 실행
     const debouncedUpdate = () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -48,7 +47,7 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
       debounceTimerRef.current = setTimeout(() => {
         updatePosition();
         debounceTimerRef.current = null;
-      }, 200);
+      }, 100);
     };
 
     updatePosition();
@@ -77,19 +76,13 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
     onToggle();
   }, [isCruising, onToggle]);
 
-  // 클릭 이벤트 - 터치로 발생한 거면 무시
-  const handleClick = useCallback(() => {
-    if (isTouchEventRef.current) {
-      isTouchEventRef.current = false;
-      return;
-    }
-    doToggle();
-  }, [doToggle]);
-
-  // 터치 이벤트 - 터치임을 표시하고 토글
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+  // 터치/클릭 통합 핸들러 - pointerdown 사용으로 단일 이벤트만 처리
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // pointerdown에서 처리하고 다른 이벤트는 모두 무시
     e.preventDefault();
-    isTouchEventRef.current = true;
+    e.stopPropagation();
+    
+    // pointerType으로 터치/마우스 구분 가능하지만, 둘 다 같은 동작
     doToggle();
   }, [doToggle]);
 
@@ -99,7 +92,7 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
     <div
       ref={containerRef}
       className="fixed w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
-      style={{ right: 24, bottom: 24 }}
+      style={{ right: 16, bottom: 16 }}
       data-cruising-control
     >
       {/* Scroll-to-top button - top row, right aligned */}
@@ -172,15 +165,15 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
 
         {/* Play/Pause button */}
         <button
-          onClick={handleClick}
-          onTouchEnd={handleTouchEnd}
+          onPointerDown={handlePointerDown}
           className={cn(
-            "p-3 rounded-full shadow-lg transition-all",
+            "p-3 rounded-full shadow-lg transition-all select-none",
             "hover:scale-105 active:scale-95",
             isCruising
               ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               : "bg-primary hover:bg-primary/90 text-primary-foreground"
           )}
+          style={{ touchAction: 'manipulation' }}
           data-cruising-control
           title={isCruising ? "크루징 멈춤" : "크루징 시작"}
           aria-label={isCruising ? "크루징 멈춤" : "크루징 시작"}

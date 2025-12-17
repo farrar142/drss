@@ -3,8 +3,6 @@
 import React, { useState } from 'react';
 import { Rss, Globe, FileText, ArrowRight, Clipboard, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
 import { Textarea } from '@/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -81,7 +79,7 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
 
     try {
       const parsed = JSON.parse(value);
-      
+
       // 유효성 검사
       if (typeof parsed !== 'object' || parsed === null) {
         setJsonError('유효한 JSON 객체가 아닙니다.');
@@ -109,8 +107,8 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
 
   const handleContinue = () => {
     if (selectedType === 'rss') {
-      if (!rssUrl) return;
-      onSelect('rss', rssUrl, parsedConfig || undefined);
+      // RSS는 URL 없이 바로 다음 단계로 (rss-save에서 URL 입력)
+      onSelect('rss', rssUrl || undefined, parsedConfig || undefined);
     } else {
       onSelect(selectedType, undefined, parsedConfig || undefined);
     }
@@ -187,40 +185,9 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
         ))}
       </div>
 
-      {/* RSS 타입 선택 시 URL 입력 */}
-      {selectedType === 'rss' && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{t.rssEverything?.rssUrlInput || 'RSS 피드 URL 입력'}</CardTitle>
-            <CardDescription>
-              {t.rssEverything?.rssUrlInputDesc || 'RSS 또는 Atom 피드의 URL을 입력하세요.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label htmlFor="rss-url">{t.rssEverything?.feedUrl || '피드 URL'}</Label>
-              <Input
-                id="rss-url"
-                placeholder="https://example.com/feed.xml"
-                value={rssUrl}
-                onChange={(e) => setRssUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && rssUrl) {
-                    handleContinue();
-                  }
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* 다음 버튼 */}
       <div className="flex justify-end">
-        <Button
-          onClick={handleContinue}
-          disabled={selectedType === 'rss' && !rssUrl}
-        >
+        <Button onClick={handleContinue}>
           {t.common?.next || '다음'} <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>

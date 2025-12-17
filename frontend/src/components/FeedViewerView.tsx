@@ -7,6 +7,7 @@ import { MediaModal } from "./MediaModal";
 import { CruisingControls } from "./CruisingControls";
 import { PullToRefresh } from "./PullToRefresh";
 import { UseFeedViewerReturn } from "../hooks/useFeedViewer";
+import { useSettingsStore } from "../stores/settingsStore";
 import dynamic from 'next/dynamic';
 
 // Dynamically import FeedItemCard to reduce initial bundle size
@@ -72,7 +73,10 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
 }) {
   // cruising에서 필요한 값만 추출 (객체 참조 변경으로 인한 리렌더링 방지)
   const { isCruising, speedPercent, toggleCruising, setSpeedPercent } = cruising;
-  
+
+  // 크루즈 컨트롤 표시 여부
+  const { showCruisingControls } = useSettingsStore();
+
   return (
     <div className={cn(
       "relative min-h-[calc(100vh-7rem)]",
@@ -136,13 +140,15 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
       <MediaModal modal={mediaModal} />
 
       {/* Cruising Controls */}
-      <CruisingControls
-        isCruising={isCruising}
-        speedPercent={speedPercent}
-        onToggle={toggleCruising}
-        onSpeedChange={setSpeedPercent}
-        scrollContainerRef={scrollContainerRef}
-      />
+      {showCruisingControls && (
+        <CruisingControls
+          isCruising={isCruising}
+          speedPercent={speedPercent}
+          onToggle={toggleCruising}
+          onSpeedChange={setSpeedPercent}
+          scrollContainerRef={scrollContainerRef}
+        />
+      )}
     </div>
   );
 });

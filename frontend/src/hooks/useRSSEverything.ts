@@ -235,9 +235,12 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       });
     }
 
-    if (type === 'rss' && rssUrl) {
-      setUrl(rssUrl);
-      // RSS는 바로 저장 단계로
+    if (type === 'rss') {
+      // RSS URL이 있으면 설정
+      if (rssUrl) {
+        setUrl(rssUrl);
+      }
+      // RSS는 바로 저장 단계로 (URL은 rss-save에서 입력 가능)
       setCurrentStep('rss-save');
     } else {
       // page_scraping 또는 detail_page_scraping

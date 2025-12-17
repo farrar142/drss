@@ -21,9 +21,12 @@ export const metadata: Metadata = {
 };
 
 // viewport-fit=cover를 설정하여 safe-area-inset을 사용할 수 있게 함
+// 모바일에서 핀치 줌 비활성화
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: 'cover',
 };
 

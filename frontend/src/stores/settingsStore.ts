@@ -95,6 +95,10 @@ interface SettingsStore {
   // 칼럼 수
   columns: number;
   setColumns: (columns: number) => void;
+
+  // 크루즈 컨트롤 표시 여부
+  showCruisingControls: boolean;
+  setShowCruisingControls: (show: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -131,6 +135,10 @@ export const useSettingsStore = create<SettingsStore>()(
       // 칼럼 수 기본값 3
       columns: 3,
       setColumns: (columns) => set({ columns }),
+
+      // 크루즈 컨트롤 표시 기본값 true
+      showCruisingControls: true,
+      setShowCruisingControls: (show) => set({ showCruisingControls: show }),
     }),
     {
       name: 'drss-settings',

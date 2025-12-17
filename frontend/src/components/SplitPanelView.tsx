@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Panel, Tab, PanelId } from '../stores/tabStore';
+import { useAppBar } from '../context/AppBarContext';
 import { TabBar } from './TabBar';
 import { ContentRenderer } from './ContentRenderer';
 import { cn } from '@/lib/utils';
@@ -192,6 +193,7 @@ PanelView.displayName = 'PanelView';
 
 export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen }) => {
   const router = useRouter();
+  const { isAppBarHidden } = useAppBar();
   const {
     panels,
     activePanelId,
@@ -377,11 +379,17 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     }
   }, [saveScrollPosition]);
 
+  // 컨테이너 높이 계산: 앱바가 숨겨지면 100vh, 아니면 앱바 높이(3.5rem) 제외
+  const containerHeight = isMediaModalOpen ? '100vh' : isAppBarHidden ? '100vh' : 'calc(100vh - 3.5rem)';
+
   return (
-    <div className={cn(
-      "flex w-full h-[calc(100vh-3.5rem)]",
-      isMediaModalOpen && "relative z-0"
-    )}>
+    <div
+      className={cn(
+        "flex w-full",
+        isMediaModalOpen && "relative z-0"
+      )}
+      style={{ height: containerHeight }}
+    >
       {panels.map((panel, index) => {
         const isActive = panel.id === activePanelId;
         const showDropIndicator = dragOverPanel === panel.id;

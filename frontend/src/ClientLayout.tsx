@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from './context/AuthContext';
+import { AppBarProvider } from './context/AppBarContext';
 import AppLayout from './components/AppLayout';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useEffect, useMemo } from 'react';
@@ -68,7 +69,9 @@ export function ClientLayout({
 
   return (
     <AuthProvider>
-      <AppLayout authChildren={children} />
+      <AppBarProvider>
+        <AppLayout authChildren={children} />
+      </AppBarProvider>
     </AuthProvider>
   );
 }
