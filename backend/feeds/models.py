@@ -29,7 +29,7 @@ class RSSCategory(models.Model):
 class RSSFeed(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200, blank=True)
+    title = models.CharField(max_length=500, blank=True)
     favicon_url = models.URLField(blank=True)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
@@ -66,7 +66,7 @@ class RSSFeed(models.Model):
 
 class RSSItem(models.Model):
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=500)
     link = models.URLField()
     description = models.TextField(blank=True)
     published_at = models.DateTimeField()
