@@ -120,6 +120,34 @@ services:
           cpus: '1'
           memory: 512M
 
+  real-browser:
+    image: ghcr.io/hyoban/puppeteer-real-browser-hono
+    restart: always
+    ports:
+      - '3001:3000'
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000' ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  browserless:
+    # marked
+    image: browserless/chrome # marked
+    restart: always # marked
+    ulimits:
+      # marked
+      core:
+        # marked
+        hard: 0 # marked
+        soft: 0 # marked
+    healthcheck:
+      # marked
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/pressure' ] # marked
+      interval: 30s # marked
+      timeout: 10s # marked
+      retries: 3 # marked
+
 networks:
   drss-network:
     driver: bridge
