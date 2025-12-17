@@ -166,6 +166,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               descriptionSelector: source.description_selector || '',
               dateSelector: source.date_selector || '',
               imageSelector: source.image_selector || '',
+              authorSelector: source.author_selector || '',
+              categoriesSelector: source.categories_selector || '',
             });
             // 상세 셀렉터
             setDetailSelectors({
@@ -174,6 +176,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               detailContentSelector: source.detail_content_selector || '',
               detailDateSelector: source.detail_date_selector || '',
               detailImageSelector: source.detail_image_selector || '',
+              detailAuthorSelector: source.detail_author_selector || '',
+              detailCategoriesSelector: source.detail_categories_selector || '',
             });
             setCurrentStep('url');
           } else {
@@ -186,6 +190,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               descriptionSelector: source.description_selector || '',
               dateSelector: source.date_selector || '',
               imageSelector: source.image_selector || '',
+              authorSelector: source.author_selector || '',
+              categoriesSelector: source.categories_selector || '',
             });
             setCurrentStep('url');
           }
@@ -227,6 +233,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         descriptionSelector: config.description_selector || '',
         dateSelector: config.date_selector || '',
         imageSelector: config.image_selector || '',
+        authorSelector: config.author_selector || '',
+        categoriesSelector: config.categories_selector || '',
       });
 
       // 상세 셀렉터
@@ -236,6 +244,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detailContentSelector: config.detail_content_selector || '',
         detailDateSelector: config.detail_date_selector || '',
         detailImageSelector: config.detail_image_selector || '',
+        detailAuthorSelector: config.detail_author_selector || '',
+        detailCategoriesSelector: config.detail_categories_selector || '',
       });
     }
 
