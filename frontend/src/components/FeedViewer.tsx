@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, RefObject } from "react";
+import { FC, RefObject, memo } from "react";
 import { RSSItem } from "../types/rss";
 import { useFeedViewer } from "../hooks/useFeedViewer";
 import { FeedViewerView } from "./FeedViewerView";
@@ -19,7 +19,8 @@ export interface FeedViewerProps {
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
-export const FeedViewer: FC<FeedViewerProps> = (props) => {
+export const FeedViewer: FC<FeedViewerProps> = memo(function FeedViewer(props) {
   const viewerState = useFeedViewer(props);
   return <FeedViewerView {...viewerState} />;
-};
+});
+FeedViewer.displayName = 'FeedViewer';

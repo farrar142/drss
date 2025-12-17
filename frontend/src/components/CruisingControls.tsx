@@ -1,10 +1,9 @@
 'use client';
 
-import { FC, useState, useRef, useCallback, RefObject } from 'react';
+import { FC, useState, useRef, useCallback, RefObject, useEffect, memo } from 'react';
 import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/ui/slider';
-import { useDebounce } from '@/hooks/useDebounce';
 
 export interface CruisingControlsProps {
   isCruising: boolean;
@@ -14,7 +13,7 @@ export interface CruisingControlsProps {
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
 }
 
-export const CruisingControls: FC<CruisingControlsProps> = ({
+export const CruisingControls: FC<CruisingControlsProps> = memo(({
   isCruising,
   speedPercent,
   onToggle,
@@ -23,6 +22,52 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isTouchEventRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 스크롤 컨테이너의 위치를 기준으로 버튼 위치 계산 (ref + DOM 직접 조작)
+  useEffect(() => {
+    const updatePosition = () => {
+      if (!containerRef.current) return;
+
+      if (scrollContainerRef?.current) {
+        const rect = scrollContainerRef.current.getBoundingClientRect();
+        containerRef.current.style.right = `${window.innerWidth - rect.right + 24}px`;
+        containerRef.current.style.bottom = `${window.innerHeight - rect.bottom + 24}px`;
+      } else {
+        containerRef.current.style.right = '24px';
+        containerRef.current.style.bottom = '24px';
+      }
+    };
+
+    // 디바운싱 - 리사이징이 끝난 후 200ms 뒤에 한 번만 실행
+    const debouncedUpdate = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        updatePosition();
+        debounceTimerRef.current = null;
+      }, 200);
+    };
+
+    updatePosition();
+    window.addEventListener('resize', debouncedUpdate);
+
+    // ResizeObserver로 컨테이너 크기 변화 감지 (디바운싱 적용)
+    const observer = new ResizeObserver(debouncedUpdate);
+    if (scrollContainerRef?.current) {
+      observer.observe(scrollContainerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener('resize', debouncedUpdate);
+      observer.disconnect();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [scrollContainerRef]);
 
   // 크루즈 시작하면 슬라이더 닫기
   const doToggle = useCallback(() => {
@@ -48,9 +93,13 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
     doToggle();
   }, [doToggle]);
 
+  // 위치가 계산되기 전에는 렌더링하지 않음
+
   return (
     <div
-      className="fixed bottom-6 right-6 w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
+      ref={containerRef}
+      className="fixed w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
+      style={{ right: 24, bottom: 24 }}
       data-cruising-control
     >
       {/* Scroll-to-top button - top row, right aligned */}
@@ -156,4 +205,6 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
       </div>
     </div>
   );
-};
+});
+
+CruisingControls.displayName = 'CruisingControls';

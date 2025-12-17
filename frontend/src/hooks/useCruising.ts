@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, RefObject } from 'react';
+import { useState, useCallback, useRef, useEffect, RefObject, useMemo } from 'react';
 import { useSettingsStore } from '../stores/settingsStore';
 
 export interface UseCruisingOptions {
@@ -201,7 +201,8 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
     };
   }, [isCruising, stopCruising, scrollContainerRef]);
 
-  return {
+  // 반환 객체를 useMemo로 안정화
+  return useMemo(() => ({
     isCruising,
     speed,
     startCruising,
@@ -211,5 +212,5 @@ export function useCruising(options: UseCruisingOptions = {}): UseCruisingReturn
     speedPercent: cruiseSpeedPercent,
     minSpeed,
     maxSpeed,
-  };
+  }), [isCruising, speed, startCruising, stopCruising, toggleCruising, setSpeedPercent, cruiseSpeedPercent, minSpeed, maxSpeed]);
 }

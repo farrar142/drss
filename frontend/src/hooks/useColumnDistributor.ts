@@ -2,6 +2,31 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 
+// 리사이즈 후 대기 중인 fillVisibleSentinels 호출이 있는지
+let pendingFillAfterResize = false;
+
+// 리사이즈 중인지 감지하는 전역 플래그
+let isResizing = false;
+let resizeTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+// 리사이즈 완료 후 콜백 등록
+let onResizeEndCallbacks: (() => void)[] = [];
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    isResizing = true;
+    if (resizeTimeoutId) clearTimeout(resizeTimeoutId);
+    resizeTimeoutId = setTimeout(() => {
+      isResizing = false;
+      resizeTimeoutId = null;
+      // 리사이즈 종료 후 대기 중인 콜백 실행
+      const callbacks = onResizeEndCallbacks;
+      onResizeEndCallbacks = [];
+      callbacks.forEach(cb => cb());
+    }, 200);
+  }, { passive: true });
+}
+
 interface UseColumnDistributorOptions<T> {
   items: T[];
   columns: number;
@@ -75,7 +100,7 @@ export function useColumnDistributor<T extends { id: number }>({
   const loadingRef = useRef(loading);
   loadingRef.current = loading;
 
-  // 컬럼에 아이템 추가
+  // 컴럼에 아이템 추가
   const addItemToColumn = useCallback((columnIndex: number): boolean => {
     if (queueRef.current.length === 0) return false;
 
@@ -116,6 +141,19 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 뷰포트에 보이는 sentinel들에 아이템 추가 (반복 호출용)
   const fillVisibleSentinels = useCallback(() => {
+    // 리사이즈 중에는 처리 건너뛰기 (레이아웃 스래싱 방지)
+    if (isResizing) {
+      // 이미 대기 중이면 추가 등록 안함
+      if (!pendingFillAfterResize) {
+        pendingFillAfterResize = true;
+        onResizeEndCallbacks.push(() => {
+          pendingFillAfterResize = false;
+          fillVisibleSentinels();
+        });
+      }
+      return;
+    }
+    
     if (queueRef.current.length === 0) return;
     if (isInitialDistributingRef.current) return;
 
@@ -147,7 +185,7 @@ export function useColumnDistributor<T extends { id: number }>({
     // queue가 남아있어도 sentinel이 안 보이면 대기 (스크롤할 때까지)
   }, [addItemToColumn]);
 
-  // 초기 배분: 각 컬럼에 하나씩 순차적으로
+  // 초기 배분: 각 컬럼에 하나씩 순차적으로 (애니메이션 효과)
   const distributeInitial = useCallback(() => {
     if (isInitialDistributingRef.current) return;
     if (queueRef.current.length === 0) return;
@@ -178,6 +216,25 @@ export function useColumnDistributor<T extends { id: number }>({
 
     distributeOne();
   }, [columns, addItemToColumn, initialDelay, fillVisibleSentinels]);
+
+  // 배치 배분: 모든 아이템을 한 번에 컴럼에 배분 (리사이즈 후 사용)
+  const distributeBatch = useCallback(() => {
+    if (queueRef.current.length === 0) return;
+
+    const currentColumns = columnsRef.current;
+    const newColumnItems: T[][] = Array.from({ length: currentColumns }, () => []);
+    
+    // 라운드로빈으로 모든 아이템 배분
+    let colIndex = 0;
+    while (queueRef.current.length > 0) {
+      const item = queueRef.current.shift()!;
+      newColumnItems[colIndex].push(item);
+      colIndex = (colIndex + 1) % currentColumns;
+    }
+
+    setColumnItems(newColumnItems);
+    setQueueLength(0);
+  }, []);
 
   // 새 아이템이 들어오면 대기열에 추가
   useEffect(() => {
@@ -215,10 +272,32 @@ export function useColumnDistributor<T extends { id: number }>({
     }
   }, [items, distributeInitial, fillVisibleSentinels, columns]);
 
-  // 컬럼 수 변경 시 리셋
+  // 컬럼 수 변경 시 리셋 (리사이즈 완료 후 처리)
+  const pendingColumnChangeRef = useRef(false);
+  
   useEffect(() => {
     if (prevColumnsRef.current !== columns) {
-      prevColumnsRef.current = columns;
+      // 리사이즈 중이면 완료 후 처리
+      if (isResizing) {
+        // 이미 예약되어 있으면 중복 등록 안 함
+        if (!pendingColumnChangeRef.current) {
+          pendingColumnChangeRef.current = true;
+          onResizeEndCallbacks.push(() => {
+            pendingColumnChangeRef.current = false;
+            // 현재 컬럼과 prevRef가 다르면 처리
+            if (prevColumnsRef.current !== columnsRef.current) {
+              handleColumnChange(columnsRef.current);
+            }
+          });
+        }
+        return;
+      }
+      
+      handleColumnChange(columns);
+    }
+    
+    function handleColumnChange(targetColumns: number) {
+      prevColumnsRef.current = targetColumns;
 
       // 초기 배분 중단
       isInitialDistributingRef.current = false;
@@ -228,28 +307,29 @@ export function useColumnDistributor<T extends { id: number }>({
       distributedIdsRef.current.clear();
       items.forEach(item => distributedIdsRef.current.add(item.id));
 
-      // 새 컬럼 배열 생성
-      const newColumnItems = Array.from({ length: columns }, () => [] as T[]);
-      setColumnItems(newColumnItems);
-      setQueueLength(queueRef.current.length);
-
-      // sentinel refs는 리셋하지 않음 (컴포넌트에서 다시 설정됨)
-      // 대신 기존 배열 확장/축소
-      if (sentinelRefs.current.length < columns) {
+      // sentinel refs 업데이트
+      if (sentinelRefs.current.length < targetColumns) {
         sentinelRefs.current = [
           ...sentinelRefs.current,
-          ...Array(columns - sentinelRefs.current.length).fill(null)
+          ...Array(targetColumns - sentinelRefs.current.length).fill(null)
         ];
-      } else if (sentinelRefs.current.length > columns) {
-        sentinelRefs.current = sentinelRefs.current.slice(0, columns);
+      } else if (sentinelRefs.current.length > targetColumns) {
+        sentinelRefs.current = sentinelRefs.current.slice(0, targetColumns);
       }
 
-      // 재배분 (상태 업데이트 후 실행되도록 충분한 딜레이)
-      setTimeout(() => {
-        distributeInitial();
-      }, 100);
+      // 배치 배분으로 한 번에 모든 아이템 배분 (리렌더링 최소화)
+      // targetColumns를 명시적으로 전달
+      const newColumnItems: T[][] = Array.from({ length: targetColumns }, () => []);
+      let colIndex = 0;
+      while (queueRef.current.length > 0) {
+        const item = queueRef.current.shift()!;
+        newColumnItems[colIndex].push(item);
+        colIndex = (colIndex + 1) % targetColumns;
+      }
+      setColumnItems(newColumnItems);
+      setQueueLength(0);
     }
-  }, [columns, items, distributeInitial]);
+  }, [columns, items]);
 
   // IntersectionObserver로 sentinel 감지
   useEffect(() => {
@@ -266,6 +346,9 @@ export function useColumnDistributor<T extends { id: number }>({
 
       const observer = new IntersectionObserver(
         (entries) => {
+          // 리사이즈 중에는 처리 건너뛰기
+          if (isResizing) return;
+          
           entries.forEach(entry => {
             if (entry.isIntersecting) {
               visibleSentinelsRef.current.add(columnIndex);

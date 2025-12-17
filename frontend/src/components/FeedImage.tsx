@@ -1,6 +1,35 @@
-import { FC, useState, useRef, useEffect } from "react";
+import { FC, useState, useRef, useEffect, memo } from "react";
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
+
+// 전역 IntersectionObserver 싱글톤 - 모든 FeedImage가 공유
+let globalObserver: IntersectionObserver | null = null;
+const observerCallbacks = new WeakMap<Element, () => void>();
+
+const getGlobalObserver = () => {
+  if (globalObserver) return globalObserver;
+  if (typeof IntersectionObserver === 'undefined') return null;
+
+  globalObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const callback = observerCallbacks.get(entry.target);
+          if (callback) {
+            callback();
+            observerCallbacks.delete(entry.target);
+            globalObserver?.unobserve(entry.target);
+          }
+        }
+      });
+    },
+    {
+      threshold: 0,
+      rootMargin: '200px 0px'
+    }
+  );
+  return globalObserver;
+};
 
 export const FeedImage: FC<{
   src: string;
@@ -9,11 +38,11 @@ export const FeedImage: FC<{
   contain?: boolean; // true면 부모에 맞춰 contain 모드로 표시
   onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
   onDoubleClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
-}> = ({ src, alt = '', className, contain = false, onClick, onDoubleClick }) => {
+}> = memo(({ src, alt = '', className, contain = false, onClick, onDoubleClick }) => {
   const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Start loading only when element is near viewport
+  // Start loading only when element is near viewport - 전역 observer 사용
   useEffect(() => {
     // If src is not an absolute http(s) url, load immediately
     try {
@@ -31,26 +60,25 @@ export const FeedImage: FC<{
     if (isVisible) return; // already visible
 
     const el = wrapperRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
+    if (!el) {
       setIsVisible(true);
       return;
     }
 
-    // rootMargin: 뷰포트 위아래 200px 범위 내에 들어오면 로딩 시작
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          obs.disconnect();
-        }
-      });
-    }, {
-      threshold: 0,
-      rootMargin: '200px 0px' // 뷰포트 위아래 200px 여유
-    });
+    const observer = getGlobalObserver();
+    if (!observer) {
+      setIsVisible(true);
+      return;
+    }
 
-    obs.observe(el);
-    return () => obs.disconnect();
+    // 콜백 등록 및 관찰 시작
+    observerCallbacks.set(el, () => setIsVisible(true));
+    observer.observe(el);
+
+    return () => {
+      observerCallbacks.delete(el);
+      observer.unobserve(el);
+    };
   }, [src, isVisible]);
 
 
@@ -215,4 +243,6 @@ export const FeedImage: FC<{
       />
     </div>
   );
-};
+});
+
+FeedImage.displayName = 'FeedImage';

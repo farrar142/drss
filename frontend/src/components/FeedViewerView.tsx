@@ -1,6 +1,6 @@
 'use client';
 
-import { FC } from "react";
+import { FC, memo, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { RSSItem } from "../types/rss";
 import { MediaModal } from "./MediaModal";
@@ -20,8 +20,8 @@ const FeedItemCard = dynamic(
 
 export interface FeedViewerViewProps extends UseFeedViewerReturn { }
 
-// 단일 컬럼 컴포넌트
-function Column({
+// 단일 컬럼 컴포넌트 - memo로 불필요한 리렌더링 방지
+const Column = memo(function Column({
   columnData,
   columnIndex,
   handleCollapseChange,
@@ -35,7 +35,7 @@ function Column({
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" style={{ contain: 'layout style' }}>
       {columnData.map((item) => (
         <FeedItemCard
           key={item.id}
@@ -52,9 +52,10 @@ function Column({
       />
     </div>
   );
-}
+});
 
-export const FeedViewerView: FC<FeedViewerViewProps> = ({
+// FeedViewerView를 memo로 감싸서 불필요한 리렌더링 방지
+export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerView({
   viewMode,
   columns,
   columnItems,
@@ -68,12 +69,15 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
   handleLoadNew,
   queueLength,
   scrollContainerRef,
-}) => {
+}) {
+  // cruising에서 필요한 값만 추출 (객체 참조 변경으로 인한 리렌더링 방지)
+  const { isCruising, speedPercent, toggleCruising, setSpeedPercent } = cruising;
+  
   return (
     <div className={cn(
-      "relative min-h-full",
+      "relative min-h-[calc(100vh-7rem)]",
       // 크루징 중에는 pointer-events 비활성화 (성능 최적화)
-      cruising.isCruising && "pointer-events-none"
+      isCruising && "pointer-events-none"
     )}>
       <PullToRefresh onRefresh={handleLoadNew} scrollContainerRef={scrollContainerRef}>
         <div className="w-full">
@@ -95,14 +99,17 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
             </div>
           ) : (
             // Feed 모드: 멀티 컬럼 그리드
-            <div className={cn(
-              "grid gap-4",
-              columns === 1 && "grid-cols-1",
-              columns === 2 && "grid-cols-2",
-              columns === 3 && "grid-cols-3",
-              columns === 4 && "grid-cols-4",
-              columns === 5 && "grid-cols-5"
-            )}>
+            <div
+              className={cn(
+                "grid gap-4",
+                columns === 1 && "grid-cols-1",
+                columns === 2 && "grid-cols-2",
+                columns === 3 && "grid-cols-3",
+                columns === 4 && "grid-cols-4",
+                columns === 5 && "grid-cols-5"
+              )}
+              style={{ contain: 'layout style' }}
+            >
               {columnItems.slice(0, columns).map((columnData, columnIndex) => (
                 <Column
                   key={columnIndex}
@@ -130,12 +137,12 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
 
       {/* Cruising Controls */}
       <CruisingControls
-        isCruising={cruising.isCruising}
-        speedPercent={cruising.speedPercent}
-        onToggle={cruising.toggleCruising}
-        onSpeedChange={cruising.setSpeedPercent}
+        isCruising={isCruising}
+        speedPercent={speedPercent}
+        onToggle={toggleCruising}
+        onSpeedChange={setSpeedPercent}
         scrollContainerRef={scrollContainerRef}
       />
     </div>
   );
-};
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Tab, TabType, PanelId } from '../stores/tabStore';
@@ -90,14 +90,25 @@ export const TabBar: React.FC<TabBarProps> = ({
   const [scrollLeft, setScrollLeft] = useState(0);
   const hasDraggedRef = useRef(false); // 드래그가 발생했는지 여부 (클릭 방지용)
 
-  // 화면 너비 감지
+  // 화면 너비 감지 (디바운싱 적용)
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    
     const checkScreenSize = () => {
       setIsSmallScreen(window.innerWidth < 640); // sm breakpoint
     };
+    
+    const debouncedCheck = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkScreenSize, 150);
+    };
+    
     checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    window.addEventListener('resize', debouncedCheck, { passive: true });
+    return () => {
+      window.removeEventListener('resize', debouncedCheck);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleTabClick = (tab: Tab) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { RSSItem } from '../types/rss';
 import { useMediaModalStore } from '../stores/mediaModalStore';
 
@@ -159,7 +159,8 @@ export function useMediaModal({ items }: UseMediaModalOptions): UseMediaModalRet
     return () => window.removeEventListener('keydown', onKey);
   }, [modalOpen, prevMedia, nextMedia, closeModal]);
 
-  return {
+  // 반환 객체를 useMemo로 안정화
+  return useMemo(() => ({
     modalOpen,
     modalMedia,
     currentMediaIndex,
@@ -174,5 +175,15 @@ export function useMediaModal({ items }: UseMediaModalOptions): UseMediaModalRet
     currentMediaIndexRef,
     mediaListRef,
     CLICK_STATE_WINDOW,
-  };
+  }), [
+    modalOpen,
+    modalMedia,
+    currentMediaIndex,
+    openMedia,
+    closeModal,
+    showMediaAt,
+    nextMedia,
+    prevMedia,
+    CLICK_STATE_WINDOW,
+  ]);
 }

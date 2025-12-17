@@ -199,7 +199,8 @@ export function useFeedViewer({
     mediaModalRef.current.openMedia(src, type, itemId);
   }, []);
 
-  return {
+  // 반환 객체를 useMemo로 안정화 - 실제 값이 변경될 때만 새 객체 생성
+  return useMemo(() => ({
     viewMode,
     columns,
     columnItems,
@@ -218,5 +219,24 @@ export function useFeedViewer({
     queueLength,
     resetDistributor,
     scrollContainerRef,
-  };
+  }), [
+    viewMode,
+    columns,
+    columnItems,
+    handleCollapseChange,
+    mediaModal,
+    handleMediaClick,
+    cruising,
+    setSentinelRef,
+    onLoadNew,
+    hasNext,
+    loading,
+    items,
+    newPostsCount,
+    isRefreshing,
+    handleLoadNew,
+    queueLength,
+    resetDistributor,
+    scrollContainerRef,
+  ]);
 }

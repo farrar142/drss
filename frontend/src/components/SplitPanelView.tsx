@@ -20,20 +20,20 @@ interface PanelViewProps {
   showDropIndicator: boolean;
   dragOverSide: 'left' | 'right' | null;
   hideTabBar?: boolean;
-  onPanelClick: () => void;
-  onTabClick: (tab: Tab) => void;
+  onPanelClick: (panelId: PanelId) => void;
+  onTabClick: (panelId: PanelId, tab: Tab) => void;
   onTabClose: (tabId: string) => void;
-  onAddTab: () => void;
+  onAddTab: (panelId: PanelId) => void;
   onDragStart: (e: React.DragEvent, tab: Tab) => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent, panelId: PanelId) => void;
   onDragLeave: () => void;
-  onDrop: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent, panelId: PanelId) => void;
   onColumnsChange: (tabId: string, columns: number) => void;
-  onScrollChange: (scrollTop: number) => void;
+  onScrollChange: (panelId: PanelId, tabId: string | null, scrollTop: number) => void;
   savedScrollPosition: number;
 }
 
-const PanelView: React.FC<PanelViewProps> = ({
+const PanelView: React.FC<PanelViewProps> = React.memo(({
   panel,
   isActive,
   panelsCount,
@@ -55,17 +55,26 @@ const PanelView: React.FC<PanelViewProps> = ({
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isRestoringScroll = useRef(false);
+  // 현재 스크롤 위치를 ref로 저장 (store 업데이트 없이)
+  const currentScrollRef = useRef(0);
 
-  // 탭 변경 시 스크롤 위치 복원 (탭 ID가 변경될 때만)
+  // 탭 변경 시 스크롤 위치 복원 및 이전 탭의 스크롤 위치 저장
   const prevActiveTabId = useRef(panel.activeTabId);
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // 탭이 실제로 변경되었을 때만 스크롤 복원
+    // 탭이 실제로 변경되었을 때
     if (prevActiveTabId.current !== panel.activeTabId) {
+      // 이전 탭의 스크롤 위치 저장 (탭 변경 시에만 store 업데이트)
+      if (prevActiveTabId.current && currentScrollRef.current > 0) {
+        onScrollChange(panel.id, prevActiveTabId.current, currentScrollRef.current);
+      }
+
+      // 새 탭의 스크롤 위치 복원
       isRestoringScroll.current = true;
       container.scrollTop = savedScrollPosition;
+      currentScrollRef.current = savedScrollPosition;
       prevActiveTabId.current = panel.activeTabId;
 
       // 복원 후 짧은 딜레이 후 스크롤 감지 활성화
@@ -73,23 +82,46 @@ const PanelView: React.FC<PanelViewProps> = ({
         isRestoringScroll.current = false;
       }, 100);
     }
-  }, [panel.activeTabId, savedScrollPosition]);
+  }, [panel.activeTabId, savedScrollPosition, onScrollChange, panel.id]);
 
-  // 스크롤 위치 저장 (쓰로틀링)
-  const lastSaveTime = useRef(0);
+  // 언마운트 시 현재 스크롤 위치 저장
+  useEffect(() => {
+    return () => {
+      if (panel.activeTabId && currentScrollRef.current > 0) {
+        onScrollChange(panel.id, panel.activeTabId, currentScrollRef.current);
+      }
+    };
+  }, [panel.id, panel.activeTabId, onScrollChange]);
+
+  // 스크롤 위치를 ref에만 저장 (store 업데이트 없음 - 리렌더링 방지)
   const handleScroll = useCallback(() => {
     if (isRestoringScroll.current) return;
-
-    // 200ms 쓰로틀링
-    const now = Date.now();
-    if (now - lastSaveTime.current < 200) return;
-    lastSaveTime.current = now;
-
     const container = scrollContainerRef.current;
     if (container) {
-      onScrollChange(container.scrollTop);
+      currentScrollRef.current = container.scrollTop;
     }
-  }, [onScrollChange]);
+  }, []);
+
+  // 이벤트 핸들러들 - panelId를 바인딩
+  const handlePanelClick = useCallback(() => {
+    onPanelClick(panel.id);
+  }, [onPanelClick, panel.id]);
+
+  const handleTabClick = useCallback((tab: Tab) => {
+    onTabClick(panel.id, tab);
+  }, [onTabClick, panel.id]);
+
+  const handleAddTab = useCallback(() => {
+    onAddTab(panel.id);
+  }, [onAddTab, panel.id]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    onDragOver(e, panel.id);
+  }, [onDragOver, panel.id]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    onDrop(e, panel.id);
+  }, [onDrop, panel.id]);
 
   // 스티키 헤더 오프셋 - 스크롤 컨테이너 내에서 탭바는 sticky로 별도 처리되므로 0px
   const effectiveHeaderOffset = '0px';
@@ -101,10 +133,10 @@ const PanelView: React.FC<PanelViewProps> = ({
         panelsCount > 1 && index === 0 && "border-r border-border",
         isActive && panelsCount > 1 && "ring-1 ring-primary/20"
       )}
-      onClick={onPanelClick}
-      onDragOver={onDragOver}
+      onClick={handlePanelClick}
+      onDragOver={handleDragOver}
       onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onDrop={handleDrop}
     >
       {/* 드롭 인디케이터 - 패널 1개일 때: 좌우 절반, 패널 2개일 때: 전체 */}
       {showDropIndicator && (
@@ -118,22 +150,23 @@ const PanelView: React.FC<PanelViewProps> = ({
         )
       )}
 
-      {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정, 미디어 모달 열릴 때 숨김 */}
-      {!hideTabBar && (
-        <div className="sticky top-0 z-30">
-          <TabBar
-            panelId={panel.id}
-            tabs={panel.tabs}
-            activeTabId={panel.activeTabId}
-            onTabClick={onTabClick}
-            onTabClose={onTabClose}
-            onAddTab={onAddTab}
-            onTabDragStart={onDragStart}
-            onColumnsChange={onColumnsChange}
-            canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
-          />
-        </div>
-      )}
+      {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정, 미디어 모달 열릴 때 숨김 (CSS로 처리하여 리마운트 방지) */}
+      <div className={cn(
+        "sticky top-0 z-30",
+        hideTabBar && "invisible"
+      )}>
+        <TabBar
+          panelId={panel.id}
+          tabs={panel.tabs}
+          activeTabId={panel.activeTabId}
+          onTabClick={handleTabClick}
+          onTabClose={onTabClose}
+          onAddTab={handleAddTab}
+          onTabDragStart={onDragStart}
+          onColumnsChange={onColumnsChange}
+          canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
+        />
+      </div>
 
       {/* 컨텐츠 - 개별 스크롤 */}
       <div
@@ -153,7 +186,9 @@ const PanelView: React.FC<PanelViewProps> = ({
       </div>
     </div>
   );
-};
+});
+
+PanelView.displayName = 'PanelView';
 
 export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen }) => {
   const router = useRouter();
@@ -192,12 +227,9 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
   }, [activePanelId, panels, router]);
 
   const handleTabClick = useCallback((panelId: PanelId, tab: Tab) => {
-    const panel = panels.find(p => p.id === panelId);
-    if (!panel) return;
-
     setActivePanel(panelId);
     setActiveTab(tab.id);
-  }, [panels, setActivePanel, setActiveTab]);
+  }, [setActivePanel, setActiveTab]);
 
   const handleTabClose = useCallback((tabId: string) => {
     removeTab(tabId);
@@ -339,12 +371,11 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
   }, [setTabColumns]);
 
   // 스크롤 위치 저장 핸들러
-  const handleScrollChange = useCallback((panelId: PanelId, scrollTop: number) => {
-    const panel = panels.find(p => p.id === panelId);
-    if (panel?.activeTabId) {
-      saveScrollPosition(panel.activeTabId, scrollTop);
+  const handleScrollChange = useCallback((panelId: PanelId, tabId: string | null, scrollTop: number) => {
+    if (tabId) {
+      saveScrollPosition(tabId, scrollTop);
     }
-  }, [panels, saveScrollPosition]);
+  }, [saveScrollPosition]);
 
   return (
     <div className={cn(
@@ -366,16 +397,16 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
             showDropIndicator={showDropIndicator}
             dragOverSide={dragOverSide}
             hideTabBar={isMediaModalOpen}
-            onPanelClick={() => handlePanelClick(panel.id)}
-            onTabClick={(tab) => handleTabClick(panel.id, tab)}
+            onPanelClick={handlePanelClick}
+            onTabClick={handleTabClick}
             onTabClose={handleTabClose}
-            onAddTab={() => handleAddTab(panel.id)}
+            onAddTab={handleAddTab}
             onDragStart={handleDragStart}
-            onDragOver={(e) => handleDragOver(e, panel.id)}
+            onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, panel.id)}
+            onDrop={handleDrop}
             onColumnsChange={handleColumnsChange}
-            onScrollChange={(scrollTop) => handleScrollChange(panel.id, scrollTop)}
+            onScrollChange={handleScrollChange}
             savedScrollPosition={savedScrollPosition}
           />
         );
