@@ -50,7 +50,7 @@ export const CruisingControls: FC<CruisingControlsProps> = ({
 
   return (
     <div
-      className="sticky bottom-6 ml-auto mr-6 w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
+      className="fixed bottom-6 right-6 w-fit z-40 flex flex-col items-end gap-2 pointer-events-none"
       data-cruising-control
     >
       {/* Scroll-to-top button - top row, right aligned */}

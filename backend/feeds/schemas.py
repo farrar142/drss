@@ -146,7 +146,7 @@ class FeedSchema(Schema):
 
 
 class FeedCreateSchema(Schema):
-    """피드 생성 스키마 - 소스 정보 포함"""
+    """피드 생성 스키마 - 소스 정보는 선택적"""
 
     category_id: int
     title: str = ""
@@ -154,8 +154,8 @@ class FeedCreateSchema(Schema):
     visible: bool = True
     refresh_interval: int = 60
 
-    # 첫 번째 소스 정보
-    source: SourceCreateSchema
+    # 첫 번째 소스 정보 (선택적)
+    source: Optional[SourceCreateSchema] = None
 
 
 class FeedUpdateSchema(Schema):

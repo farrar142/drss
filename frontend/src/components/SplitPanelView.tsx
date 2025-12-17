@@ -140,7 +140,7 @@ const PanelView: React.FC<PanelViewProps> = ({
           ['--header-offset' as string]: effectiveHeaderOffset,
         }}
       >
-        <div className="p-1 sm:p-2 md:p-4 lg:p-6">
+        <div className="p-1 sm:p-2 md:p-4 lg:p-6 min-h-full">
           <ContentRenderer panelId={panel.id} scrollContainerRef={scrollContainerRef} />
         </div>
       </div>

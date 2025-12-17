@@ -23,6 +23,8 @@ export interface Translations {
     refresh: string;
     settings: string;
     logout: string;
+    back: string;
+    next: string;
   };
 
   // Navigation
@@ -210,12 +212,28 @@ export interface Translations {
     saveFeed: string;
     feedName: string;
     feedNamePlaceholder: string;
+    feedInfo: string;
+    descriptionLabel: string;
+    descriptionPlaceholder: string;
+    autoDetected: string;
     selectCategory: string;
     refreshInterval: string;
     refreshIntervalUnit: string;
     saving: string;
     createSuccess: string;
     createError: string;
+    // Source Type Step
+    selectSourceType: string;
+    selectSourceTypeDesc: string;
+    sourceTypeRss: string;
+    sourceTypeRssDesc: string;
+    sourceTypePageScraping: string;
+    sourceTypePageScrapingDesc: string;
+    sourceTypeDetailScraping: string;
+    sourceTypeDetailScrapingDesc: string;
+    rssUrlInput: string;
+    rssUrlInputDesc: string;
+    feedUrl: string;
     // Validation
     urlRequired: string;
     itemSelectorRequired: string;

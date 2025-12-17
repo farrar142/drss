@@ -20,8 +20,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import FeedDialog from './FeedDialog';
 import { useRSSStore } from '../stores/rssStore';
+import { useTabStore } from '../stores/tabStore';
 import {
   FeedSchema,
   feedsRoutersFeedDeleteFeed,
@@ -40,21 +40,20 @@ interface FeedListItemProps {
 
 export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
   const { updateFeed, removeFeed } = useRSSStore();
+  const { openTab, closeTabsByFeedId } = useTabStore();
 
-  const [editOpen, setEditOpen] = useState(false);
-
-  const handleEdit = () => setEditOpen(true);
-
-  const handleEditSave = async (payload: any) => {
-    try {
-      const updated = await feedsRoutersFeedUpdateFeed(feed.id, payload);
-      updateFeed(updated);
-      setEditOpen(false);
-      return updated;
-    } catch (err) {
-      console.error('Failed to update feed', err);
-      throw err;
-    }
+  // 피드 수정 - FeedEdit 탭 열기
+  const handleEdit = () => {
+    openTab({
+      type: 'feed-edit',
+      title: `${feed.title} - 수정`,
+      path: '/feed-edit',
+      resourceId: feed.id, // 피드별로 다른 탭이 열리도록
+      feedEditContext: {
+        mode: 'edit',
+        feedId: feed.id,
+      },
+    });
   };
 
   const handleRefresh = async () => {
@@ -71,6 +70,8 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
     try {
       await feedsRoutersFeedDeleteFeed(feed.id);
       removeFeed(feed.id);
+      // 삭제된 피드와 관련된 모든 탭 닫기
+      closeTabsByFeedId(feed.id);
     } catch (error) {
       console.error(error);
     }
@@ -224,27 +225,6 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <FeedDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        mode="edit"
-        title="피드 수정"
-        submitLabel="저장"
-        initial={{
-          title: feed.title,
-          description: feed.description,
-          favicon_url: feed.favicon_url,
-          visible: feed.visible,
-          refresh_interval: feed.refresh_interval,
-          source: feed.sources?.[0] ? {
-            source_type: feed.sources[0].source_type as any,
-            url: feed.sources[0].url,
-            custom_headers: feed.sources[0].custom_headers,
-          } : undefined,
-        }}
-        onSubmit={handleEditSave}
-      />
     </>
   );
 };

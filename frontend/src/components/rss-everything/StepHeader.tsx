@@ -5,21 +5,56 @@ import { Globe, ChevronRight, RotateCcw } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { useTranslation } from '@/stores/languageStore';
 
+type SourceType = 'rss' | 'page_scraping' | 'detail_page_scraping';
+
 interface StepHeaderProps {
   currentStepIndex: number;
+  sourceType: SourceType | null;
   onReset: () => void;
 }
 
-export function StepHeader({ currentStepIndex, onReset }: StepHeaderProps) {
+export function StepHeader({ currentStepIndex, sourceType, onReset }: StepHeaderProps) {
   const { t } = useTranslation();
 
-  const steps = [
-    t.rssEverything.step1,
-    t.rssEverything.step2,
-    t.rssEverything.step3,
-    t.rssEverything.step4,
-    t.rssEverything.step5,
-  ];
+  // 소스 타입별 스텝 정의
+  const getStepsForSourceType = (): string[] => {
+    if (!sourceType) {
+      // 소스 타입 선택 전
+      return [t.rssEverything.step1]; // 소스 타입 선택
+    }
+
+    switch (sourceType) {
+      case 'rss':
+        // RSS: 소스 타입 선택 → 저장
+        return [
+          t.rssEverything.step1, // 소스 타입 선택
+          t.rssEverything.step5, // 저장
+        ];
+      case 'page_scraping':
+        // Page Scraping: 소스 타입 → URL → 목록 셀렉터 → 미리보기 → 저장
+        return [
+          t.rssEverything.step1, // 소스 타입 선택
+          t.rssEverything.step2, // URL 입력
+          '목록 셀렉터', // 목록 셀렉터
+          t.rssEverything.step4, // 미리보기
+          t.rssEverything.step5, // 저장
+        ];
+      case 'detail_page_scraping':
+        // Detail Page Scraping: 모든 스텝
+        return [
+          t.rssEverything.step1, // 소스 타입 선택
+          t.rssEverything.step2, // URL 입력
+          '목록 셀렉터', // 목록 셀렉터
+          t.rssEverything.step3, // 상세 셀렉터
+          t.rssEverything.step4, // 미리보기
+          t.rssEverything.step5, // 저장
+        ];
+      default:
+        return [t.rssEverything.step1];
+    }
+  };
+
+  const steps = getStepsForSourceType();
 
   return (
     <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 py-2">

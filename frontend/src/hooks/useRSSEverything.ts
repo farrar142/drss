@@ -1,25 +1,32 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRSSStore } from '@/stores/rssStore';
-import { useTabStore } from '@/stores/tabStore';
+import { useTabStore, RSSEverythingContext } from '@/stores/tabStore';
 import {
   feedsRoutersRssEverythingFetchHtml,
   feedsRoutersRssEverythingPreviewItems,
   feedsRoutersRssEverythingCreateSource,
+  feedsRoutersRssEverythingGetSource,
+  feedsRoutersRssEverythingUpdateSource,
   feedsRoutersCategoryListCategories,
   FetchHTMLRequest,
   PreviewItemRequest,
   RSSEverythingCreateRequest,
+  RSSEverythingUpdateRequest,
   PreviewItem,
 } from '@/services/api';
 import { ListSelectors, DetailSelectors } from '@/components/SelectorBuilder';
+import { SourceConfig } from '@/components/rss-everything/SourceTypeStep';
 
 // 파싱 모드
 export type ParseMode = 'list' | 'detail';
 
-// 스텝 정의
-export type Step = 'url' | 'list-select' | 'detail-select' | 'preview' | 'save';
+// 소스 타입
+export type SourceType = 'rss' | 'page_scraping' | 'detail_page_scraping';
+
+// 스텝 정의 (source-type, rss-save 추가)
+export type Step = 'source-type' | 'rss-save' | 'url' | 'list-select' | 'detail-select' | 'preview' | 'save';
 
 // 초기 상태
 const initialListSelectors: ListSelectors = {
@@ -43,15 +50,33 @@ const initialDetailSelectors: DetailSelectors = {
 export interface SelectorValidation {
   totalItems: number;
   itemsWithLinks: number;
-  warning: string | null;
+  warning?: string;
 }
 
-export function useRSSEverything() {
+export interface UseRSSEverythingOptions {
+  context?: RSSEverythingContext;
+}
+
+export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
+  const { context } = options;
   const { categories, setCategories } = useRSSStore();
   const { openTab, removeTab, panels, activePanelId } = useTabStore();
 
+  // Context에 따라 초기 스텝 결정
+  const getInitialStep = (): Step => {
+    if (context?.mode === 'edit') {
+      // 편집 모드: 기존 소스 수정 (URL 스텝부터)
+      return 'url';
+    }
+    // 생성 모드: 소스 타입 선택부터
+    return 'source-type';
+  };
+
+  // 소스 타입 상태
+  const [sourceType, setSourceType] = useState<SourceType>('rss');
+
   // Step state
-  const [currentStep, setCurrentStep] = useState<Step>('url');
+  const [currentStep, setCurrentStep] = useState<Step>(getInitialStep());
 
   // URL step
   const [url, setUrl] = useState('');
@@ -60,7 +85,7 @@ export function useRSSEverything() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 파싱 모드
+  // 파싱 모드 (소스 타입에 따라 결정)
   const [parseMode, setParseMode] = useState<ParseMode>('list');
 
   // 목록 페이지 HTML & 셀렉터
@@ -82,6 +107,7 @@ export function useRSSEverything() {
 
   // Save step
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [customHeaders, setCustomHeaders] = useState<Record<string, string>>({});
@@ -89,10 +115,233 @@ export function useRSSEverything() {
   const [excludeSelectors, setExcludeSelectors] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // RSS 피드 검증 결과
+  const [rssValidationResult, setRssValidationResult] = useState<{
+    title: string;
+    description: string;
+    items_count: number;
+  } | null>(null);
+
   // HTMLViewer에서 선택된 셀렉터를 받을 현재 타겟
-  // 'exclude'는 excludeSelectors 배열에 추가하는 모드
   const [activeListField, setActiveListField] = useState<keyof ListSelectors | 'exclude'>('itemSelector');
   const [activeDetailField, setActiveDetailField] = useState<keyof DetailSelectors | 'exclude'>('detailContentSelector');
+
+  // 편집 중인 소스 ID (수정 모드에서)
+  const [editingSourceId, setEditingSourceId] = useState<number | null>(context?.sourceId || null);
+
+  // 편집 모드일 때 기존 소스 데이터 로드
+  useEffect(() => {
+    const loadSourceData = async () => {
+      if (context?.mode === 'edit' && context.sourceId) {
+        setIsLoading(true);
+        try {
+          const source = await feedsRoutersRssEverythingGetSource(context.sourceId);
+          setEditingSourceId(source.id);
+
+          // 기본 정보 설정
+          setUrl(source.url);
+          setUseBrowser(source.use_browser);
+          setWaitSelector(source.wait_selector || 'body');
+          setCustomHeaders(source.custom_headers as Record<string, string> || {});
+          setDateFormats(source.date_formats || []);
+          setExcludeSelectors(source.exclude_selectors || []);
+
+          // 소스 타입에 따라 분기
+          const srcType = source.source_type as SourceType;
+          setSourceType(srcType);
+
+          if (srcType === 'rss') {
+            // RSS 타입이면 rss-save 스텝으로 (URL 수정 가능하게)
+            setCurrentStep('rss-save');
+          } else if (srcType === 'detail_page_scraping') {
+            setParseMode('detail');
+            // 목록 셀렉터
+            setListSelectors({
+              itemSelector: source.item_selector || '',
+              titleSelector: source.title_selector || '',
+              linkSelector: source.link_selector || '',
+              descriptionSelector: source.description_selector || '',
+              dateSelector: source.date_selector || '',
+              imageSelector: source.image_selector || '',
+            });
+            // 상세 셀렉터
+            setDetailSelectors({
+              detailTitleSelector: source.detail_title_selector || '',
+              detailDescriptionSelector: source.detail_description_selector || '',
+              detailContentSelector: source.detail_content_selector || '',
+              detailDateSelector: source.detail_date_selector || '',
+              detailImageSelector: source.detail_image_selector || '',
+            });
+            setCurrentStep('url');
+          } else {
+            // page_scraping
+            setParseMode('list');
+            setListSelectors({
+              itemSelector: source.item_selector || '',
+              titleSelector: source.title_selector || '',
+              linkSelector: source.link_selector || '',
+              descriptionSelector: source.description_selector || '',
+              dateSelector: source.date_selector || '',
+              imageSelector: source.image_selector || '',
+            });
+            setCurrentStep('url');
+          }
+        } catch (err) {
+          console.error('Failed to load source:', err);
+          setError('소스 데이터를 불러오는데 실패했습니다.');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadSourceData();
+  }, [context?.mode, context?.sourceId]);
+
+  // 카테고리 로드
+  useEffect(() => {
+    if (categories.length === 0) {
+      feedsRoutersCategoryListCategories().then((data) => {
+        setCategories(data);
+      });
+    }
+  }, [categories.length, setCategories]);
+
+  // 소스 타입 선택 후 다음 단계로
+  const handleSourceTypeSelect = (type: SourceType, rssUrl?: string, config?: SourceConfig) => {
+    setSourceType(type);
+
+    // config가 있으면 미리 설정 적용
+    if (config) {
+      // URL 설정
+      if (config.url) {
+        setUrl(config.url);
+      }
+
+      // 기타 설정들
+      if (config.use_browser !== undefined) setUseBrowser(config.use_browser);
+      if (config.wait_selector) setWaitSelector(config.wait_selector);
+      if (config.custom_headers) setCustomHeaders(config.custom_headers as Record<string, string>);
+      if (config.date_formats) setDateFormats(config.date_formats);
+      if (config.exclude_selectors) setExcludeSelectors(config.exclude_selectors);
+
+      // 목록 셀렉터
+      setListSelectors({
+        itemSelector: config.item_selector || '',
+        titleSelector: config.title_selector || '',
+        linkSelector: config.link_selector || '',
+        descriptionSelector: config.description_selector || '',
+        dateSelector: config.date_selector || '',
+        imageSelector: config.image_selector || '',
+      });
+
+      // 상세 셀렉터
+      setDetailSelectors({
+        detailTitleSelector: config.detail_title_selector || '',
+        detailDescriptionSelector: config.detail_description_selector || '',
+        detailContentSelector: config.detail_content_selector || '',
+        detailDateSelector: config.detail_date_selector || '',
+        detailImageSelector: config.detail_image_selector || '',
+      });
+    }
+
+    if (type === 'rss' && rssUrl) {
+      setUrl(rssUrl);
+      // RSS는 바로 저장 단계로
+      setCurrentStep('rss-save');
+    } else {
+      // page_scraping 또는 detail_page_scraping
+      setParseMode(type === 'detail_page_scraping' ? 'detail' : 'list');
+      setCurrentStep('url');
+    }
+  };
+
+  // RSS 피드 검증
+  const handleValidateRss = useCallback(async () => {
+    if (!url) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // RSS URL 검증 API 호출 (백엔드에 해당 API가 있다고 가정)
+      const response = await fetch(`/api/rss/validate?url=${encodeURIComponent(url)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRssValidationResult(data);
+        if (!name && data.title) {
+          setName(data.title);
+        }
+        if (!description && data.description) {
+          setDescription(data.description);
+        }
+      }
+    } catch (err) {
+      // 검증 실패해도 저장은 가능
+      console.warn('RSS validation failed:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [url, name, description]);
+
+  // RSS 피드 저장 (생성 또는 수정)
+  const handleSaveRssFeed = useCallback(async () => {
+    if (!url) {
+      setError('URL is required');
+      return;
+    }
+
+    // feedId 필수 (기존 피드에 소스 추가)
+    if (!context?.feedId) {
+      setError('Feed ID is required');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      if (context?.mode === 'edit' && editingSourceId) {
+        // 수정 모드: 기존 소스 업데이트
+        const updateData: RSSEverythingUpdateRequest = {
+          url,
+          source_type: 'rss',
+          custom_headers: customHeaders,
+        };
+
+        await feedsRoutersRssEverythingUpdateSource(editingSourceId, updateData);
+
+        // 성공 메시지 후 탭 닫기
+        alert('소스가 업데이트되었습니다.');
+      } else {
+        // 생성 모드: 기존 피드에 소스 추가
+        const sourceData: RSSEverythingCreateRequest = {
+          feed_id: context.feedId,
+          url,
+          source_type: 'rss',
+          custom_headers: customHeaders,
+        };
+
+        await feedsRoutersRssEverythingCreateSource(sourceData);
+
+        // 카테고리 새로고침 (피드 목록도 함께 갱신됨)
+        const updatedCategories = await feedsRoutersCategoryListCategories();
+        setCategories(updatedCategories);
+      }
+
+      // 현재 탭 닫고 홈으로
+      const activePanel = panels.find(p => p.id === activePanelId);
+      const currentTab = activePanel?.tabs.find(t => t.type === 'rss-everything');
+      if (currentTab) {
+        removeTab(currentTab.id);
+      }
+      openTab({ type: 'home', title: '메인스트림', path: '/home' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsSaving(false);
+    }
+  }, [url, customHeaders, panels, activePanelId, removeTab, openTab, setCategories, context?.mode, context?.feedId, editingSourceId]);
 
   // Fetch HTML from URL (목록 페이지)
   const handleFetchListHTML = useCallback(async () => {
@@ -161,7 +410,6 @@ export function useRSSEverything() {
   // HTMLViewer에서 셀렉터 선택시
   const handleListSelectorFromViewer = useCallback((selector: string) => {
     if (activeListField === 'exclude') {
-      // exclude 모드일 때는 excludeSelectors 배열에 추가 (중복 방지)
       setExcludeSelectors(prev => {
         if (prev.includes(selector)) return prev;
         return [...prev, selector];
@@ -176,7 +424,6 @@ export function useRSSEverything() {
 
   const handleDetailSelectorFromViewer = useCallback((selector: string) => {
     if (activeDetailField === 'exclude') {
-      // exclude 모드일 때는 excludeSelectors 배열에 추가 (중복 방지)
       setExcludeSelectors(prev => {
         if (prev.includes(selector)) return prev;
         return [...prev, selector];
@@ -197,11 +444,9 @@ export function useRSSEverything() {
       const parser = new DOMParser();
       const doc = parser.parseFromString(listHtml, 'text/html');
 
-      // 첫 번째 아이템 찾기
       const firstItem = doc.querySelector(listSelectors.itemSelector);
       if (!firstItem) return null;
 
-      // 링크 셀렉터가 있으면 그것으로, 없으면 아이템 내 첫 번째 a 태그
       let linkElement: HTMLAnchorElement | null = null;
 
       if (listSelectors.linkSelector) {
@@ -217,7 +462,6 @@ export function useRSSEverything() {
       const href = linkElement.getAttribute('href');
       if (!href) return null;
 
-      // 상대 URL을 절대 URL로 변환
       try {
         return new URL(href, url).href;
       } catch {
@@ -228,7 +472,7 @@ export function useRSSEverything() {
     }
   }, [listHtml, listSelectors.itemSelector, listSelectors.linkSelector, url]);
 
-  // 셀렉터 검증 함수 - 프론트엔드에서 미리 확인
+  // 셀렉터 검증 함수
   const validateSelectors = useCallback((): SelectorValidation | null => {
     if (!listHtml || !listSelectors.itemSelector) return null;
 
@@ -236,7 +480,6 @@ export function useRSSEverything() {
       const parser = new DOMParser();
       const doc = parser.parseFromString(listHtml, 'text/html');
 
-      // 아이템들 찾기
       const items = doc.querySelectorAll(listSelectors.itemSelector);
       const totalItems = items.length;
 
@@ -248,79 +491,61 @@ export function useRSSEverything() {
         };
       }
 
-      // 링크가 있는 아이템 수 확인
       let itemsWithLinks = 0;
       const linkSelector = listSelectors.linkSelector || 'a[href]';
 
       items.forEach((item) => {
-        const linkEl = item.querySelector(linkSelector);
-        if (linkEl && linkEl.getAttribute('href')) {
+        const link = item.querySelector(linkSelector);
+        if (link?.getAttribute('href')) {
           itemsWithLinks++;
         }
       });
 
-      // 경고 메시지 결정
-      let warning: string | null = null;
-
-      if (itemsWithLinks === 0) {
-        warning = 'noLinksWarning';
-      } else if (itemsWithLinks < totalItems * 0.5) {
-        // 절반 미만의 아이템에만 링크가 있으면 경고
-        warning = 'selectorMismatchWarning';
-      }
-
-      return {
+      const result: SelectorValidation = {
         totalItems,
         itemsWithLinks,
-        warning,
       };
+
+      if (itemsWithLinks === 0) {
+        result.warning = 'noLinksFound';
+      } else if (itemsWithLinks < totalItems * 0.5) {
+        result.warning = 'fewLinksFound';
+      }
+
+      return result;
     } catch {
-      return null;
+      return {
+        totalItems: 0,
+        itemsWithLinks: 0,
+        warning: 'validationError',
+      };
     }
   }, [listHtml, listSelectors.itemSelector, listSelectors.linkSelector]);
 
-  // 셀렉터 변경 시 자동 검증
+  // 셀렉터 검증 핸들러
   const handleValidateSelectors = useCallback(() => {
-    if (!listSelectors.itemSelector) {
-      setSelectorValidation(null);
-      return;
-    }
-
     setIsValidating(true);
-    // 약간의 디바운스 효과
-    setTimeout(() => {
-      const result = validateSelectors();
-      setSelectorValidation(result);
-      setIsValidating(false);
-    }, 100);
-  }, [listSelectors.itemSelector, validateSelectors]);
+    const result = validateSelectors();
+    setSelectorValidation(result);
+    setIsValidating(false);
+  }, [validateSelectors]);
 
-  // 목록 셀렉터 설정 완료 후 다음 단계로
+  // 목록 선택 다음 단계
   const handleListSelectNext = useCallback(() => {
     if (!listSelectors.itemSelector) {
-      setError('Item container selector is required');
+      setError('Item selector is required');
       return;
     }
 
     if (parseMode === 'list') {
-      if (!listSelectors.titleSelector) {
-        setError('Title selector is required for list mode');
-        return;
-      }
+      // 목록만 파싱: 바로 미리보기로
       setCurrentStep('preview');
     } else {
-      // detail 모드에서는 linkSelector가 필수
-      if (!listSelectors.linkSelector) {
-        setError('Link selector is required for detail mode');
-        return;
-      }
-
-      // 목록에서 첫 번째 링크 URL을 상세 페이지 URL로 설정
+      // 상세 페이지 파싱 필요
       const firstLinkUrl = extractFirstLinkUrl();
       if (firstLinkUrl) {
         setDetailUrl(firstLinkUrl);
       }
-
       setCurrentStep('detail-select');
     }
   }, [parseMode, listSelectors, extractFirstLinkUrl]);
@@ -343,7 +568,6 @@ export function useRSSEverything() {
         wait_selector: waitSelector,
         custom_headers: customHeaders,
         exclude_selectors: excludeSelectors,
-        // 상세 페이지 파싱 옵션
         follow_links: parseMode === 'detail',
         detail_title_selector: detailSelectors.detailTitleSelector,
         detail_description_selector: detailSelectors.detailDescriptionSelector,
@@ -367,15 +591,11 @@ export function useRSSEverything() {
     }
   }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, customHeaders, excludeSelectors]);
 
-  // Save RSS Everything source
+  // Save RSS Everything source (page_scraping / detail_page_scraping)
   const handleSave = useCallback(async () => {
-    if (!name) {
-      setError('Name is required');
-      return;
-    }
-
-    if (selectedCategoryId === null) {
-      setError('Category is required');
+    // feedId 필수 (기존 피드에 소스 추가)
+    if (!context?.feedId) {
+      setError('Feed ID is required');
       return;
     }
 
@@ -383,10 +603,12 @@ export function useRSSEverything() {
     setError(null);
 
     try {
+      const sourceType = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
+      
       const request: RSSEverythingCreateRequest = {
-        name,
+        feed_id: context.feedId,
         url,
-        category_id: selectedCategoryId,
+        source_type: sourceType,
         item_selector: listSelectors.itemSelector,
         title_selector: listSelectors.titleSelector,
         link_selector: listSelectors.linkSelector,
@@ -401,19 +623,17 @@ export function useRSSEverything() {
         detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
         use_browser: useBrowser,
         wait_selector: waitSelector,
-        refresh_interval: refreshInterval,
-        custom_headers: customHeaders,
-        exclude_selectors: excludeSelectors.filter(s => s.trim() !== ''),
-        date_formats: dateFormats.filter(f => f.trim() !== ''),
+        date_formats: dateFormats,
+        exclude_selectors: excludeSelectors,
       };
 
       await feedsRoutersRssEverythingCreateSource(request);
 
-      // 카테고리 새로고침
-      const categoriesResponse = await feedsRoutersCategoryListCategories();
-      setCategories(categoriesResponse);
+      // 카테고리 & 피드 새로고침
+      const updatedCategories = await feedsRoutersCategoryListCategories();
+      setCategories(updatedCategories);
 
-      // 현재 탭을 닫고 홈으로 이동
+      // 현재 탭 닫고 홈으로
       const activePanel = panels.find(p => p.id === activePanelId);
       const currentTab = activePanel?.tabs.find(t => t.type === 'rss-everything');
       if (currentTab) {
@@ -425,11 +645,12 @@ export function useRSSEverything() {
     } finally {
       setIsSaving(false);
     }
-  }, [name, url, parseMode, listSelectors, detailSelectors, selectedCategoryId, useBrowser, waitSelector, refreshInterval, setCategories, panels, activePanelId, removeTab, openTab]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {
-    setCurrentStep('url');
+    setCurrentStep(getInitialStep());
+    setSourceType('rss');
     setUrl('');
     setUseBrowser(true);
     setWaitSelector('body');
@@ -443,17 +664,26 @@ export function useRSSEverything() {
     setActiveDetailField('detailContentSelector');
     setPreviewItems([]);
     setName('');
+    setDescription('');
     setSelectedCategoryId(null);
     setRefreshInterval(60);
     setCustomHeaders({});
     setDateFormats([]);
     setExcludeSelectors([]);
     setError(null);
+    setRssValidationResult(null);
+    setSelectorValidation(null);
   }, []);
 
   // Step navigation
   const goBack = useCallback(() => {
     switch (currentStep) {
+      case 'rss-save':
+        setCurrentStep('source-type');
+        break;
+      case 'url':
+        setCurrentStep('source-type');
+        break;
       case 'list-select':
         setCurrentStep('url');
         break;
@@ -473,19 +703,55 @@ export function useRSSEverything() {
     setCurrentStep('save');
   }, []);
 
-  // 현재 스텝 인덱스 계산
+  // 현재 스텝 인덱스 계산 (소스 타입별로 다른 스텝 구조)
   const getCurrentStepIndex = useCallback(() => {
-    switch (currentStep) {
-      case 'url': return 0;
-      case 'list-select': return 1;
-      case 'detail-select': return 2;
-      case 'preview': return parseMode === 'detail' ? 3 : 2;
-      case 'save': return parseMode === 'detail' ? 4 : 3;
+    // RSS: source-type(0) → rss-save(1)
+    if (sourceType === 'rss') {
+      switch (currentStep) {
+        case 'source-type': return 0;
+        case 'rss-save': return 1;
+        default: return 0;
+      }
     }
-    return 0;
-  }, [currentStep, parseMode]);
+
+    // Page Scraping: source-type(0) → url(1) → list-select(2) → preview(3) → save(4)
+    if (sourceType === 'page_scraping') {
+      switch (currentStep) {
+        case 'source-type': return 0;
+        case 'url': return 1;
+        case 'list-select': return 2;
+        case 'preview': return 3;
+        case 'save': return 4;
+        default: return 0;
+      }
+    }
+
+    // Detail Page Scraping: source-type(0) → url(1) → list-select(2) → detail-select(3) → preview(4) → save(5)
+    if (sourceType === 'detail_page_scraping') {
+      switch (currentStep) {
+        case 'source-type': return 0;
+        case 'url': return 1;
+        case 'list-select': return 2;
+        case 'detail-select': return 3;
+        case 'preview': return 4;
+        case 'save': return 5;
+        default: return 0;
+      }
+    }
+
+    // 소스 타입 선택 전
+    return currentStep === 'source-type' ? 0 : 0;
+  }, [currentStep, sourceType]);
 
   return {
+    // Context
+    context,
+
+    // Source type
+    sourceType,
+    setSourceType,
+    handleSourceTypeSelect,
+
     // State
     currentStep,
     url,
@@ -502,6 +768,7 @@ export function useRSSEverything() {
     previewItems,
     previewLoading,
     name,
+    description,
     selectedCategoryId,
     refreshInterval,
     customHeaders,
@@ -514,6 +781,7 @@ export function useRSSEverything() {
     // Validation state
     selectorValidation,
     isValidating,
+    rssValidationResult,
 
     // Setters
     setUrl,
@@ -524,6 +792,7 @@ export function useRSSEverything() {
     setDetailUrl,
     setDetailSelectors,
     setName,
+    setDescription,
     setSelectedCategoryId,
     setRefreshInterval,
     setCustomHeaders,
@@ -531,6 +800,10 @@ export function useRSSEverything() {
     setExcludeSelectors,
     setActiveListField,
     setActiveDetailField,
+
+    // Edit mode
+    isEditMode: context?.mode === 'edit',
+    editingSourceId,
 
     // Actions
     handleFetchListHTML,
@@ -540,6 +813,8 @@ export function useRSSEverything() {
     handleListSelectNext,
     handlePreview,
     handleSave,
+    handleSaveRssFeed,
+    handleValidateRss,
     handleReset,
     goBack,
     goToSave,
@@ -550,21 +825,3 @@ export function useRSSEverything() {
     currentStepIndex: getCurrentStepIndex(),
   };
 }
-
-// 필드 레이블 (deprecated - 이제 컴포넌트에서 i18n 사용)
-export const listFieldLabels: Record<keyof ListSelectors, string> = {
-  itemSelector: 'Item Container',
-  titleSelector: 'Title',
-  linkSelector: 'Link',
-  descriptionSelector: 'Description',
-  dateSelector: 'Date',
-  imageSelector: 'Image',
-};
-
-export const detailFieldLabels: Record<keyof DetailSelectors, string> = {
-  detailTitleSelector: 'Title',
-  detailDescriptionSelector: 'Description',
-  detailContentSelector: 'Content',
-  detailDateSelector: 'Date',
-  detailImageSelector: 'Image',
-};

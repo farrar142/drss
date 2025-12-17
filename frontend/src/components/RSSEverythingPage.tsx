@@ -1,6 +1,7 @@
 'use client';
 
 import { useRSSEverything } from '@/hooks/useRSSEverything';
+import { RSSEverythingContext } from '@/stores/tabStore';
 import {
   StepHeader,
   UrlStep,
@@ -8,9 +9,15 @@ import {
   DetailSelectorStep,
   PreviewStep,
   SaveStep,
+  SourceTypeStep,
+  RssSaveStep,
 } from './rss-everything';
 
-export default function RSSEverythingPage() {
+interface RSSEverythingPageProps {
+  context?: RSSEverythingContext;
+}
+
+export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
   const {
     // State
     currentStep,
@@ -42,6 +49,20 @@ export default function RSSEverythingPage() {
     selectorValidation,
     isValidating,
 
+    // Source type
+    sourceType,
+    handleSourceTypeSelect,
+
+    // RSS specific
+    description,
+    setDescription,
+    rssValidationResult,
+    handleSaveRssFeed,
+    handleValidateRss,
+
+    // Edit mode
+    isEditMode,
+
     // Setters
     setUrl,
     setUseBrowser,
@@ -72,12 +93,13 @@ export default function RSSEverythingPage() {
     goToSave,
     // Validation
     handleValidateSelectors,
-  } = useRSSEverything();
+  } = useRSSEverything({ context });
 
   return (
     <div className="h-full bg-background overflow-auto">
       <StepHeader
         currentStepIndex={currentStepIndex}
+        sourceType={sourceType}
         onReset={handleReset}
       />
 
@@ -86,6 +108,33 @@ export default function RSSEverythingPage() {
           <div className="mb-2 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
             {error}
           </div>
+        )}
+
+        {currentStep === 'source-type' && (
+          <SourceTypeStep
+            onSelect={handleSourceTypeSelect}
+          />
+        )}
+
+        {currentStep === 'rss-save' && (
+          <RssSaveStep
+            url={url}
+            name={name}
+            description={description}
+            selectedCategoryId={selectedCategoryId}
+            refreshInterval={refreshInterval}
+            categories={categories}
+            isSaving={isSaving}
+            isEditMode={isEditMode}
+            validationResult={rssValidationResult}
+            onUrlChange={setUrl}
+            onNameChange={setName}
+            onDescriptionChange={setDescription}
+            onCategoryChange={setSelectedCategoryId}
+            onRefreshIntervalChange={setRefreshInterval}
+            onBack={goBack}
+            onSave={handleSaveRssFeed}
+          />
         )}
 
         {currentStep === 'url' && (

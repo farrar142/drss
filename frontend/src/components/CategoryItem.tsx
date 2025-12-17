@@ -22,13 +22,12 @@ import {
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Switch } from '@/ui/switch';
-import FeedDialog from './FeedDialog';
 import { RSSCategory, RSSFeed } from '../types/rss';
 import { FeedListItem } from './FeedListItem';
 import { useRSSStore } from '../stores/rssStore';
+import { useTabStore } from '../stores/tabStore';
 import { useTranslation, interpolate } from '../stores/languageStore';
 import {
-  feedsRoutersFeedCreateFeed,
   feedsRoutersCategoryUpdateCategory,
   feedsRoutersCategoryRefreshCategoryFeeds,
   feedsRoutersFeedUpdateFeed,
@@ -68,9 +67,9 @@ export const CategoryItem: FC<{
   isDraggingCategory,
 }) => {
     const { addFeed, updateCategory, updateFeed } = useRSSStore();
+    const { openTab } = useTabStore();
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
-    const [addFeedOpen, setAddFeedOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [editName, setEditName] = useState(category.name);
     const [editDescription, setEditDescription] = useState(category.description);
@@ -96,15 +95,19 @@ export const CategoryItem: FC<{
       setExpanded((p) => !p);
     };
 
-    const handleCreateSubmit = async (payload: any) => {
-      // payload에는 title, description, visible, refresh_interval, source가 포함됨
-      const feedData = {
-        ...payload,
-        category_id: category.id,
-      };
-      const created = await feedsRoutersFeedCreateFeed(feedData);
-      addFeed(created);
-      return created;
+    // 피드 추가 - FeedEdit 탭 열기
+    const handleAddFeed = () => {
+      openTab({
+        type: 'feed-edit',
+        title: `${t.feed.add} - ${category.name}`,
+        path: '/feed-edit',
+        // resourceId를 음수로 설정하여 카테고리별 생성 탭 구분 (기존 피드 ID와 충돌 방지)
+        resourceId: -category.id,
+        feedEditContext: {
+          mode: 'create',
+          categoryId: category.id,
+        },
+      });
     };
 
     const handleEditSave = async () => {
@@ -348,22 +351,13 @@ export const CategoryItem: FC<{
                   "border border-dashed border-sidebar-border/70 hover:border-sidebar-border",
                   "hover:bg-sidebar-accent/50"
                 )}
-                onClick={() => setAddFeedOpen(true)}
+                onClick={handleAddFeed}
               >
                 <Plus className="w-3.5 h-3.5" /> {t.feed.add}
               </Button>
             </div>
           </div>
         </div>
-
-        <FeedDialog
-          open={addFeedOpen}
-          onOpenChange={setAddFeedOpen}
-          mode="create"
-          title={t.feed.add}
-          submitLabel={t.common.add}
-          onSubmit={handleCreateSubmit}
-        />
 
         {/* 카테고리 수정 다이얼로그 */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>

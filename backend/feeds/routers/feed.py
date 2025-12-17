@@ -121,8 +121,8 @@ def create_feed(request, data: FeedCreateSchema):
     description = data.description
     source_data = data.source
 
-    # RSS 타입이고 제목이 제공되지 않은 경우 RSS 피드를 파싱해서 메타데이터 추출
-    if source_data.source_type == "rss" and not title:
+    # 소스가 있고 RSS 타입이며 제목이 제공되지 않은 경우 RSS 피드를 파싱해서 메타데이터 추출
+    if source_data and source_data.source_type == "rss" and not title:
         try:
             feed = fetch_feed_data(source_data.url, source_data.custom_headers)
 
@@ -142,7 +142,7 @@ def create_feed(request, data: FeedCreateSchema):
             if not description:
                 description = ""
     elif not title:
-        title = "New Feed"
+        title = data.title or "New Feed"
 
     with transaction.atomic():
         # RSSFeed 생성
@@ -156,38 +156,40 @@ def create_feed(request, data: FeedCreateSchema):
             refresh_interval=data.refresh_interval,
         )
 
-        # RSSEverythingSource 생성
-        RSSEverythingSource.objects.create(
-            feed=feed,
-            source_type=source_data.source_type,
-            is_active=True,
-            url=source_data.url,
-            custom_headers=source_data.custom_headers,
-            item_selector=source_data.item_selector,
-            title_selector=source_data.title_selector,
-            link_selector=source_data.link_selector,
-            description_selector=source_data.description_selector,
-            date_selector=source_data.date_selector,
-            image_selector=source_data.image_selector,
-            detail_title_selector=source_data.detail_title_selector,
-            detail_description_selector=source_data.detail_description_selector,
-            detail_content_selector=source_data.detail_content_selector,
-            detail_date_selector=source_data.detail_date_selector,
-            detail_image_selector=source_data.detail_image_selector,
-            exclude_selectors=source_data.exclude_selectors,
-            date_formats=source_data.date_formats,
-            date_locale=source_data.date_locale,
-            use_browser=source_data.use_browser,
-            wait_selector=source_data.wait_selector,
-            timeout=source_data.timeout,
-        )
+        # source가 제공된 경우에만 RSSEverythingSource 생성
+        if source_data:
+            RSSEverythingSource.objects.create(
+                feed=feed,
+                source_type=source_data.source_type,
+                is_active=True,
+                url=source_data.url,
+                custom_headers=source_data.custom_headers,
+                item_selector=source_data.item_selector,
+                title_selector=source_data.title_selector,
+                link_selector=source_data.link_selector,
+                description_selector=source_data.description_selector,
+                date_selector=source_data.date_selector,
+                image_selector=source_data.image_selector,
+                detail_title_selector=source_data.detail_title_selector,
+                detail_description_selector=source_data.detail_description_selector,
+                detail_content_selector=source_data.detail_content_selector,
+                detail_date_selector=source_data.detail_date_selector,
+                detail_image_selector=source_data.detail_image_selector,
+                exclude_selectors=source_data.exclude_selectors,
+                date_formats=source_data.date_formats,
+                date_locale=source_data.date_locale,
+                use_browser=source_data.use_browser,
+                wait_selector=source_data.wait_selector,
+                timeout=source_data.timeout,
+            )
 
-    # 피드 생성 후 즉시 아이템 가져오기 (동기적으로 대기)
-    try:
-        update_feed_items.delay(feed.pk).get(timeout=30)
-    except Exception as e:
-        # 타임아웃이나 에러 발생 시에도 피드는 생성됨
-        pass
+    # 소스가 있는 경우에만 피드 아이템 가져오기
+    if source_data:
+        try:
+            update_feed_items.delay(feed.pk).get(timeout=30)
+        except Exception as e:
+            # 타임아웃이나 에러 발생 시에도 피드는 생성됨
+            pass
 
     # item_count 추가
     from django.db.models import Count

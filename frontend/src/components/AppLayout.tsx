@@ -17,7 +17,6 @@ import {
   Heart,
   LogOut,
   Palette,
-  Globe,
 } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -238,10 +237,6 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openTab({ type: 'rss-everything', title: 'RSS Everything', path: '/rss-everything' })}>
-                <Globe className="mr-2 h-4 w-4" />
-                RSS Everything
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: '설정', path: '/settings' })}>
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}

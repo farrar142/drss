@@ -5,6 +5,7 @@ import { FeedViewer } from './FeedViewer';
 import { SettingsPage } from './SettingsPage';
 import RSSEverythingPage from './RSSEverythingPage';
 import TaskResultsPage from './TaskResultsPage';
+import FeedEditPage from './FeedEditPage';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTabStore, Tab, PanelId } from '../stores/tabStore';
 import { RSSItem } from '../types/rss';
@@ -139,7 +140,8 @@ SingleFeed.displayName = 'SingleFeed';
 const getTabContentKey = (tab: Tab): string => {
   if (tab.type === 'home') return 'home';
   if (tab.type === 'settings') return 'settings';
-  if (tab.type === 'rss-everything') return 'rss-everything';
+  if (tab.type === 'rss-everything') return `rss-everything-${tab.resourceId ?? 'new'}`;
+  if (tab.type === 'feed-edit') return `feed-edit-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'task-results') return 'task-results';
   if (tab.type === 'category' && tab.resourceId) return `category-${tab.resourceId}`;
   if (tab.type === 'feed' && tab.resourceId) return `feed-${tab.resourceId}`;
@@ -166,7 +168,9 @@ const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: T
     case 'settings':
       return <SettingsPage />;
     case 'rss-everything':
-      return <RSSEverythingPage />;
+      return <RSSEverythingPage context={tab.context} />;
+    case 'feed-edit':
+      return <FeedEditPage context={tab.feedEditContext} />;
     case 'task-results':
       return <TaskResultsPage />;
     default:
@@ -191,7 +195,7 @@ export const ContentRenderer = memo(({ panelId, scrollContainerRef }: ContentRen
   if (!panel) return null;
 
   return (
-    <>
+    <div className="min-h-full">
       {panel.tabs.map(tab => {
         const contentKey = getTabContentKey(tab);
         const isActive = tab.id === panel.activeTabId;
@@ -200,13 +204,14 @@ export const ContentRenderer = memo(({ panelId, scrollContainerRef }: ContentRen
           <div
             key={contentKey}
             data-tab-content={tab.id}
+            className={isActive ? 'min-h-full' : ''}
             style={{ display: isActive ? 'block' : 'none' }}
           >
             <TabContentRenderer tab={tab} isActive={isActive} scrollContainerRef={scrollContainerRef} />
           </div>
         );
       })}
-    </>
+    </div>
   );
 });
 ContentRenderer.displayName = 'ContentRenderer';

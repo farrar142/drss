@@ -1,7 +1,21 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results';
+export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'feed-edit';
+
+// RSSEverything 탭 컨텍스트 (소스 편집용)
+export interface RSSEverythingContext {
+  mode: 'create' | 'edit';
+  feedId: number;       // 피드 ID (필수 - 소스를 연결할 피드)
+  sourceId?: number;    // 소스 수정 시 소스 ID
+}
+
+// FeedEdit 탭 컨텍스트 (피드 편집용)
+export interface FeedEditContext {
+  mode: 'create' | 'edit';
+  categoryId?: number;  // 피드 생성 시 카테고리 ID
+  feedId?: number;      // 피드 수정 시 피드 ID
+}
 
 export interface Tab {
   id: string;
@@ -17,6 +31,10 @@ export interface Tab {
   filter?: 'all' | 'unread' | 'read' | 'favorite';
   // Feed 모드에서 컬럼 수 (min: 1, default: 3, max: 5)
   columns?: number;
+  // RSSEverything 탭의 컨텍스트 데이터
+  context?: RSSEverythingContext;
+  // FeedEdit 탭의 컨텍스트 데이터
+  feedEditContext?: FeedEditContext;
 }
 
 // 패널 ID 타입
@@ -64,6 +82,9 @@ interface TabStore {
   // 컬럼 수 저장/조회
   setTabColumns: (tabId: string, columns: number) => void;
   getTabColumns: (tabId: string) => number;
+
+  // 특정 피드와 관련된 모든 탭 닫기
+  closeTabsByFeedId: (feedId: number) => void;
 }
 
 // 고유 ID 생성
@@ -366,6 +387,35 @@ export const useTabStore = create<TabStore>()(
       getTabColumns: (tabId) => {
         const found = findTabInPanels(get().panels, tabId);
         return found?.tab.columns ?? 3;
+      },
+
+      closeTabsByFeedId: (feedId) => {
+        const { panels, removeTab } = get();
+
+        // 모든 패널에서 해당 피드와 관련된 탭 찾기
+        const tabsToClose: string[] = [];
+
+        for (const panel of panels) {
+          for (const tab of panel.tabs) {
+            // feed 타입 탭: resourceId가 feedId와 일치
+            if (tab.type === 'feed' && tab.resourceId === feedId) {
+              tabsToClose.push(tab.id);
+            }
+            // feed-edit 타입 탭: feedEditContext.feedId가 일치
+            if (tab.type === 'feed-edit' && tab.feedEditContext?.feedId === feedId) {
+              tabsToClose.push(tab.id);
+            }
+            // rss-everything 타입 탭: context.feedId가 일치
+            if (tab.type === 'rss-everything' && tab.context?.feedId === feedId) {
+              tabsToClose.push(tab.id);
+            }
+          }
+        }
+
+        // 찾은 탭들 닫기 (역순으로 닫아야 인덱스 문제 없음)
+        for (const tabId of tabsToClose.reverse()) {
+          removeTab(tabId);
+        }
       },
     }),
     {

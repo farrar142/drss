@@ -1,4 +1,6 @@
 export { StepHeader } from './StepHeader';
+export { SourceTypeStep } from './SourceTypeStep';
+export { RssSaveStep } from './RssSaveStep';
 export { UrlStep } from './UrlStep';
 export { ListSelectorStep } from './ListSelectorStep';
 export { DetailSelectorStep } from './DetailSelectorStep';

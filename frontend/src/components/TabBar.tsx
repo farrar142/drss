@@ -79,11 +79,24 @@ export const TabBar: React.FC<TabBarProps> = ({
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const columnMenuRef = useRef<HTMLDivElement>(null);
 
+  // 화면 너비 상태 (작은 화면에서는 컬럼 설정 숨김)
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
   // 드래그 스크롤 상태
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
   const hasDraggedRef = useRef(false); // 드래그가 발생했는지 여부 (클릭 방지용)
+
+  // 화면 너비 감지
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 640); // sm breakpoint
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   const handleTabClick = (tab: Tab) => {
     if (hasDraggedRef.current) return;
@@ -150,8 +163,8 @@ export const TabBar: React.FC<TabBarProps> = ({
   // 활성 탭 정보
   const activeTab = tabs.find(t => t.id === activeTabId);
   const activeColumns = activeTab?.columns ?? 3;
-  // settings 탭에서는 컬럼 설정 숨김
-  const showColumnSetting = activeTab && activeTab.type !== 'settings';
+  // settings, rss-everything, feed-edit, task-results 탭 또는 작은 화면에서는 컬럼 설정 숨김 (1열 강제)
+  const showColumnSetting = activeTab && !isSmallScreen && !['settings', 'rss-everything', 'feed-edit', 'task-results'].includes(activeTab.type);
 
   // 활성 탭이 보이도록 스크롤
   useEffect(() => {

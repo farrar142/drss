@@ -71,7 +71,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = ({
 }) => {
   return (
     <div className={cn(
-      "relative",
+      "relative min-h-full",
       // 크루징 중에는 pointer-events 비활성화 (성능 최적화)
       cruising.isCruising && "pointer-events-none"
     )}>

@@ -115,19 +115,18 @@ class PreviewItemResponse(BaseModel):
 
 
 class RSSEverythingCreateRequest(BaseModel):
-    """RSSEverything 소스 생성 요청"""
+    """RSSEverything 소스 생성 요청 - 기존 피드에 소스 추가"""
 
-    # RSSFeed 생성에 필요한 정보
-    name: str  # Feed 이름
+    # 기존 피드 ID (필수)
+    feed_id: int
+
+    # 소스 정보
     url: str  # 크롤링할 URL
-    category_id: int  # Feed가 속할 카테고리 (필수)
-
-    # RSSFeed 옵션
-    refresh_interval: int = 60
+    source_type: str = "rss"  # rss, page_scraping, detail_page_scraping
     custom_headers: dict = Field(default_factory=dict)
 
     # 셀렉터 설정
-    item_selector: str
+    item_selector: str = ""
     title_selector: str = ""
     link_selector: str = ""
     description_selector: str = ""
@@ -152,6 +151,12 @@ class RSSEverythingCreateRequest(BaseModel):
 
 class RSSEverythingUpdateRequest(BaseModel):
     """RSSEverything 소스 수정 요청"""
+
+    # RSS 타입 소스 수정을 위한 기본 필드
+    url: Optional[str] = None
+    source_type: Optional[str] = None
+    custom_headers: Optional[dict] = None
+    is_active: Optional[bool] = None
 
     item_selector: Optional[str] = None
     title_selector: Optional[str] = None
@@ -754,57 +759,41 @@ def get_source(request, source_id: int):
 @router.post("", response=RSSEverythingSchema, auth=JWTAuth())
 def create_source(request, data: RSSEverythingCreateRequest):
     """
-    새 RSSEverything 소스 생성
-    RSSFeed를 먼저 생성하고, RSSEverythingSource를 연결합니다.
+    기존 피드에 새 RSSEverything 소스 추가
     """
-    from django.db import transaction
-    from feeds.utils import extract_favicon_url
+    # 기존 피드 확인
+    feed = get_object_or_404(RSSFeed, id=data.feed_id, user=request.auth)
 
-    category = get_object_or_404(RSSCategory, id=data.category_id, user=request.auth)
+    # source_type 결정 (follow_links가 True면 detail_page_scraping)
+    source_type = data.source_type
+    if data.follow_links and source_type not in ["detail_page_scraping"]:
+        source_type = "detail_page_scraping"
 
-    # Favicon 추출
-    favicon_url = extract_favicon_url(data.url)
-
-    # source_type 결정
-    source_type = "detail_page_scraping" if data.follow_links else "page_scraping"
-
-    # 트랜잭션으로 RSSFeed와 RSSEverythingSource를 함께 생성
-    with transaction.atomic():
-        # RSSFeed 먼저 생성
-        feed = RSSFeed.objects.create(
-            user=request.auth,
-            category=category,
-            title=data.name,
-            favicon_url=favicon_url,
-            description=f"RSS Everything: {data.url}",
-            refresh_interval=data.refresh_interval,
-        )
-
-        # RSSEverythingSource 생성 (feed 연결)
-        source = RSSEverythingSource.objects.create(
-            feed=feed,
-            source_type=source_type,
-            is_active=True,
-            url=data.url,
-            custom_headers=data.custom_headers,
-            item_selector=data.item_selector,
-            title_selector=data.title_selector,
-            link_selector=data.link_selector,
-            description_selector=data.description_selector,
-            date_selector=data.date_selector,
-            image_selector=data.image_selector,
-            detail_title_selector=data.detail_title_selector,
-            detail_description_selector=data.detail_description_selector,
-            detail_content_selector=data.detail_content_selector,
-            detail_date_selector=data.detail_date_selector,
-            detail_image_selector=data.detail_image_selector,
-            exclude_selectors=data.exclude_selectors,
-            date_formats=data.date_formats,
-            date_locale=data.date_locale,
-            use_browser=data.use_browser,
-            wait_selector=data.wait_selector,
-            timeout=data.timeout,
-        )
+    # RSSEverythingSource 생성
+    source = RSSEverythingSource.objects.create(
+        feed=feed,
+        source_type=source_type,
+        is_active=True,
+        url=data.url,
+        custom_headers=data.custom_headers,
+        item_selector=data.item_selector,
+        title_selector=data.title_selector,
+        link_selector=data.link_selector,
+        description_selector=data.description_selector,
+        date_selector=data.date_selector,
+        image_selector=data.image_selector,
+        detail_title_selector=data.detail_title_selector,
+        detail_description_selector=data.detail_description_selector,
+        detail_content_selector=data.detail_content_selector,
+        detail_date_selector=data.detail_date_selector,
+        detail_image_selector=data.detail_image_selector,
+        exclude_selectors=data.exclude_selectors,
+        date_formats=data.date_formats,
+        date_locale=data.date_locale,
+        use_browser=data.use_browser,
+        wait_selector=data.wait_selector,
+        timeout=data.timeout,
+    )
 
     return RSSEverythingSchema.from_orm(source)
 
@@ -817,6 +806,23 @@ def update_source(request, source_id: int, data: RSSEverythingUpdateRequest):
     )
 
     update_fields = []
+
+    # URL, source_type, custom_headers, is_active 필드 처리
+    if data.url is not None:
+        source.url = data.url
+        update_fields.append("url")
+    
+    if data.source_type is not None:
+        source.source_type = data.source_type
+        update_fields.append("source_type")
+    
+    if data.custom_headers is not None:
+        source.custom_headers = data.custom_headers
+        update_fields.append("custom_headers")
+    
+    if data.is_active is not None:
+        source.is_active = data.is_active
+        update_fields.append("is_active")
 
     # follow_links가 변경되면 source_type도 변경
     if data.follow_links is not None:
