@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import RSSCategory, RSSFeed, RSSItem, CachedImage
+from .models import RSSCategory, RSSFeed, RSSItem
 from .tasks import update_feed_items
 
 
@@ -89,19 +89,6 @@ class RSSItemAdmin(admin.ModelAdmin):
     list_filter = ("is_read", "is_favorite", "feed")
     search_fields = ("title", "description", "link")
     actions = [mark_read, mark_unread, mark_favorite, unmark_favorite]
-
-
-@admin.register(CachedImage)
-class CachedImageAdmin(admin.ModelAdmin):
-    list_display = (
-        "original_url",
-        "relative_path",
-        "content_type",
-        "width",
-        "height",
-        "created_at",
-    )
-    readonly_fields = ("created_at",)
 
 
 from django.contrib import admin

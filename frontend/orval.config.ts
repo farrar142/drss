@@ -4,12 +4,12 @@ export default defineConfig({
     api: {
         input: './openapi.json',
         output: {
-            target: './app/services/api.ts',
+            target: './src/services/api.ts',
             client: 'axios-functions',
             clean: true,
             override: {
                 mutator: {
-                    path: './app/utils/axiosInstance.ts',
+                    path: './src/utils/axiosInstance.ts',
                     name: 'axiosInstance',
                 },
             },

@@ -1,0 +1,129 @@
+# Production Docker Compose Configuration
+# Usage: docker compose -f prod.compose.yml up -d
+
+x-django-config: &backend
+  build:
+    context: ./backend
+    dockerfile: prod.Dockerfile
+    target: production
+  restart: always
+  environment:
+    - DJANGO_SETTINGS_MODULE=base.settings
+    - TZ=Asia/Seoul
+    - PYTHONUNBUFFERED=1
+    - PYTHONDONTWRITEBYTECODE=1
+  env_file:
+    - .env
+  networks:
+    - drss-network
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+services:
+  # ===================
+  # Django API Server
+  # ===================
+  django:
+    <<: *backend
+    image: drss-backend:production
+    container_name: drss-django
+    volumes:
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+
+  # ===================
+  # Celery Worker
+  # ===================
+  celery-worker:
+    <<: *backend
+    image: drss-backend:production
+    container_name: drss-celery-worker
+    entrypoint: celery
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
+    depends_on:
+      - django
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  # ===================
+  # Celery Beat Scheduler
+  # ===================
+  celery-beat:
+    <<: *backend
+    image: drss-backend:production
+    container_name: drss-celery-beat
+    entrypoint: celery
+    command: ["-A", "base", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    depends_on:
+      - django
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ===================
+  # Next.js Frontend
+  # ===================
+  node:
+    build:
+      context: ./frontend
+      dockerfile: prod.Dockerfile
+      target: production
+    image: drss-frontend:production
+    container_name: drss-frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Seoul
+      - WATCHPACK_POLLING=true
+      - HOST=0.0.0.0
+    env_file:
+      - .env
+    networks:
+      - drss-network
+    depends_on:
+      django:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+networks:
+  drss-network:
+    driver: bridge
+
+volumes:
+  static_volume:
+  media_volume:

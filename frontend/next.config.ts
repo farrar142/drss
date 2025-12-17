@@ -10,8 +10,8 @@ const nextConfig: NextConfig = {
 
     // Webpack watchOptions 설정 (대부분의 경우 이것으로 충분합니다.)
     config.watchOptions = {
-      poll: 1000, // 1초 간격으로 폴링 (밀리초 단위)
-      aggregateTimeout: 300,
+      poll: 100, // 1초 간격으로 폴링 (밀리초 단위)
+      aggregateTimeout: 30000,
     };
 
     return config;

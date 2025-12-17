@@ -17,6 +17,7 @@ import {
   Heart,
   LogOut,
   Palette,
+  Globe,
 } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -70,14 +71,6 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-
-  // 헤더 가시성 - 패널 1개일 때 스크롤에 따라 변경됨
-  const [headerVisible, setHeaderVisible] = useState(true);
-
-  // 헤더 가시성 변경 핸들러
-  const handleHeaderVisibilityChange = useCallback((visible: boolean) => {
-    setHeaderVisible(visible);
-  }, []);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
@@ -140,13 +133,7 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header
-        className={cn(
-          "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-          "transition-all duration-300 ease-in-out",
-          headerVisible
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0 pointer-events-none"
-        )}
+        className="fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
         style={{ top: 0 }}
       >
         <div className="flex h-full items-center gap-4 px-4">
@@ -251,6 +238,10 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => openTab({ type: 'rss-everything', title: 'RSS Everything', path: '/rss-everything' })}>
+                <Globe className="mr-2 h-4 w-4" />
+                RSS Everything
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: '설정', path: '/settings' })}>
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}
@@ -280,10 +271,10 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         )}
         style={{
           marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
-          paddingTop: headerVisible ? '3.5rem' : '0', // 헤더 숨김 시 패딩 제거
+          paddingTop: '3.5rem',
         }}
       >
-        <SplitPanelView headerVisible={headerVisible} onHeaderVisibilityChange={handleHeaderVisibilityChange} />
+        <SplitPanelView />
       </main>
     </div>
   );

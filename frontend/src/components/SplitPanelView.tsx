@@ -8,8 +8,7 @@ import { ContentRenderer } from './ContentRenderer';
 import { cn } from '@/lib/utils';
 
 interface SplitPanelViewProps {
-  headerVisible: boolean;
-  onHeaderVisibilityChange?: (visible: boolean) => void;
+  // 스크롤 숨김 기능 제거됨
 }
 
 // 개별 패널 컴포넌트 - 각자 스크롤 관리
@@ -18,7 +17,6 @@ interface PanelViewProps {
   isActive: boolean;
   panelsCount: number;
   index: number;
-  headerVisible: boolean;
   showDropIndicator: boolean;
   dragOverSide: 'left' | 'right' | null;
   onPanelClick: () => void;
@@ -32,7 +30,6 @@ interface PanelViewProps {
   onColumnsChange: (tabId: string, columns: number) => void;
   onScrollChange: (scrollTop: number) => void;
   savedScrollPosition: number;
-  onTabBarVisibilityChange?: (visible: boolean) => void;
 }
 
 const PanelView: React.FC<PanelViewProps> = ({
@@ -40,7 +37,6 @@ const PanelView: React.FC<PanelViewProps> = ({
   isActive,
   panelsCount,
   index,
-  headerVisible,
   showDropIndicator,
   dragOverSide,
   onPanelClick,
@@ -54,64 +50,9 @@ const PanelView: React.FC<PanelViewProps> = ({
   onColumnsChange,
   onScrollChange,
   savedScrollPosition,
-  onTabBarVisibilityChange,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [tabBarVisible, setTabBarVisible] = useState(true);
-  const lastScrollTop = useRef(0);
   const isRestoringScroll = useRef(false);
-  const tabBarVisibleRef = useRef(true); // 현재 상태를 ref로 추적
-
-  // 스크롤에 따른 탭바 숨김/표시 (패널 1개일 때만)
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    // 패널이 2개 이상이면 항상 표시하고 리스너 불필요
-    if (panelsCount > 1) {
-      if (!tabBarVisibleRef.current) {
-        tabBarVisibleRef.current = true;
-        setTabBarVisible(true);
-      }
-      return;
-    }
-
-    const handleScrollForToggle = () => {
-      if (isRestoringScroll.current) return;
-
-      const currentScrollTop = container.scrollTop;
-      const scrollThreshold = 50;
-      const scrollDiff = currentScrollTop - lastScrollTop.current;
-      lastScrollTop.current = currentScrollTop;
-
-      // 변경이 필요한지 계산
-      let shouldBeVisible = tabBarVisibleRef.current;
-
-      if (currentScrollTop < scrollThreshold) {
-        // 맨 위에서는 항상 표시
-        shouldBeVisible = true;
-      } else if (scrollDiff > 5) {
-        // 스크롤 다운 (5px 이상 움직였을 때만)
-        shouldBeVisible = false;
-      } else if (scrollDiff < -5) {
-        // 스크롤 업 (5px 이상 움직였을 때만)
-        shouldBeVisible = true;
-      }
-
-      // 상태가 변경될 때만 업데이트
-      if (shouldBeVisible !== tabBarVisibleRef.current) {
-        tabBarVisibleRef.current = shouldBeVisible;
-        setTabBarVisible(shouldBeVisible);
-        onTabBarVisibilityChange?.(shouldBeVisible);
-      }
-    };
-
-    container.addEventListener('scroll', handleScrollForToggle, { passive: true });
-
-    return () => {
-      container.removeEventListener('scroll', handleScrollForToggle);
-    };
-  }, [panel.id, panelsCount, onTabBarVisibilityChange]);
 
   // 탭 변경 시 스크롤 위치 복원 (탭 ID가 변경될 때만)
   const prevActiveTabId = useRef(panel.activeTabId);
@@ -123,7 +64,6 @@ const PanelView: React.FC<PanelViewProps> = ({
     if (prevActiveTabId.current !== panel.activeTabId) {
       isRestoringScroll.current = true;
       container.scrollTop = savedScrollPosition;
-      lastScrollTop.current = savedScrollPosition;
       prevActiveTabId.current = panel.activeTabId;
 
       // 복원 후 짧은 딜레이 후 스크롤 감지 활성화
@@ -177,17 +117,7 @@ const PanelView: React.FC<PanelViewProps> = ({
       )}
 
       {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정 */}
-      <div
-        className={cn(
-          "sticky top-0 z-30 transition-all duration-300 ease-in-out",
-          tabBarVisible
-            ? "opacity-100"
-            : "opacity-0 pointer-events-none"
-        )}
-        style={{
-          marginTop: tabBarVisible ? 0 : -36,
-        }}
-      >
+      <div className="sticky top-0 z-30">
         <TabBar
           panelId={panel.id}
           tabs={panel.tabs}
@@ -218,7 +148,7 @@ const PanelView: React.FC<PanelViewProps> = ({
   );
 };
 
-export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, onHeaderVisibilityChange }) => {
+export const SplitPanelView: React.FC<SplitPanelViewProps> = () => {
   const router = useRouter();
   const {
     panels,
@@ -237,13 +167,6 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
 
   const [dragOverPanel, setDragOverPanel] = useState<PanelId | null>(null);
   const [dragOverSide, setDragOverSide] = useState<'left' | 'right' | null>(null);
-
-  // 패널 1개일 때 스크롤에 따른 헤더 토글
-  const handleTabBarVisibilityChange = useCallback((visible: boolean) => {
-    if (panels.length === 1) {
-      onHeaderVisibilityChange?.(visible);
-    }
-  }, [panels.length, onHeaderVisibilityChange]);
 
   // 활성 패널의 활성 탭이 변경되면 URL 업데이트 (모든 피드 탭은 /home으로 통일)
   useEffect(() => {
@@ -430,7 +353,6 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
             isActive={isActive}
             panelsCount={panels.length}
             index={index}
-            headerVisible={headerVisible}
             showDropIndicator={showDropIndicator}
             dragOverSide={dragOverSide}
             onPanelClick={() => handlePanelClick(panel.id)}
@@ -444,7 +366,6 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ headerVisible, o
             onColumnsChange={handleColumnsChange}
             onScrollChange={(scrollTop) => handleScrollChange(panel.id, scrollTop)}
             savedScrollPosition={savedScrollPosition}
-            onTabBarVisibilityChange={handleTabBarVisibilityChange}
           />
         );
       })}

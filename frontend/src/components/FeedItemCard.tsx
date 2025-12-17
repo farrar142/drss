@@ -11,12 +11,15 @@ import { FeedImage } from "./FeedImage";
 import { FeedVideo } from "./FeedVideo";
 
 
-const renderDescription = (
+export const renderDescription = (
   description: string,
   onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
   baseUrl?: string,
   itemId?: number
 ) => {
+  // Scope ID for CSS isolation
+  const scopeId = `rss-scope-${itemId}`;
+
   // Helper to check if a node contains an img or video (directly or nested)
   const hasMediaChild = (node: any): boolean => {
     if (!node.children) return false;
@@ -29,6 +32,35 @@ const renderDescription = (
   const isBlockElement = (name: string): boolean => {
     const blockElements = ['div', 'p', 'figure', 'blockquote', 'ul', 'ol', 'li', 'table', 'section', 'article', 'header', 'footer', 'nav', 'aside', 'main', 'form', 'fieldset', 'address', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'hr', 'noscript'];
     return blockElements.includes(name);
+  };
+
+  /**
+   * CSS 선택자 앞에 scope prefix를 추가합니다.
+   * 예: ".content { color: red; }" -> ".rss-scope-123 .content { color: red; }"
+   */
+  const scopeCss = (css: string, scopeId: string): string => {
+    // 각 규칙의 선택자 앞에 scope 추가
+    // 정규식: 선택자 부분을 찾아서 앞에 scopeId 추가
+    return css.replace(
+      /([^\r\n,{}@]+?)(\s*\{)/g,
+      (match, selector, brace) => {
+        // @media, @keyframes 등은 건너뛰기
+        if (selector.trim().startsWith('@')) {
+          return match;
+        }
+        // 이미 scoped면 건너뛰기
+        if (selector.includes(scopeId)) {
+          return match;
+        }
+        // body, html 선택자는 scope로 대체
+        const trimmed = selector.trim();
+        if (trimmed === 'body' || trimmed === 'html') {
+          return `.${scopeId}${brace}`;
+        }
+        // 일반 선택자 앞에 scope 추가
+        return `.${scopeId} ${selector}${brace}`;
+      }
+    );
   };
 
   const normalizeSrc = (raw: string) => {
@@ -81,6 +113,15 @@ const renderDescription = (
     if (domNode.attribs && domNode.attribs.class) {
       domNode.attribs.className = domNode.attribs.class;
       delete domNode.attribs.class;
+    }
+
+    // Handle <style> tags - scope CSS selectors
+    if (domNode.name === 'style') {
+      const cssText = (domNode.children[0] as any)?.data || '';
+      if (!cssText.trim()) return null;
+
+      const scopedCss = scopeCss(cssText, scopeId);
+      return <style dangerouslySetInnerHTML={{ __html: scopedCss }} />;
     }
 
     // Handle <a> tags that wrap images - remove the link wrapper
@@ -379,6 +420,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       {/* Description */}
       {(viewMode === 'feed' || !collapsed) && (
         <div className={cn(
+          `rss-scope-${item.id}`,
           "mt-2 sm:mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
           fontSize.body
         )}>

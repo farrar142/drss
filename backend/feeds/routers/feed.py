@@ -161,11 +161,24 @@ def update_feed(request, feed_id: int, data: FeedUpdateSchema):
 @router.post("/{feed_id}/refresh", auth=JWTAuth())
 def refresh_feed(request, feed_id: int):
     from feeds.tasks import update_feed_items
+    from feeds.models import FeedTaskResult
 
     feed = get_object_or_404(RSSFeed, id=feed_id, user=request.auth)
-    # 비동기로 실행
-    update_feed_items.delay(feed.pk)
-    return {"success": True, "message": "Feed refresh scheduled"}
+    
+    # FeedTaskResult 먼저 생성
+    task_result = FeedTaskResult.objects.create(
+        feed=feed,
+        status=FeedTaskResult.Status.PENDING,
+    )
+    
+    # 비동기로 실행 (task_result_id 전달)
+    update_feed_items.delay(feed.pk, task_result_id=task_result.id)
+    
+    return {
+        "success": True,
+        "message": "Feed refresh scheduled",
+        "task_result_id": task_result.id,
+    }
 
 
 @router.put("/{feed_id}/mark-all-read", auth=JWTAuth())

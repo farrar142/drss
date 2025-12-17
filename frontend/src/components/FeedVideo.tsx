@@ -1,5 +1,8 @@
 import { FC, useRef, useEffect } from "react";
 
+// 필터링할 잘못된 DOM 속성들
+const INVALID_VIDEO_PROPS = ['playsinline', 'autoplay', 'autopictureinpicture', 'disablepictureinpicture', 'disableremoteplayback', 'style'];
+
 // Custom Video component with intersection observer for autoplay
 export const FeedVideo: FC<{
   src?: string;
@@ -9,6 +12,11 @@ export const FeedVideo: FC<{
   [key: string]: any;
 }> = ({ src, poster, className, onClick, ...props }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // 잘못된 DOM 속성 필터링
+  const filteredProps = Object.fromEntries(
+    Object.entries(props).filter(([key]) => !INVALID_VIDEO_PROPS.includes(key.toLowerCase()))
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -54,7 +62,7 @@ export const FeedVideo: FC<{
           onClick(e);
         }
       }}
-      {...props}
+      {...filteredProps}
     />
   );
 };

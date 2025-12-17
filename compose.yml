@@ -1,130 +1,107 @@
-# Production Docker Compose Configuration
-# Usage: docker compose -f prod.compose.yml up -d
-
 x-django-config: &backend
   build:
     context: ./backend
-    dockerfile: prod.Dockerfile
-    target: production
+    dockerfile: Dockerfile
+  image: drss-backend
   restart: always
+  volumes:
+    - ./backend:/usr/src/app
   environment:
     - DJANGO_SETTINGS_MODULE=base.settings
     - TZ=Asia/Seoul
+    - PUPPETEER_WS_ENDPOINT=ws://browserless:3000
+    - PUPPETEER_REAL_BROWSER_SERVICE=http://real-browser:3000
     - PYTHONUNBUFFERED=1
     - PYTHONDONTWRITEBYTECODE=1
   env_file:
     - .env
-  networks:
-    - drss-network
-  logging:
-    driver: "json-file"
-    options:
-      max-size: "10m"
-      max-file: "3"
 
 services:
-  # ===================
-  # Django API Server
-  # ===================
   django:
     <<: *backend
-    image: drss-backend:production
     container_name: drss-django
-    volumes:
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+    # Run collectstatic at container start so static files (including admin
+    # assets) are available to WhiteNoise before Uvicorn serves requests.
+    entrypoint: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
-
-  # ===================
-  # Celery Worker
-  # ===================
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
   celery-worker:
     <<: *backend
-    image: drss-backend:production
+    profiles:
+      - celery
     container_name: drss-celery-worker
-    entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
-    depends_on:
-      - django
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-
-  # ===================
-  # Celery Beat Scheduler
-  # ===================
-  celery-beat:
-    <<: *backend
-    image: drss-backend:production
-    container_name: drss-celery-beat
-    entrypoint: celery
-    command: ["-A", "base", "beat", "--loglevel=info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
-    depends_on:
-      - django
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-
-  # ===================
-  # Next.js Frontend
-  # ===================
-  node:
-    build:
-      context: ./frontend
-      dockerfile: prod.Dockerfile
-      target: production
-    image: drss-frontend:production
-    container_name: drss-frontend
-    restart: always
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=production
-      - TZ=Asia/Seoul
-      - WATCHPACK_POLLING=true
-      - HOST=0.0.0.0
-    env_file:
-      - .env
-    networks:
-      - drss-network
+    entrypoint: celery -A base worker --loglevel=info --concurrency 1
     depends_on:
       django:
         condition: service_healthy
+  celery-beat:
+    <<: *backend
+    profiles:
+      - celery
+    container_name: drss-celery-beat
+    entrypoint: celery -A base beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      django:
+        condition: service_healthy
+  node:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: drss-frontend
+    container_name: drss-frontend
+    restart: always
+    volumes:
+      - ./frontend:/usr/src/app
+      - node_modules:/usr/src/app/node_modules # node_modules는 named volume으로 유지
+      - next_cache:/usr/src/app/.next # next.js 캐시를 위한 named volume
+    ports:
+      - "3000:3000"
+    environment:
+      - TZ=Asia/Seoul
+      - WATCHPACK_POLLING=true
+      - HOST=0.0.0.0
+      - BACKEND_HOST=django
+    env_file:
+      - .env
+    command: npx next dev --hostname 0.0.0.0
+  real-browser:
+    profiles:
+      - crawler
+    image: ghcr.io/hyoban/puppeteer-real-browser-hono
+    restart: always
+    ports:
+      - '3001:3000'
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000' ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
 
-networks:
-  drss-network:
-    driver: bridge
+  browserless:
+    profiles:
+      - crawler
+    # marked
+    image: browserless/chrome # marked
+    restart: always # marked
+    ulimits:
+      # marked
+      core:
+        # marked
+        hard: 0 # marked
+        soft: 0 # marked
+    healthcheck:
+      # marked
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:3000/pressure' ] # marked
+      interval: 30s # marked
+      timeout: 10s # marked
+      retries: 3 # marked
 
 volumes:
-  static_volume:
-  media_volume:
+  node_modules:
+  next_cache:

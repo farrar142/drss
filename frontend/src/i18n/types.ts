@@ -153,4 +153,84 @@ export interface Translations {
     networkError: string;
     unknownError: string;
   };
+
+  // RSS Everything
+  rssEverything: {
+    title: string;
+    description: string;
+    // Steps
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+    step5: string;
+    step6: string;
+    reset: string;
+    resetConfirm: string;
+    // URL Step
+    urlLabel: string;
+    urlPlaceholder: string;
+    fetchPage: string;
+    fetching: string;
+    useBrowser: string;
+    useBrowserDesc: string;
+    customHeaders: string;
+    addHeader: string;
+    headerName: string;
+    headerValue: string;
+    parseMode: string;
+    parseModeList: string;
+    parseModeListDesc: string;
+    parseModeDetail: string;
+    parseModeDetailDesc: string;
+    // Selector Step
+    listSelectors: string;
+    listSelectorsDesc: string;
+    detailSelectors: string;
+    detailSelectorsDesc: string;
+    detailSelectorsNote: string;
+    selectElement: string;
+    clearSelector: string;
+    itemSelector: string;
+    itemSelectorDesc: string;
+    titleSelector: string;
+    linkSelector: string;
+    descriptionSelector: string;
+    dateSelector: string;
+    imageSelector: string;
+    contentSelector: string;
+    // Preview Step
+    preview: string;
+    previewItems: string;
+    loadingPreview: string;
+    previewError: string;
+    noItemsFound: string;
+    previewEmpty: string;
+    // Save Step
+    saveFeed: string;
+    feedName: string;
+    feedNamePlaceholder: string;
+    selectCategory: string;
+    refreshInterval: string;
+    refreshIntervalUnit: string;
+    saving: string;
+    createSuccess: string;
+    createError: string;
+    // Validation
+    urlRequired: string;
+    itemSelectorRequired: string;
+    feedNameRequired: string;
+    categoryRequired: string;
+    // Selector validation
+    validating: string;
+    validationResult: string;
+    itemsFound: string;
+    itemsWithLinks: string;
+    noLinksWarning: string;
+    selectorMismatchWarning: string;
+    detailSelectorWorks: string;
+    detailSelectorNotFound: string;
+    validate: string;
+    customHeadersDescription: string;
+  };
 }

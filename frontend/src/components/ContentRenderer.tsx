@@ -3,6 +3,7 @@
 import React, { useMemo, memo, RefObject } from 'react';
 import { FeedViewer } from './FeedViewer';
 import { SettingsPage } from './SettingsPage';
+import RSSEverythingPage from './RSSEverythingPage';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTabStore, Tab, PanelId } from '../stores/tabStore';
 import { RSSItem } from '../types/rss';
@@ -137,6 +138,7 @@ SingleFeed.displayName = 'SingleFeed';
 const getTabContentKey = (tab: Tab): string => {
   if (tab.type === 'home') return 'home';
   if (tab.type === 'settings') return 'settings';
+  if (tab.type === 'rss-everything') return 'rss-everything';
   if (tab.type === 'category' && tab.resourceId) return `category-${tab.resourceId}`;
   if (tab.type === 'feed' && tab.resourceId) return `feed-${tab.resourceId}`;
   return tab.id;
@@ -161,6 +163,8 @@ const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: T
       return null;
     case 'settings':
       return <SettingsPage />;
+    case 'rss-everything':
+      return <RSSEverythingPage />;
     default:
       return null;
   }

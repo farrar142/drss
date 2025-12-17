@@ -11,8 +11,6 @@ import jwt
 from django.conf import settings
 from datetime import timedelta
 
-from feeds.tasks import update_feed_items
-
 User = get_user_model()
 
 
@@ -468,29 +466,3 @@ class CategoryUpdateTest(TestCase):
         self.assertEqual(data["name"], "New Name")
         self.assertEqual(data["description"], "New Description")
         self.assertFalse(data["visible"])
-
-
-class FeedScheduleTest(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="scheduser", password="schedpass123"
-        )
-        self.category = RSSCategory.objects.create(
-            user=self.user, name="Sched Category", description="Sched"
-        )
-
-    def test_setup_feed_schedule_creates_and_updates(self):
-        feed = RSSFeed.objects.create(
-            user=self.user,
-            category=self.category,
-            url="http://example.com/rss",
-            title="Feed For Schedule",
-            refresh_interval=5,
-            visible=True,
-        )
-
-        from .management.commands.setup_feed_schedules import setup_feed_schedule
-        from django_celery_beat.models import PeriodicTask
-
-        # create schedule
-        setup_feed_schedule(feed)

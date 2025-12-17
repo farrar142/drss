@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-export type TabType = 'home' | 'category' | 'feed' | 'settings';
+export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything';
 
 export interface Tab {
   id: string;
