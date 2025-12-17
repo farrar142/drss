@@ -147,14 +147,14 @@ const getStorageKey = (userId: number) => `drss-tabs-user-${userId}`;
 // localStorage에서 상태 로드
 const loadFromStorage = (userId: number): PersistedState | null => {
   if (typeof window === 'undefined') return null;
-  
+
   try {
     const key = getStorageKey(userId);
     const stored = localStorage.getItem(key);
     if (!stored) return null;
-    
+
     const parsed = JSON.parse(stored);
-    
+
     // 마이그레이션: 기존 tabs 구조에서 panels 구조로
     if (parsed.tabs && !parsed.panels) {
       return {
@@ -166,7 +166,7 @@ const loadFromStorage = (userId: number): PersistedState | null => {
         activePanelId: 'left' as PanelId,
       };
     }
-    
+
     return parsed as PersistedState;
   } catch {
     return null;
@@ -176,7 +176,7 @@ const loadFromStorage = (userId: number): PersistedState | null => {
 // localStorage에 상태 저장
 const saveToStorage = (userId: number, state: PersistedState) => {
   if (typeof window === 'undefined') return;
-  
+
   try {
     const key = getStorageKey(userId);
     // 탭 수 제한 및 scrollPosition 제외

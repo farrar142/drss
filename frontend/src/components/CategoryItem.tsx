@@ -45,6 +45,7 @@ export const CategoryItem: FC<{
   onDragEnd?: () => void;
   onNavigateCategory?: (category: RSSCategory) => void;
   onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => void;
+  onCloseDrawer?: () => void;  // 드로워 닫기 콜백
   // 카테고리 드래그용
   onCategoryDragStart?: (e: React.DragEvent, category: RSSCategory) => void;
   onCategoryDragOver?: (e: React.DragEvent) => void;
@@ -61,6 +62,7 @@ export const CategoryItem: FC<{
   onDragEnd,
   onNavigateCategory,
   onNavigateFeed,
+  onCloseDrawer,
   onCategoryDragStart,
   onCategoryDragOver,
   onCategoryDrop,
@@ -108,6 +110,8 @@ export const CategoryItem: FC<{
           categoryId: category.id,
         },
       });
+      // 플로팅 모드일 때 드로워 닫기
+      onCloseDrawer?.();
     };
 
     const handleEditSave = async () => {

@@ -64,7 +64,8 @@ services:
       - "3000:3000"
     environment:
       - TZ=Asia/Seoul
-      - WATCHPACK_POLLING=true
+      - WATCHPACK_POLLING=trueenvironment
+      - CHOKIDAR_USEPOLLING=true
       - HOST=0.0.0.0
       - BACKEND_HOST=django
     env_file:

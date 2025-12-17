@@ -69,7 +69,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
         <h2 className="text-lg font-semibold mb-2">
-          {isEditMode 
+          {isEditMode
             ? (t.rssEverything?.saveFeed || 'RSS 소스 수정')
             : (t.rssEverything?.addSource || 'RSS 소스 추가')
           }

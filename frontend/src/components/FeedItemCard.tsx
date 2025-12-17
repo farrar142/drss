@@ -41,10 +41,10 @@ export const renderDescription = (
   const scopeCss = (css: string, scopeId: string): string => {
     // 주석 제거
     let cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    
+
     const result: string[] = [];
     let i = 0;
-    
+
     while (i < cleanCss.length) {
       // @media, @keyframes 등 @ 규칙 처리
       if (cleanCss[i] === '@') {
@@ -53,7 +53,7 @@ export const renderDescription = (
           const atRule = atRuleMatch[0];
           result.push(atRule);
           i += atRule.length;
-          
+
           // @keyframes는 내부를 건드리지 않음
           if (atRule.includes('@keyframes') || atRule.includes('@font-face')) {
             let braceCount = 1;
@@ -68,48 +68,48 @@ export const renderDescription = (
           continue;
         }
       }
-      
+
       // 닫는 중괄호
       if (cleanCss[i] === '}') {
         result.push('}');
         i++;
         continue;
       }
-      
+
       // 선택자 찾기 (다음 { 까지)
       const selectorEnd = cleanCss.indexOf('{', i);
       if (selectorEnd === -1) break;
-      
+
       let selector = cleanCss.slice(i, selectorEnd).trim();
       i = selectorEnd + 1;
-      
+
       // 빈 선택자 건너뛰기
       if (!selector) {
         result.push('{');
         continue;
       }
-      
+
       // 여러 선택자 (콤마로 구분) 각각에 scope 추가
       const scopedSelectors = selector.split(',').map(sel => {
         sel = sel.trim();
         if (!sel) return sel;
-        
+
         // body, html, :root는 scope 클래스로 대체
         if (sel === 'body' || sel === 'html' || sel === ':root') {
           return `.${scopeId}`;
         }
-        
+
         // 이미 scoped면 그대로
         if (sel.includes(scopeId)) {
           return sel;
         }
-        
+
         // 일반 선택자 앞에 scope 추가
         return `.${scopeId} ${sel}`;
       }).join(', ');
-      
+
       result.push(scopedSelectors + ' {');
-      
+
       // 속성 블록 찾기 (다음 } 까지, 중첩 { } 고려)
       let braceCount = 1;
       const propsStart = i;
@@ -120,7 +120,7 @@ export const renderDescription = (
       }
       result.push(cleanCss.slice(propsStart, i));
     }
-    
+
     return result.join('');
   };
 

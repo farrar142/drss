@@ -46,6 +46,7 @@ type DrawerContentProps = {
   onDragStart: (feed: FeedSchema) => void;
   onDragEnd: () => void;
   onReorderCategories: (categories: RSSCategory[]) => void;
+  onCloseDrawer?: () => void;  // 드로워 닫기 콜백
   t: ReturnType<typeof useTranslation>['t'];
 };
 
@@ -62,6 +63,7 @@ const DrawerContent = memo(({
   onDragStart,
   onDragEnd,
   onReorderCategories,
+  onCloseDrawer,
   t
 }: DrawerContentProps) => {
   const [draggingCategoryId, setDraggingCategoryId] = useState<number | null>(null);
@@ -168,6 +170,7 @@ const DrawerContent = memo(({
                 onDragEnd={onDragEnd}
                 onNavigateCategory={onNavigateCategory}
                 onNavigateFeed={onNavigateFeed}
+                onCloseDrawer={onCloseDrawer}
               />
             </div>
           ))}
@@ -217,7 +220,11 @@ export const CategoryDrawer: FC<{
   const handleNavigateHome = useCallback(() => {
     saveCurrentScroll();
     openTab({ type: 'home', title: '메인스트림', path: '/home' });
-  }, [openTab, saveCurrentScroll]);
+    // 플로팅 모드(temporary)일 때 드로워 닫기
+    if (variant === 'temporary') {
+      onClose();
+    }
+  }, [openTab, saveCurrentScroll, variant, onClose]);
 
   const handleNavigateCategory = useCallback((category: RSSCategory) => {
     saveCurrentScroll();
@@ -227,7 +234,11 @@ export const CategoryDrawer: FC<{
       path: '/home', // URL 단순화 - 모든 피드 탭은 /home
       resourceId: category.id
     });
-  }, [openTab, saveCurrentScroll]);
+    // 플로팅 모드(temporary)일 때 드로워 닫기
+    if (variant === 'temporary') {
+      onClose();
+    }
+  }, [openTab, saveCurrentScroll, variant, onClose]);
 
   const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => {
     saveCurrentScroll();
@@ -238,7 +249,11 @@ export const CategoryDrawer: FC<{
       resourceId: feedId,
       favicon: faviconUrl
     });
-  }, [openTab, saveCurrentScroll]);
+    // 플로팅 모드(temporary)일 때 드로워 닫기
+    if (variant === 'temporary') {
+      onClose();
+    }
+  }, [openTab, saveCurrentScroll, variant, onClose]);
 
   useEffect(() => {
     feedsRouterListFeeds().then(setFeeds);
@@ -322,6 +337,7 @@ export const CategoryDrawer: FC<{
               onDragStart={setDraggingFeed}
               onDragEnd={() => setDraggingFeed(null)}
               onReorderCategories={handleReorderCategories}
+              onCloseDrawer={onClose}
               t={t}
             />
           </SheetContent>

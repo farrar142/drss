@@ -221,7 +221,7 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] flex items-center justify-center",
+        "fixed inset-0 z-[100] flex flex-col items-center justify-center",
         "bg-black/80 backdrop-blur-sm"
       )}
       onClick={closeModal}
@@ -229,8 +229,8 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
       {/* Media Content */}
       <div
         className={cn(
-          "w-[95vw] h-[95vh] flex items-center justify-center",
-          "bg-card/90 rounded-2xl border border-border p-4",
+          "w-[95vw] flex-1 max-h-[calc(100%-4rem)] flex items-center justify-center",
+          "bg-card/90 rounded-2xl border border-border p-4 my-2",
           "shadow-2xl relative touch-none select-none"
         )}
         // onClick={(e) => e.stopPropagation()}
@@ -496,8 +496,13 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
           );
         })()}
 
-        {/* Bottom Controls Bar */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+        {/* Bottom Controls Bar - 모달 콘텐츠 밖, 화면 하단 고정 */}
+        </div>
+        <div 
+          className="w-full flex justify-center pb-2 pt-1"
+          style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm rounded-full px-2 py-1.5">
 
             {/* === 저장들 === */}
@@ -742,7 +747,6 @@ export const MediaModal: FC<MediaModalProps> = ({ modal }) => {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 };

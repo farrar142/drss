@@ -8,10 +8,10 @@ const nextConfig: NextConfig = {
     // isServer가 false인 경우에만 (클라이언트 측) 설정을 적용하거나
     // 필요에 따라 조건 없이 적용할 수 있습니다.
 
-    // Webpack watchOptions 설정 (대부분의 경우 이것으로 충분합니다.)
+    // Webpack watchOptions 설정 (대부분의 경우 이것으로 충분합니다.)if (!isServer && process.env.NODE_ENV === 'development') {
     config.watchOptions = {
-      poll: 100, // 1초 간격으로 폴링 (밀리초 단위)
-      aggregateTimeout: 30000,
+      poll: 300, // 300ms 간격으로 파일 변경을 확인합니다.
+      aggregateTimeout: 300, // 변경 사항이 감지되면 300ms 후에 빌드를 시작합니다.
     };
 
     return config;
@@ -29,6 +29,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+
         hostname: '**',
       },
       {
