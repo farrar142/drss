@@ -69,6 +69,10 @@ class RSSItem(models.Model):
     title = models.CharField(max_length=500)
     link = models.URLField()
     description = models.TextField(blank=True)
+    author = models.CharField(max_length=255, blank=True, help_text="아이템 작성자")
+    categories = models.JSONField(
+        default=list, blank=True, help_text="카테고리 목록 (예: ['Tech', 'News'])"
+    )
     published_at = models.DateTimeField()
     guid = models.CharField(max_length=500, unique=True)
     is_read = models.BooleanField(default=False)
@@ -152,6 +156,12 @@ class RSSEverythingSource(models.Model):
     image_selector = models.CharField(
         max_length=500, blank=True, help_text="이미지 CSS 셀렉터 (아이템 내부)"
     )
+    author_selector = models.CharField(
+        max_length=500, blank=True, help_text="작성자 CSS 셀렉터 (아이템 내부)"
+    )
+    categories_selector = models.CharField(
+        max_length=500, blank=True, help_text="카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)"
+    )
 
     # 상세 페이지 설정 (DETAIL_PAGE_SCRAPING 타입에서만 사용)
     detail_title_selector = models.CharField(
@@ -168,6 +178,12 @@ class RSSEverythingSource(models.Model):
     )
     detail_image_selector = models.CharField(
         max_length=500, blank=True, help_text="상세 페이지에서 이미지 CSS 셀렉터"
+    )
+    detail_author_selector = models.CharField(
+        max_length=500, blank=True, help_text="상세 페이지에서 작성자 CSS 셀렉터"
+    )
+    detail_categories_selector = models.CharField(
+        max_length=500, blank=True, help_text="상세 페이지에서 카테고리 CSS 셀렉터"
     )
 
     # 제외할 셀렉터 설정

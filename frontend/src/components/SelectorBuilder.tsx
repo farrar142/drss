@@ -16,6 +16,8 @@ export interface ListSelectors {
   descriptionSelector: string;
   dateSelector: string;
   imageSelector: string;
+  authorSelector: string;
+  categoriesSelector: string;
 }
 
 export interface DetailSelectors {
@@ -24,6 +26,8 @@ export interface DetailSelectors {
   detailContentSelector: string;
   detailDateSelector: string;
   detailImageSelector: string;
+  detailAuthorSelector: string;
+  detailCategoriesSelector: string;
 }
 
 interface SelectorResult {

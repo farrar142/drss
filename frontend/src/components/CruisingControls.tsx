@@ -81,7 +81,7 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
     // pointerdown에서 처리하고 다른 이벤트는 모두 무시
     e.preventDefault();
     e.stopPropagation();
-    
+
     // pointerType으로 터치/마우스 구분 가능하지만, 둘 다 같은 동작
     doToggle();
   }, [doToggle]);

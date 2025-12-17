@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Heart } from "lucide-react";
+import { CheckCircle, Heart, User, Tag } from "lucide-react";
 import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
@@ -471,12 +471,32 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         </div>
       </div>
 
-      {/* Date - aligned with title */}
-      {publishedAt && (
-        <div className={cn("text-muted-foreground", fontSize.meta)}>
-          {publishedAt}
-        </div>
-      )}
+      {/* Date + Author + Categories - metadata row */}
+      <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground", fontSize.meta)}>
+        {publishedAt && <span>{publishedAt}</span>}
+        {item.author && (
+          <span className="flex items-center gap-1">
+            <User className="w-3 h-3" />
+            {item.author}
+          </span>
+        )}
+        {item.categories && item.categories.length > 0 && (
+          <span className="flex items-center gap-1 flex-wrap">
+            <Tag className="w-3 h-3 shrink-0" />
+            {item.categories.slice(0, 5).map((cat, idx) => (
+              <span
+                key={idx}
+                className="px-1.5 py-0.5 bg-muted rounded text-xs"
+              >
+                {cat}
+              </span>
+            ))}
+            {item.categories.length > 5 && (
+              <span className="text-xs">+{item.categories.length - 5}</span>
+            )}
+          </span>
+        )}
+      </div>
 
       {/* Description */}
       {(viewMode === 'feed' || !collapsed) && (

@@ -199,6 +199,8 @@ export const en: Translations = {
     dateSelector: 'Date',
     imageSelector: 'Image',
     contentSelector: 'Content',
+    authorSelector: 'Author',
+    categoriesSelector: 'Categories',
     // Preview Step
     preview: 'Preview',
     previewItems: 'Extracted Items',
@@ -250,5 +252,9 @@ export const en: Translations = {
     detailSelectorNotFound: 'Element not found in detail page',
     validate: 'Validate',
     customHeadersDescription: 'Add custom HTTP headers for requests (e.g., User-Agent, Cookie)',
+    // Mobile toggle
+    selectorSettings: 'Selector Settings',
+    htmlPreview: 'HTML Preview',
+    clickToExclude: 'Click to select element to exclude',
   },
 };

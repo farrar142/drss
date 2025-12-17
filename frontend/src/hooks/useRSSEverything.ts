@@ -36,6 +36,8 @@ const initialListSelectors: ListSelectors = {
   descriptionSelector: '',
   dateSelector: '',
   imageSelector: '',
+  authorSelector: '',
+  categoriesSelector: '',
 };
 
 const initialDetailSelectors: DetailSelectors = {
@@ -44,6 +46,8 @@ const initialDetailSelectors: DetailSelectors = {
   detailContentSelector: '',
   detailDateSelector: '',
   detailImageSelector: '',
+  detailAuthorSelector: '',
+  detailCategoriesSelector: '',
 };
 
 // 셀렉터 검증 결과 타입

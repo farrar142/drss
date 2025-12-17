@@ -207,12 +207,30 @@ def _update_from_rss_source(feed, source):
                 published_at = datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
         else:
             print("No published_parsed or updated_parsed found")
+
+        # 작성자 추출
+        author = ""
+        if hasattr(entry, "author"):
+            author = str(entry.author)[:255] if entry.author else ""
+        elif hasattr(entry, "author_detail") and entry.author_detail:
+            author = str(getattr(entry.author_detail, "name", ""))[:255]
+
+        # 카테고리 추출
+        categories = []
+        if hasattr(entry, "tags") and entry.tags:
+            for tag in entry.tags:
+                term = getattr(tag, "term", None) or getattr(tag, "label", None)
+                if term:
+                    categories.append(str(term))
+
         new_items.append(
             RSSItem(
                 feed=feed,
                 title=title,
                 link=link,
                 description=description,
+                author=author,
+                categories=categories,
                 published_at=published_at,
                 guid=guid,
             )
@@ -370,6 +388,19 @@ def _crawl_list_page(source, items, existing_guids):
                 if parsed_date:
                     published_at = parsed_date
 
+        # 작성자 추출
+        author = ""
+        if source.author_selector:
+            author_el = item.select_one(source.author_selector)
+            if author_el:
+                author = author_el.get_text(strip=True)[:255]
+
+        # 카테고리 추출
+        categories = []
+        if source.categories_selector:
+            cat_els = item.select(source.categories_selector)
+            categories = [el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)][:10]
+
         new_items.append(
             RSSItem(
                 title=title[:199],
@@ -377,6 +408,8 @@ def _crawl_list_page(source, items, existing_guids):
                 description=description,
                 published_at=published_at,
                 guid=guid[:499],
+                author=author,
+                categories=categories,
             )
         )
 
@@ -502,6 +535,19 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                     if parsed_date:
                         published_at = parsed_date
 
+            # 작성자 추출
+            author = ""
+            if source.detail_author_selector:
+                author_el = detail_soup.select_one(source.detail_author_selector)
+                if author_el:
+                    author = author_el.get_text(strip=True)[:255]
+
+            # 카테고리 추출
+            categories = []
+            if source.detail_categories_selector:
+                cat_els = detail_soup.select(source.detail_categories_selector)
+                categories = [el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)][:10]
+
             new_items.append(
                 RSSItem(
                     title=title[:199],
@@ -509,6 +555,8 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                     description=description,
                     published_at=published_at,
                     guid=item_info["link"][:499],
+                    author=author,
+                    categories=categories,
                 )
             )
         except Exception as e:

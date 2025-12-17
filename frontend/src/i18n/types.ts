@@ -201,6 +201,8 @@ export interface Translations {
     dateSelector: string;
     imageSelector: string;
     contentSelector: string;
+    authorSelector: string;
+    categoriesSelector: string;
     // Preview Step
     preview: string;
     previewItems: string;
@@ -252,5 +254,9 @@ export interface Translations {
     detailSelectorNotFound: string;
     validate: string;
     customHeadersDescription: string;
+    // Mobile toggle
+    selectorSettings: string;
+    htmlPreview: string;
+    clickToExclude: string;
   };
 }

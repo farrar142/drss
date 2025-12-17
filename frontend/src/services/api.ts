@@ -289,6 +289,8 @@ export interface ItemSchema {
   title: string;
   link: string;
   description: string;
+  author?: string;
+  categories?: string[];
   published_at: string;
   is_read: boolean;
   is_favorite: boolean;

@@ -15,6 +15,8 @@ class ItemSchema(Schema):
     title: str
     link: str
     description: str
+    author: str = ""
+    categories: list[str] = []
     published_at: datetime
     is_read: bool
     is_favorite: bool

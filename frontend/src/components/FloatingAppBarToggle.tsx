@@ -32,13 +32,13 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   // DOM 직접 업데이트 (React state 없이)
   const updateButtonPosition = useCallback((x: number, y: number, animate = false) => {
     if (!buttonRef.current) return;
-    
+
     if (animate) {
       buttonRef.current.style.transition = 'left 0.2s ease-out, top 0.2s ease-out';
     } else {
       buttonRef.current.style.transition = 'none';
     }
-    
+
     buttonRef.current.style.left = `${x}px`;
     buttonRef.current.style.top = `${y}px`;
     positionRef.current = { x, y };
@@ -48,7 +48,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   const clampPosition = useCallback((pos: Position): Position => {
     const maxX = window.innerWidth - BUTTON_SIZE - EDGE_MARGIN;
     const maxY = window.innerHeight - BUTTON_SIZE - EDGE_MARGIN;
-    
+
     return {
       x: Math.max(EDGE_MARGIN, Math.min(pos.x, maxX)),
       y: Math.max(EDGE_MARGIN, Math.min(pos.y, maxY)),
@@ -59,11 +59,11 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   const snapToEdge = useCallback((pos: Position): Position => {
     const centerX = pos.x + BUTTON_SIZE / 2;
     const screenCenterX = window.innerWidth / 2;
-    
-    const snappedX = centerX < screenCenterX 
-      ? EDGE_MARGIN 
+
+    const snappedX = centerX < screenCenterX
+      ? EDGE_MARGIN
       : window.innerWidth - BUTTON_SIZE - EDGE_MARGIN;
-    
+
     return clampPosition({ x: snappedX, y: pos.y });
   }, [clampPosition]);
 
@@ -76,7 +76,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     let initialPos: Position;
-    
+
     if (saved) {
       try {
         initialPos = JSON.parse(saved);
@@ -94,7 +94,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
         y: window.innerHeight - BUTTON_SIZE - DEFAULT_BOTTOM,
       };
     }
-    
+
     const clampedPos = clampPosition(initialPos);
     updateButtonPosition(clampedPos.x, clampedPos.y);
   }, [clampPosition, updateButtonPosition]);
@@ -103,13 +103,13 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault(); // 클릭 이벤트 방지
     e.stopPropagation();
-    
+
     const touch = e.touches[0];
     dragStartPos.current = { x: touch.clientX, y: touch.clientY };
     initialButtonPos.current = { ...positionRef.current };
     dragStartTime.current = Date.now();
     hasMoved.current = false;
-    
+
     // 드래그 시작 시 스케일 업
     if (buttonRef.current) {
       buttonRef.current.style.transform = 'scale(1.1)';
@@ -120,16 +120,16 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const touch = e.touches[0];
     const deltaX = touch.clientX - dragStartPos.current.x;
     const deltaY = touch.clientY - dragStartPos.current.y;
-    
+
     // 5px 이상 이동하면 드래그로 인식
     if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
       hasMoved.current = true;
     }
-    
+
     if (hasMoved.current) {
       // 드래그 중에는 제한 없이 자유롭게 이동 (경계는 놓을 때만 적용)
       const newX = initialButtonPos.current.x + deltaX;
@@ -141,15 +141,15 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const dragDuration = Date.now() - dragStartTime.current;
-    
+
     // 스케일 복원
     if (buttonRef.current) {
       buttonRef.current.style.transform = 'scale(1)';
       buttonRef.current.style.boxShadow = '';
     }
-    
+
     if (hasMoved.current) {
       // 드래그 종료 시 가장자리로 스냅 (애니메이션 적용)
       const snappedPos = snapToEdge(positionRef.current);
@@ -178,7 +178,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
     const handleMouseMove = (e: MouseEvent) => {
       const deltaX = e.clientX - dragStartPos.current.x;
       const deltaY = e.clientY - dragStartPos.current.y;
-      
+
       if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
         hasMoved.current = true;
         const newX = initialButtonPos.current.x + deltaX;
@@ -189,13 +189,13 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
 
     const handleMouseUp = () => {
       const dragDuration = Date.now() - dragStartTime.current;
-      
+
       // 스케일 복원
       if (buttonRef.current) {
         buttonRef.current.style.transform = 'scale(1)';
         buttonRef.current.style.boxShadow = '';
       }
-      
+
       if (hasMoved.current) {
         const snappedPos = snapToEdge(positionRef.current);
         updateButtonPosition(snappedPos.x, snappedPos.y, true);
@@ -203,7 +203,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
       } else if (dragDuration < 300) {
         onToggle();
       }
-      
+
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };

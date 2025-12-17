@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { Loader2, Eye, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Loader2, Eye, ArrowRight, AlertTriangle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
@@ -23,6 +23,8 @@ function useListFieldLabels() {
     descriptionSelector: t.rssEverything.descriptionSelector,
     dateSelector: t.rssEverything.dateSelector,
     imageSelector: t.rssEverything.imageSelector,
+    authorSelector: t.rssEverything.authorSelector,
+    categoriesSelector: t.rssEverything.categoriesSelector,
   };
 }
 
@@ -88,10 +90,31 @@ export function ListSelectorStep({
   const canProceed = listSelectors.itemSelector &&
     (parseMode === 'list' ? listSelectors.titleSelector : listSelectors.linkSelector);
 
+  // 모바일에서 셀렉터 패널과 HTML 뷰어 토글
+  const [showHtmlViewer, setShowHtmlViewer] = useState(false);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-8rem)]">
-      {/* Selector Builder */}
-      <Card className="flex flex-col overflow-hidden">
+    <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 h-[calc(100vh-8rem)]">
+      {/* Mobile: Toggle Button */}
+      <div className="lg:hidden flex gap-2">
+        <Button
+          variant={!showHtmlViewer ? "default" : "outline"}
+          className="flex-1"
+          onClick={() => setShowHtmlViewer(false)}
+        >
+          {t.rssEverything.selectorSettings}
+        </Button>
+        <Button
+          variant={showHtmlViewer ? "default" : "outline"}
+          className="flex-1"
+          onClick={() => setShowHtmlViewer(true)}
+        >
+          {t.rssEverything.htmlPreview}
+        </Button>
+      </div>
+
+      {/* Selector Builder - 모바일에서 토글 */}
+      <Card className={`flex flex-col overflow-hidden ${showHtmlViewer ? 'hidden lg:flex' : 'flex'}`}>
         <CardHeader className="flex-shrink-0 pb-2">
           <CardTitle>
             {t.rssEverything.listSelectors}
@@ -152,9 +175,9 @@ export function ListSelectorStep({
             </div>
           ) : (
             <div className="space-y-2">
-              <Label className="text-destructive">Exclude Selector (클릭하여 추가)</Label>
+              <Label className="text-destructive">Exclude Selector</Label>
               <p className="text-xs text-muted-foreground">
-                HTML에서 요소를 클릭하면 제외 목록에 추가됩니다.
+                {t.rssEverything.clickToExclude}
               </p>
             </div>
           )}
@@ -251,13 +274,13 @@ export function ListSelectorStep({
         </CardContent>
       </Card>
 
-      {/* HTML Viewer */}
-      <Card className="overflow-hidden flex flex-col">
+      {/* HTML Viewer - 모바일에서 토글 */}
+      <Card className={`overflow-hidden flex flex-col min-h-[50vh] lg:min-h-0 ${!showHtmlViewer ? 'hidden lg:flex' : 'flex'}`}>
         <CardHeader className="flex-shrink-0 py-2">
           <CardTitle>{t.rssEverything.preview}</CardTitle>
           <CardDescription>
             {activeListField === 'exclude' ? (
-              <span className="text-destructive">클릭하여 제외할 요소 선택</span>
+              <span className="text-destructive">{t.rssEverything.clickToExclude}</span>
             ) : (
               <>{t.rssEverything.selectElement}: <strong>{listFieldLabels[activeListField]}</strong></>
             )}

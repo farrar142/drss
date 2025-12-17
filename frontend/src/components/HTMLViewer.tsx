@@ -224,20 +224,38 @@ export function HTMLViewer({ html, baseUrl, currentSelector, onSelectorChange }:
     doc.addEventListener('mouseout', handleMouseOut, true);
     doc.addEventListener('click', handleClick, true);
 
-    // Prevent navigation
-    const handleLinkClick = (e: MouseEvent) => {
+    // Prevent navigation - 모든 링크 이벤트 차단 (터치 포함)
+    const preventNavigation = (e: Event) => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'A' || target.closest('a')) {
         e.preventDefault();
+        e.stopPropagation();
       }
     };
-    doc.addEventListener('click', handleLinkClick, false);
+    doc.addEventListener('click', preventNavigation, false);
+    doc.addEventListener('touchend', preventNavigation, false);
+    doc.addEventListener('touchstart', preventNavigation, { passive: false });
+
+    // Disable pointer events on all links to prevent any navigation
+    const style = doc.createElement('style');
+    style.id = 'rss-everything-link-disable';
+    style.textContent = `
+      a {
+        pointer-events: auto !important;
+        cursor: crosshair !important;
+      }
+    `;
+    doc.head.appendChild(style);
 
     return () => {
       doc.removeEventListener('mouseover', handleMouseOver, true);
       doc.removeEventListener('mouseout', handleMouseOut, true);
       doc.removeEventListener('click', handleClick, true);
-      doc.removeEventListener('click', handleLinkClick, false);
+      doc.removeEventListener('click', preventNavigation, false);
+      doc.removeEventListener('touchend', preventNavigation, false);
+      doc.removeEventListener('touchstart', preventNavigation);
+      const linkStyle = doc.getElementById('rss-everything-link-disable');
+      if (linkStyle) linkStyle.remove();
     };
   }, [isReady, generateSelector, generateGeneralSelector, onSelectorChange]);
 
