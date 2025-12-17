@@ -63,6 +63,8 @@ class SourceCreateSchema(Schema):
     description_selector: str = ""
     date_selector: str = ""
     image_selector: str = ""
+    author_selector: str = ""
+    categories_selector: str = ""
 
     # 상세 페이지용 셀렉터
     detail_title_selector: str = ""
@@ -70,6 +72,8 @@ class SourceCreateSchema(Schema):
     detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
+    detail_author_selector: str = ""
+    detail_categories_selector: str = ""
 
     # 기타 설정
     exclude_selectors: list[str] = []
@@ -95,6 +99,8 @@ class SourceUpdateSchema(Schema):
     description_selector: Optional[str] = None
     date_selector: Optional[str] = None
     image_selector: Optional[str] = None
+    author_selector: Optional[str] = None
+    categories_selector: Optional[str] = None
 
     # 상세 페이지용 셀렉터
     detail_title_selector: Optional[str] = None
@@ -102,6 +108,8 @@ class SourceUpdateSchema(Schema):
     detail_content_selector: Optional[str] = None
     detail_date_selector: Optional[str] = None
     detail_image_selector: Optional[str] = None
+    detail_author_selector: Optional[str] = None
+    detail_categories_selector: Optional[str] = None
 
     # 기타 설정
     exclude_selectors: Optional[list[str]] = None
@@ -216,12 +224,16 @@ class RSSEverythingCreateRequest(BaseModel):
     description_selector: str = ""
     date_selector: str = ""
     image_selector: str = ""
+    author_selector: str = ""
+    categories_selector: str = ""
     follow_links: bool = False
     detail_title_selector: str = ""
     detail_description_selector: str = ""
     detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
+    detail_author_selector: str = ""
+    detail_categories_selector: str = ""
     exclude_selectors: list[str] = Field(default_factory=list)
     date_formats: list[str] = Field(default_factory=list)
     date_locale: str = "ko_KR"
@@ -243,12 +255,16 @@ class RSSEverythingUpdateRequest(BaseModel):
     description_selector: Optional[str] = None
     date_selector: Optional[str] = None
     image_selector: Optional[str] = None
+    author_selector: Optional[str] = None
+    categories_selector: Optional[str] = None
     follow_links: Optional[bool] = None
     detail_title_selector: Optional[str] = None
     detail_description_selector: Optional[str] = None
     detail_content_selector: Optional[str] = None
     detail_date_selector: Optional[str] = None
     detail_image_selector: Optional[str] = None
+    detail_author_selector: Optional[str] = None
+    detail_categories_selector: Optional[str] = None
     exclude_selectors: Optional[list[str]] = None
     date_formats: Optional[list[str]] = None
     date_locale: Optional[str] = None
@@ -271,12 +287,16 @@ class RSSEverythingSchema(BaseModel):
     description_selector: str
     date_selector: str
     image_selector: str
+    author_selector: str
+    categories_selector: str
     follow_links: bool
     detail_title_selector: str
     detail_description_selector: str
     detail_content_selector: str
     detail_date_selector: str
     detail_image_selector: str
+    detail_author_selector: str
+    detail_categories_selector: str
     exclude_selectors: list[str]
     date_formats: list[str]
     date_locale: str
@@ -303,12 +323,16 @@ class RSSEverythingSchema(BaseModel):
             description_selector=obj.description_selector or "",
             date_selector=obj.date_selector or "",
             image_selector=obj.image_selector or "",
+            author_selector=obj.author_selector or "",
+            categories_selector=obj.categories_selector or "",
             follow_links=obj.source_type == "detail_page_scraping",
             detail_title_selector=obj.detail_title_selector or "",
             detail_description_selector=obj.detail_description_selector or "",
             detail_content_selector=obj.detail_content_selector or "",
             detail_date_selector=obj.detail_date_selector or "",
             detail_image_selector=obj.detail_image_selector or "",
+            detail_author_selector=obj.detail_author_selector or "",
+            detail_categories_selector=obj.detail_categories_selector or "",
             exclude_selectors=obj.exclude_selectors or [],
             date_formats=obj.date_formats or [],
             date_locale=obj.date_locale or "ko_KR",

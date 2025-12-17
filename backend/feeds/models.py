@@ -160,7 +160,9 @@ class RSSEverythingSource(models.Model):
         max_length=500, blank=True, help_text="작성자 CSS 셀렉터 (아이템 내부)"
     )
     categories_selector = models.CharField(
-        max_length=500, blank=True, help_text="카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)"
+        max_length=500,
+        blank=True,
+        help_text="카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)",
     )
 
     # 상세 페이지 설정 (DETAIL_PAGE_SCRAPING 타입에서만 사용)

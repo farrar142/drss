@@ -123,13 +123,13 @@ services:
   real-browser:
     image: ghcr.io/hyoban/puppeteer-real-browser-hono
     restart: always
-    ports:
-      - '3001:3000'
     healthcheck:
       test: [ 'CMD', 'curl', '-f', 'http://localhost:3000' ]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - drss-network
 
   browserless:
     # marked
@@ -147,6 +147,8 @@ services:
       interval: 30s # marked
       timeout: 10s # marked
       retries: 3 # marked
+    networks:
+      - drss-network
 
 networks:
   drss-network:

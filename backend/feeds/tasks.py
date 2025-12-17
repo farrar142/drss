@@ -399,7 +399,9 @@ def _crawl_list_page(source, items, existing_guids):
         categories = []
         if source.categories_selector:
             cat_els = item.select(source.categories_selector)
-            categories = [el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)][:10]
+            categories = [
+                el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
+            ][:10]
 
         new_items.append(
             RSSItem(
@@ -546,7 +548,9 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
             categories = []
             if source.detail_categories_selector:
                 cat_els = detail_soup.select(source.detail_categories_selector)
-                categories = [el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)][:10]
+                categories = [
+                    el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
+                ][:10]
 
             new_items.append(
                 RSSItem(
