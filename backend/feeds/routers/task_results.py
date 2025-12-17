@@ -15,13 +15,14 @@ router = Router(tags=["task-results"])
 
 class FeedInfo(BaseModel):
     """피드 기본 정보"""
+
     id: int
     title: str
-    url: str
 
 
 class TaskResultSchema(BaseModel):
     """Task 결과 스키마"""
+
     id: int
     feed: FeedInfo
     task_id: str
@@ -41,7 +42,6 @@ class TaskResultSchema(BaseModel):
             feed=FeedInfo(
                 id=obj.feed.id,
                 title=obj.feed.title,
-                url=obj.feed.url,
             ),
             task_id=obj.task_id,
             status=obj.status,
@@ -57,12 +57,14 @@ class TaskResultSchema(BaseModel):
 
 class TaskResultListResponse(BaseModel):
     """Task 결과 목록 응답"""
+
     items: list[TaskResultSchema]
     total: int
 
 
 class TaskStatsSchema(BaseModel):
     """Task 통계"""
+
     total: int
     success: int
     failure: int
@@ -80,7 +82,7 @@ def list_task_results(
 ):
     """
     Task 결과 목록 조회
-    
+
     Parameters:
     - feed_id: 특정 피드의 결과만 조회
     - status: 상태 필터 (pending, running, success, failure)
@@ -90,16 +92,16 @@ def list_task_results(
     # 사용자의 피드에 대한 결과만 조회
     user_feeds = RSSFeed.objects.filter(user=request.auth).values_list("id", flat=True)
     queryset = FeedTaskResult.objects.filter(feed_id__in=user_feeds)
-    
+
     if feed_id:
         queryset = queryset.filter(feed_id=feed_id)
-    
+
     if status:
         queryset = queryset.filter(status=status)
-    
+
     total = queryset.count()
-    results = queryset.order_by("-created_at")[offset:offset + limit]
-    
+    results = queryset.order_by("-created_at")[offset : offset + limit]
+
     return TaskResultListResponse(
         items=[TaskResultSchema.from_orm(r) for r in results],
         total=total,
@@ -110,16 +112,16 @@ def list_task_results(
 def get_task_stats(request, feed_id: Optional[int] = None):
     """
     Task 통계 조회
-    
+
     Parameters:
     - feed_id: 특정 피드의 통계만 조회
     """
     user_feeds = RSSFeed.objects.filter(user=request.auth).values_list("id", flat=True)
     queryset = FeedTaskResult.objects.filter(feed_id__in=user_feeds)
-    
+
     if feed_id:
         queryset = queryset.filter(feed_id=feed_id)
-    
+
     return TaskStatsSchema(
         total=queryset.count(),
         success=queryset.filter(status=FeedTaskResult.Status.SUCCESS).count(),
@@ -135,7 +137,7 @@ def get_task_result(request, result_id: int):
     특정 Task 결과 상세 조회
     """
     from django.shortcuts import get_object_or_404
-    
+
     result = get_object_or_404(
         FeedTaskResult,
         id=result_id,
@@ -150,7 +152,7 @@ def delete_task_result(request, result_id: int):
     특정 Task 결과 삭제
     """
     from django.shortcuts import get_object_or_404
-    
+
     result = get_object_or_404(
         FeedTaskResult,
         id=result_id,
@@ -168,21 +170,21 @@ def clear_task_results(
 ):
     """
     Task 결과 일괄 삭제
-    
+
     Parameters:
     - feed_id: 특정 피드의 결과만 삭제
     - status: 특정 상태의 결과만 삭제
     """
     user_feeds = RSSFeed.objects.filter(user=request.auth).values_list("id", flat=True)
     queryset = FeedTaskResult.objects.filter(feed_id__in=user_feeds)
-    
+
     if feed_id:
         queryset = queryset.filter(feed_id=feed_id)
-    
+
     if status:
         queryset = queryset.filter(status=status)
-    
+
     deleted_count = queryset.count()
     queryset.delete()
-    
+
     return {"success": True, "deleted": deleted_count}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe } from 'lucide-react';
+import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -11,6 +11,7 @@ import { Slider } from '@/ui/slider';
 import { useThemeStore, applyThemeColors } from '@/stores/themeStore';
 import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '@/stores/settingsStore';
 import { useTranslation, languageNames, availableLanguages } from '@/stores/languageStore';
+import { useTabStore } from '@/stores/tabStore';
 import { FeedItemCard } from '@/components/FeedItemCard';
 import { RSSItem } from '@/types/rss';
 
@@ -42,6 +43,7 @@ export function SettingsPage() {
   const { mode, setMode, colors, setColors, resetColors } = useThemeStore();
   const { fontSizeLevel, setFontSizeLevel, cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
   const { t, language, setLanguage } = useTranslation();
+  const { openTab } = useTabStore();
 
   // Local state for color pickers
   const [primaryHex, setPrimaryHex] = useState(colors.primary);
@@ -76,11 +78,25 @@ export function SettingsPage() {
     resetColors();
   };
 
+  const handleOpenTaskResults = () => {
+    openTab({
+      type: 'task-results',
+      title: 'Task Results',
+      path: '/task-results',
+    });
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-1">
-      <div className="flex items-center gap-3 mb-8">
-        <Palette className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Palette className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleOpenTaskResults}>
+          <ClipboardList className="w-4 h-4 mr-2" />
+          Task Results
+        </Button>
       </div>
 
       {/* Language */}

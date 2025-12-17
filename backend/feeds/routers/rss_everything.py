@@ -182,6 +182,8 @@ class RSSEverythingSchema(BaseModel):
     id: int
     feed_id: int
     url: str
+    source_type: str
+    is_active: bool
 
     item_selector: str
     title_selector: str
@@ -190,7 +192,7 @@ class RSSEverythingSchema(BaseModel):
     date_selector: str
     image_selector: str
 
-    follow_links: bool
+    follow_links: bool  # source_type이 detail_page_scraping이면 True
     detail_title_selector: str
     detail_description_selector: str
     detail_content_selector: str
@@ -204,6 +206,7 @@ class RSSEverythingSchema(BaseModel):
     use_browser: bool
     wait_selector: str
     timeout: int
+    custom_headers: dict
 
     last_crawled_at: Optional[str]
     last_error: str
@@ -216,28 +219,31 @@ class RSSEverythingSchema(BaseModel):
             id=obj.id,
             feed_id=obj.feed_id,
             url=obj.url,
-            item_selector=obj.item_selector,
-            title_selector=obj.title_selector,
-            link_selector=obj.link_selector,
-            description_selector=obj.description_selector,
-            date_selector=obj.date_selector,
-            image_selector=obj.image_selector,
-            follow_links=obj.follow_links,
-            detail_title_selector=obj.detail_title_selector,
-            detail_description_selector=obj.detail_description_selector,
-            detail_content_selector=obj.detail_content_selector,
-            detail_date_selector=obj.detail_date_selector,
-            detail_image_selector=obj.detail_image_selector,
+            source_type=obj.source_type,
+            is_active=obj.is_active,
+            item_selector=obj.item_selector or "",
+            title_selector=obj.title_selector or "",
+            link_selector=obj.link_selector or "",
+            description_selector=obj.description_selector or "",
+            date_selector=obj.date_selector or "",
+            image_selector=obj.image_selector or "",
+            follow_links=obj.source_type == "detail_page_scraping",
+            detail_title_selector=obj.detail_title_selector or "",
+            detail_description_selector=obj.detail_description_selector or "",
+            detail_content_selector=obj.detail_content_selector or "",
+            detail_date_selector=obj.detail_date_selector or "",
+            detail_image_selector=obj.detail_image_selector or "",
             exclude_selectors=obj.exclude_selectors or [],
             date_formats=obj.date_formats or [],
-            date_locale=obj.date_locale,
+            date_locale=obj.date_locale or "ko_KR",
             use_browser=obj.use_browser,
-            wait_selector=obj.wait_selector,
+            wait_selector=obj.wait_selector or "",
             timeout=obj.timeout,
+            custom_headers=obj.custom_headers or {},
             last_crawled_at=(
                 obj.last_crawled_at.isoformat() if obj.last_crawled_at else None
             ),
-            last_error=obj.last_error,
+            last_error=obj.last_error or "",
             created_at=obj.created_at.isoformat(),
             updated_at=obj.updated_at.isoformat(),
         )
@@ -541,13 +547,13 @@ def preview_items(request, data: PreviewItemRequest):
             )
 
         soup = BeautifulSoup(result.html, "html.parser")
-        
+
         # exclude_selectors 적용 - 지정된 요소들 제거
         if data.exclude_selectors:
             for exclude_selector in data.exclude_selectors:
                 for el in soup.select(exclude_selector):
                     el.decompose()
-        
+
         items = soup.select(data.item_selector)
 
         preview_items = []
@@ -759,10 +765,8 @@ def create_source(request, data: RSSEverythingCreateRequest):
     # Favicon 추출
     favicon_url = extract_favicon_url(data.url)
 
-    # 가상의 RSS URL 생성 (내부 식별용)
-    import uuid
-
-    virtual_url = f"rss-everything://{uuid.uuid4()}"
+    # source_type 결정
+    source_type = "detail_page_scraping" if data.follow_links else "page_scraping"
 
     # 트랜잭션으로 RSSFeed와 RSSEverythingSource를 함께 생성
     with transaction.atomic():
@@ -770,25 +774,25 @@ def create_source(request, data: RSSEverythingCreateRequest):
         feed = RSSFeed.objects.create(
             user=request.auth,
             category=category,
-            url=virtual_url,
             title=data.name,
             favicon_url=favicon_url,
             description=f"RSS Everything: {data.url}",
             refresh_interval=data.refresh_interval,
-            custom_headers=data.custom_headers,
         )
 
         # RSSEverythingSource 생성 (feed 연결)
         source = RSSEverythingSource.objects.create(
             feed=feed,
+            source_type=source_type,
+            is_active=True,
             url=data.url,
+            custom_headers=data.custom_headers,
             item_selector=data.item_selector,
             title_selector=data.title_selector,
             link_selector=data.link_selector,
             description_selector=data.description_selector,
             date_selector=data.date_selector,
             image_selector=data.image_selector,
-            follow_links=data.follow_links,
             detail_title_selector=data.detail_title_selector,
             detail_description_selector=data.detail_description_selector,
             detail_content_selector=data.detail_content_selector,
@@ -814,6 +818,13 @@ def update_source(request, source_id: int, data: RSSEverythingUpdateRequest):
 
     update_fields = []
 
+    # follow_links가 변경되면 source_type도 변경
+    if data.follow_links is not None:
+        source.source_type = (
+            "detail_page_scraping" if data.follow_links else "page_scraping"
+        )
+        update_fields.append("source_type")
+
     for field in [
         "item_selector",
         "title_selector",
@@ -821,7 +832,6 @@ def update_source(request, source_id: int, data: RSSEverythingUpdateRequest):
         "description_selector",
         "date_selector",
         "image_selector",
-        "follow_links",
         "detail_title_selector",
         "detail_description_selector",
         "detail_content_selector",
@@ -860,6 +870,7 @@ def delete_source(request, source_id: int):
 
 class RefreshResponse(BaseModel):
     """새로고침 응답"""
+
     success: bool
     task_result_id: int
     message: str

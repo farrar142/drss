@@ -228,16 +228,20 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
       <FeedDialog
         open={editOpen}
         onOpenChange={setEditOpen}
+        mode="edit"
         title="피드 수정"
         submitLabel="저장"
         initial={{
-          url: feed.url,
           title: feed.title,
           description: feed.description,
           favicon_url: feed.favicon_url,
           visible: feed.visible,
-          custom_headers: feed.custom_headers as any,
           refresh_interval: feed.refresh_interval,
+          source: feed.sources?.[0] ? {
+            source_type: feed.sources[0].source_type as any,
+            url: feed.sources[0].url,
+            custom_headers: feed.sources[0].custom_headers,
+          } : undefined,
         }}
         onSubmit={handleEditSave}
       />

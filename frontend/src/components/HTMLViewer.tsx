@@ -46,17 +46,17 @@ export function HTMLViewer({ html, baseUrl, currentSelector, onSelectorChange }:
       // Check if we need nth-child to disambiguate
       if (current.parentElement) {
         const siblings = Array.from(current.parentElement.children);
-        
+
         // Find siblings with same tag
         const sameTagSiblings = siblings.filter(el => el.tagName === current!.tagName);
-        
+
         if (sameTagSiblings.length > 1) {
           // If we have a unique class, use it without nth-child
           if (classes.length > 0) {
-            const sameTagAndClassSiblings = sameTagSiblings.filter(el => 
+            const sameTagAndClassSiblings = sameTagSiblings.filter(el =>
               el.classList.contains(classes[0])
             );
-            
+
             if (sameTagAndClassSiblings.length === 1) {
               // Class is unique among siblings, use just the class
               selector += '.' + classes[0];
@@ -110,7 +110,7 @@ export function HTMLViewer({ html, baseUrl, currentSelector, onSelectorChange }:
       if (parent.id) {
         return `#${parent.id} ${tag}`;
       }
-      
+
       const parentClasses = Array.from(parent.classList)
         .filter(c =>
           !c.match(/^[a-z]+-[a-f0-9]+$/i) &&
@@ -123,7 +123,7 @@ export function HTMLViewer({ html, baseUrl, currentSelector, onSelectorChange }:
       if (parentClasses.length > 0) {
         return `.${parentClasses[0]} ${tag}`;
       }
-      
+
       parent = parent.parentElement;
     }
 

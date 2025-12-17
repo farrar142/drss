@@ -8,7 +8,6 @@ import {
   feedsRoutersTaskResultsClearTaskResults,
   TaskResultSchema,
   TaskStatsSchema,
-  TaskResultStatus,
 } from '@/services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
 import { Button } from '@/ui/button';
@@ -24,6 +23,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+
+// TaskResultStatus 타입을 직접 정의
+type TaskResultStatus = 'pending' | 'running' | 'success' | 'failure';
 
 const STATUS_CONFIG: Record<TaskResultStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'Pending', color: 'bg-yellow-500', icon: <Clock className="h-4 w-4" /> },
@@ -72,7 +74,7 @@ export default function TaskResultsPage() {
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
-      
+
       const response = await feedsRoutersTaskResultsListTaskResults(params as Parameters<typeof feedsRoutersTaskResultsListTaskResults>[0]);
       setResults(response.items);
       setTotal(response.total);
@@ -250,7 +252,7 @@ export default function TaskResultsPage() {
           ) : (
             <div className="space-y-2">
               {results.map((result) => {
-                const statusConfig = STATUS_CONFIG[result.status];
+                const statusConfig = STATUS_CONFIG[result.status as TaskResultStatus] || STATUS_CONFIG.pending;
                 return (
                   <div
                     key={result.id}

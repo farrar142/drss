@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState } from 'react';
-import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown } from 'lucide-react';
+import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Tab, TabType, PanelId } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,10 @@ const TabIcon: React.FC<{ type: TabType; favicon?: string; className?: string }>
       return <Rss className={className} />;
     case 'settings':
       return <Settings className={className} />;
+    case 'rss-everything':
+      return <Globe className={className} />;
+    case 'task-results':
+      return <ClipboardList className={className} />;
     default:
       return null;
   }

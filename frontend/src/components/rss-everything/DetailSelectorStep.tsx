@@ -204,8 +204,8 @@ export function DetailSelectorStep({
           <CardDescription>
             {detailHtml
               ? (activeDetailField === 'exclude'
-                  ? <span className="text-destructive">클릭하여 제외할 요소 선택</span>
-                  : <>{t.rssEverything.selectElement}: <strong>{detailFieldLabels[activeDetailField]}</strong></>)
+                ? <span className="text-destructive">클릭하여 제외할 요소 선택</span>
+                : <>{t.rssEverything.selectElement}: <strong>{detailFieldLabels[activeDetailField]}</strong></>)
               : t.rssEverything.previewEmpty}
           </CardDescription>
         </CardHeader>

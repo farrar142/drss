@@ -97,7 +97,12 @@ export const CategoryItem: FC<{
     };
 
     const handleCreateSubmit = async (payload: any) => {
-      const created = await feedsRoutersFeedCreateFeed({ ...payload, category_id: category.id });
+      // payload에는 title, description, visible, refresh_interval, source가 포함됨
+      const feedData = {
+        ...payload,
+        category_id: category.id,
+      };
+      const created = await feedsRoutersFeedCreateFeed(feedData);
       addFeed(created);
       return created;
     };
@@ -351,7 +356,14 @@ export const CategoryItem: FC<{
           </div>
         </div>
 
-        <FeedDialog open={addFeedOpen} onOpenChange={setAddFeedOpen} title={t.feed.add} submitLabel={t.common.add} onSubmit={handleCreateSubmit} />
+        <FeedDialog
+          open={addFeedOpen}
+          onOpenChange={setAddFeedOpen}
+          mode="create"
+          title={t.feed.add}
+          submitLabel={t.common.add}
+          onSubmit={handleCreateSubmit}
+        />
 
         {/* 카테고리 수정 다이얼로그 */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>

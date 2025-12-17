@@ -58,14 +58,13 @@ def extract_html_block(element, base_url: str = "") -> str:
 
 @shared_task(bind=True)
 def update_feed_items(self, feed_id, task_result_id=None):
-    from .models import RSSFeed, RSSItem, FeedTaskResult
+    from .models import RSSFeed, RSSItem, FeedTaskResult, RSSEverythingSource
 
     """
     특정 RSS 피드의 아이템들을 업데이트하는 task
-    RSSEverythingSource가 연결된 경우 크롤링을 사용하고,
-    그렇지 않으면 기존 RSS 파싱을 사용합니다.
+    피드에 연결된 모든 소스들을 순회하며 아이템을 수집합니다.
     """
-    
+
     # Task 결과 레코드 가져오기 또는 생성
     task_result = None
     if task_result_id:
@@ -79,8 +78,8 @@ def update_feed_items(self, feed_id, task_result_id=None):
             task_result = None
 
     try:
-        feed = RSSFeed.objects.get(id=feed_id)
-        logger.info(f"Updating feed: {feed.title} ({feed.url})")
+        feed = RSSFeed.objects.prefetch_related("sources").get(id=feed_id)
+        logger.info(f"Updating feed: {feed.title}")
     except RSSFeed.DoesNotExist:
         if task_result:
             task_result.status = FeedTaskResult.Status.FAILURE
@@ -99,16 +98,50 @@ def update_feed_items(self, feed_id, task_result_id=None):
         )
 
     try:
-        # RSSEverythingSource가 연결된 경우 크롤링 사용
-        try:
-            if hasattr(feed, "rss_everything_source") and feed.rss_everything_source:
-                result = _update_feed_from_rss_everything(feed, task_result)
-            else:
-                result = _update_feed_from_rss(feed, task_result)
-        except Exception:
-            result = _update_feed_from_rss(feed, task_result)
-        
-        return result
+        total_found = 0
+        total_created = 0
+        errors = []
+
+        # 활성화된 모든 소스 처리
+        active_sources = feed.sources.filter(is_active=True)
+
+        for source in active_sources:
+            try:
+                if source.source_type == RSSEverythingSource.SourceType.RSS:
+                    found, created = _update_from_rss_source(feed, source)
+                else:
+                    found, created = _update_from_scraping_source(feed, source)
+
+                total_found += found
+                total_created += created
+            except Exception as e:
+                logger.exception(f"Failed to update from source {source.id}")
+                errors.append(f"Source {source.id}: {str(e)}")
+                source.last_error = str(e)
+                source.save(update_fields=["last_error"])
+
+        # Task 결과 업데이트
+        if errors:
+            task_result.status = FeedTaskResult.Status.SUCCESS  # 일부 성공
+            task_result.error_message = "; ".join(errors)
+        else:
+            task_result.status = FeedTaskResult.Status.SUCCESS
+
+        task_result.items_found = total_found
+        task_result.items_created = total_created
+        task_result.completed_at = django_timezone.now()
+        task_result.save(
+            update_fields=[
+                "status",
+                "items_found",
+                "items_created",
+                "error_message",
+                "completed_at",
+            ]
+        )
+
+        return f"Updated feed {feed.title}: {total_created} new items from {len(active_sources)} sources"
+
     except Exception as e:
         logger.exception(f"Failed to update feed {feed_id}")
         task_result.status = FeedTaskResult.Status.FAILURE
@@ -118,15 +151,17 @@ def update_feed_items(self, feed_id, task_result_id=None):
         return f"Failed: {str(e)}"
 
 
-def _update_feed_from_rss(feed, task_result=None):
-    """일반 RSS 피드에서 아이템을 업데이트"""
-    from .models import RSSItem, FeedTaskResult
+def _update_from_rss_source(feed, source):
+    """RSS 소스에서 아이템을 업데이트"""
+    from .models import RSSItem
     from feedparser import FeedParserDict
 
-    feed_data = fetch_feed_data(feed.url, feed.custom_headers)
+    feed_data = fetch_feed_data(source.url, source.custom_headers)
 
     if feed_data.bozo:
-        return f"Failed to parse feed {feed.url}: {feed_data.bozo_exception}"
+        raise Exception(
+            f"Failed to parse feed {source.url}: {feed_data.bozo_exception}"
+        )
 
     # 새로운 아이템들 수집
     new_items = []
@@ -186,120 +221,86 @@ def _update_feed_from_rss(feed, task_result=None):
     # 새로운 아이템들 bulk create
     items_found = len(feed_data.entries)
     items_created = len(new_items)
-    
+
     if new_items:
         RSSItem.objects.bulk_create(new_items)
         feed.last_updated = django_timezone.now()
         feed.save()
 
-    # Task 결과 업데이트
-    if task_result:
-        from .models import FeedTaskResult
-        task_result.status = FeedTaskResult.Status.SUCCESS
-        task_result.items_found = items_found
-        task_result.items_created = items_created
-        task_result.completed_at = django_timezone.now()
-        task_result.save(update_fields=["status", "items_found", "items_created", "completed_at"])
+    # 소스 업데이트
+    source.last_crawled_at = django_timezone.now()
+    source.last_error = ""
+    source.save(update_fields=["last_crawled_at", "last_error"])
 
-    return f"Updated feed {feed.title}: {items_created} new items"
+    return items_found, items_created
 
 
-def _update_feed_from_rss_everything(feed, task_result=None):
-    """RSSEverythingSource를 사용하여 피드 아이템을 업데이트"""
-    from .models import RSSItem, RSSEverythingSource, FeedTaskResult
+def _update_from_scraping_source(feed, source):
+    """스크래핑 소스에서 아이템을 업데이트 (PAGE_SCRAPING, DETAIL_PAGE_SCRAPING)"""
+    from .models import RSSItem, RSSEverythingSource
     from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
-    from feeds.routers.rss_everything import extract_html_with_css
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
 
-    source: RSSEverythingSource = feed.rss_everything_source
-    logger.info(f"Updating feed from RSSEverything source: {feed.title} ({source.url})")
+    logger.info(f"Updating feed from scraping source: {feed.title} ({source.url})")
 
-    try:
-        # HTML 가져오기 - custom_headers는 feed에서 가져옴
-        if source.use_browser:
-            result = fetch_html_with_browser(
-                url=source.url,
-                selector=source.wait_selector,
-                timeout=source.timeout,
-                custom_headers=feed.custom_headers,
-            )
-        else:
-            result = fetch_html_smart(
-                url=source.url,
-                use_browser_on_fail=True,
-                browser_selector=source.wait_selector,
-                custom_headers=feed.custom_headers,
-            )
-
-        if not result.success or not result.html:
-            source.last_error = result.error or "Failed to fetch HTML"
-            source.save(update_fields=["last_error"])
-            return f"Failed to fetch HTML: {source.last_error}"
-
-        soup = BeautifulSoup(result.html, "html.parser")
-        
-        # exclude_selectors 적용 - 지정된 요소들 제거
-        if source.exclude_selectors:
-            for exclude_selector in source.exclude_selectors:
-                for el in soup.select(exclude_selector):
-                    el.decompose()
-        
-        items = soup.select(source.item_selector)
-        items_found = len(items)
-
-        new_items = []
-        existing_guids = set(
-            RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
+    # HTML 가져오기
+    if source.use_browser:
+        result = fetch_html_with_browser(
+            url=source.url,
+            selector=source.wait_selector,
+            timeout=source.timeout,
+            custom_headers=source.custom_headers,
+        )
+    else:
+        result = fetch_html_smart(
+            url=source.url,
+            use_browser_on_fail=True,
+            browser_selector=source.wait_selector,
+            custom_headers=source.custom_headers,
         )
 
-        if source.follow_links:
-            # 상세 페이지 파싱 모드
-            new_items = _crawl_detail_pages(source, items, existing_guids, soup)
-        else:
-            # 목록 페이지 직접 파싱 모드
-            new_items = _crawl_list_page(source, items, existing_guids)
+    if not result.success or not result.html:
+        raise Exception(result.error or "Failed to fetch HTML")
 
-        items_created = len(new_items)
-        
-        # 새로운 아이템들 bulk create
-        if new_items:
-            # feed 설정
-            for item in new_items:
-                item.feed = feed
-            RSSItem.objects.bulk_create(new_items)
-            feed.last_updated = django_timezone.now()
-            feed.save()
+    soup = BeautifulSoup(result.html, "html.parser")
 
-        source.last_crawled_at = django_timezone.now()
-        source.last_error = ""
-        source.save(update_fields=["last_crawled_at", "last_error"])
+    # exclude_selectors 적용 - 지정된 요소들 제거
+    if source.exclude_selectors:
+        for exclude_selector in source.exclude_selectors:
+            for el in soup.select(exclude_selector):
+                el.decompose()
 
-        # Task 결과 업데이트
-        if task_result:
-            task_result.status = FeedTaskResult.Status.SUCCESS
-            task_result.items_found = items_found
-            task_result.items_created = items_created
-            task_result.completed_at = django_timezone.now()
-            task_result.save(update_fields=["status", "items_found", "items_created", "completed_at"])
+    items = soup.select(source.item_selector)
+    items_found = len(items)
 
-        return (
-            f"Updated feed {feed.title} from RSSEverything: {items_created} new items"
-        )
+    existing_guids = set(
+        RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
+    )
 
-    except Exception as e:
-        logger.exception(f"Failed to update feed from RSSEverything source {source.id}")
-        source.last_error = str(e)
-        source.save(update_fields=["last_error"])
-        
-        # Task 결과 업데이트 (실패)
-        if task_result:
-            task_result.status = FeedTaskResult.Status.FAILURE
-            task_result.error_message = str(e)
-            task_result.completed_at = django_timezone.now()
-            task_result.save(update_fields=["status", "error_message", "completed_at"])
-        
-        return f"Failed: {str(e)}"
+    if source.source_type == RSSEverythingSource.SourceType.DETAIL_PAGE_SCRAPING:
+        # 상세 페이지 파싱 모드
+        new_items = _crawl_detail_pages(source, items, existing_guids, soup)
+    else:
+        # 목록 페이지 직접 파싱 모드
+        new_items = _crawl_list_page(source, items, existing_guids)
+
+    items_created = len(new_items)
+
+    # 새로운 아이템들 bulk create
+    if new_items:
+        # feed 설정
+        for item in new_items:
+            item.feed = feed
+        RSSItem.objects.bulk_create(new_items)
+        feed.last_updated = django_timezone.now()
+        feed.save()
+
+    source.last_crawled_at = django_timezone.now()
+    source.last_error = ""
+    source.save(update_fields=["last_crawled_at", "last_error"])
+
+    return items_found, items_created
 
 
 def _crawl_list_page(source, items, existing_guids):
@@ -393,8 +394,8 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
     new_items = []
     links_to_fetch = []
 
-    # custom_headers는 feed에서 가져옴
-    custom_headers = source.feed.custom_headers if hasattr(source, "feed") else {}
+    # custom_headers는 source에서 가져옴
+    custom_headers = source.custom_headers or {}
 
     # 먼저 목록에서 링크들을 수집
     for item in items[:20]:  # 최대 20개
@@ -448,7 +449,7 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                 continue
 
             detail_soup = BeautifulSoup(detail_result.html, "html.parser")
-            
+
             # exclude_selectors 적용 - 지정된 요소들 제거
             if source.exclude_selectors:
                 for exclude_selector in source.exclude_selectors:

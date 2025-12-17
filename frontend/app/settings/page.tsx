@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe, ClipboardList } from 'lucide-react';
-import Link from 'next/link';
+import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -79,17 +78,9 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 p-1">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Palette className="w-8 h-8 text-primary" />
-          <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
-        </div>
-        <Link href="/task-results">
-          <Button variant="outline" size="sm">
-            <ClipboardList className="w-4 h-4 mr-2" />
-            Task Results
-          </Button>
-        </Link>
+      <div className="flex items-center gap-3 mb-8">
+        <Palette className="w-8 h-8 text-primary" />
+        <h1 className="text-3xl font-bold text-foreground">{t.settings.title}</h1>
       </div>
 
       {/* Language */}

@@ -29,18 +29,16 @@ class RSSCategory(models.Model):
 class RSSFeed(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
-    url = models.URLField(unique=True)
     title = models.CharField(max_length=200, blank=True)
     favicon_url = models.URLField(blank=True)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
-    custom_headers = models.JSONField(default=dict, blank=True)
     refresh_interval = models.IntegerField(
         default=60, help_text="자동 새로고침 주기 (분)"
     )
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    rss_everything_source: "Optional[RSSEverythingSource]"
+    sources: models.QuerySet["RSSEverythingSource"]
 
     class Meta:
         indexes = [
@@ -52,6 +50,18 @@ class RSSFeed(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def url(self) -> str:
+        """첫 번째 소스의 URL 반환 (호환성)"""
+        first_source = self.sources.first()
+        return first_source.url if first_source else ""
+
+    @property
+    def custom_headers(self) -> dict:
+        """첫 번째 소스의 custom_headers 반환 (호환성)"""
+        first_source = self.sources.first()
+        return first_source.custom_headers if first_source else {}
 
 
 class RSSItem(models.Model):
@@ -82,31 +92,51 @@ class RSSItem(models.Model):
 
 class RSSEverythingSource(models.Model):
     """
-    RSSEverything: 일반 웹 페이지를 RSS 피드로 변환하기 위한 설정
-    사용자가 선택한 CSS 셀렉터를 기반으로 페이지에서 아이템을 추출합니다.
-    RSSFeed와 1:1로 연결되어 피드 업데이트 시 크롤링을 수행합니다.
+    RSSEverything: RSS 피드의 아이템 소스를 정의합니다.
+    소스 타입에 따라 클래식 RSS, 페이지 스크래핑, 상세 페이지 스크래핑 방식을 지원합니다.
+    RSSFeed와 1:N으로 연결되어 하나의 피드가 여러 소스를 가질 수 있습니다.
     """
 
-    # 연결된 RSSFeed (필수)
-    feed = models.OneToOneField(
+    class SourceType(models.TextChoices):
+        RSS = "rss", "RSS/Atom (Classic)"
+        PAGE_SCRAPING = "page_scraping", "Page Scraping"
+        DETAIL_PAGE_SCRAPING = "detail_page_scraping", "Detail Page Scraping"
+
+    # 연결된 RSSFeed (필수) - 1:N 관계로 변경
+    feed = models.ForeignKey(
         RSSFeed,
         on_delete=models.CASCADE,
-        related_name="rss_everything_source",
+        related_name="sources",
         help_text="연결된 RSS 피드",
     )
 
-    # 기본 정보
-    url = models.URLField(help_text="크롤링할 페이지 URL")
+    # 소스 타입
+    source_type = models.CharField(
+        max_length=30,
+        choices=SourceType.choices,
+        default=SourceType.RSS,
+        help_text="소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)",
+    )
 
-    # 아이템 목록 셀렉터 (메인 페이지에서 아이템들을 찾는 셀렉터)
+    # 활성화 여부
+    is_active = models.BooleanField(default=True, help_text="이 소스의 활성화 여부")
+
+    # 기본 정보
+    url = models.URLField(help_text="RSS URL 또는 크롤링할 페이지 URL")
+
+    # 커스텀 헤더 (RSS/스크래핑 모두 사용)
+    custom_headers = models.JSONField(default=dict, blank=True)
+
+    # 아이템 목록 셀렉터 (메인 페이지에서 아이템들을 찾는 셀렉터) - 스크래핑용
     item_selector = models.CharField(
         max_length=500,
+        blank=True,
         help_text="아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)",
     )
 
-    # 각 아이템에서 추출할 정보의 셀렉터 (아이템 내부 상대 셀렉터)
+    # 각 아이템에서 추출할 정보의 셀렉터 (아이템 내부 상대 셀렉터) - 스크래핑용
     title_selector = models.CharField(
-        max_length=500, help_text="제목 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, help_text="제목 CSS 셀렉터 (아이템 내부)"
     )
     link_selector = models.CharField(
         max_length=500,
@@ -123,10 +153,7 @@ class RSSEverythingSource(models.Model):
         max_length=500, blank=True, help_text="이미지 CSS 셀렉터 (아이템 내부)"
     )
 
-    # 상세 페이지 설정 (선택사항 - 링크를 따라가서 상세 내용 추출)
-    follow_links = models.BooleanField(
-        default=False, help_text="각 아이템의 링크를 따라가서 상세 내용을 가져올지 여부"
-    )
+    # 상세 페이지 설정 (DETAIL_PAGE_SCRAPING 타입에서만 사용)
     detail_title_selector = models.CharField(
         max_length=500, blank=True, help_text="상세 페이지에서 제목 CSS 셀렉터"
     )
@@ -150,7 +177,7 @@ class RSSEverythingSource(models.Model):
         help_text='제외할 CSS 셀렉터 목록 (예: [".ads", ".sidebar", "script"])',
     )
 
-    # 날짜 파싱 설정
+    # 날짜 파싱 설정 - 스크래핑용
     date_formats = models.JSONField(
         default=list,
         blank=True,
@@ -160,9 +187,9 @@ class RSSEverythingSource(models.Model):
         max_length=20, default="ko_KR", help_text="날짜 로케일 (예: ko_KR, en_US)"
     )
 
-    # 브라우저 크롤링 설정
+    # 브라우저 크롤링 설정 - 스크래핑용
     use_browser = models.BooleanField(
-        default=True, help_text="브라우저 렌더링 사용 여부 (JavaScript 필요 시)"
+        default=False, help_text="브라우저 렌더링 사용 여부 (JavaScript 필요 시)"
     )
     wait_selector = models.CharField(
         max_length=500, blank=True, help_text="페이지 로드 완료 확인용 셀렉터"
@@ -177,7 +204,30 @@ class RSSEverythingSource(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["feed"]),
+            models.Index(fields=["feed", "source_type"]),
+            models.Index(fields=["feed", "is_active"]),
         ]
+        verbose_name = "RSS Everything Source"
+        verbose_name_plural = "RSS Everything Sources"
+
+    def __str__(self):
+        return f"{self.get_source_type_display()}: {self.feed.title} ({self.url})"
+
+    @property
+    def is_rss(self) -> bool:
+        return self.source_type == self.SourceType.RSS
+
+    @property
+    def is_scraping(self) -> bool:
+        return self.source_type in [
+            self.SourceType.PAGE_SCRAPING,
+            self.SourceType.DETAIL_PAGE_SCRAPING,
+        ]
+
+    @property
+    def follow_links(self) -> bool:
+        """상세 페이지를 따라갈지 여부 (DETAIL_PAGE_SCRAPING 타입일 때만 True)"""
+        return self.source_type == self.SourceType.DETAIL_PAGE_SCRAPING
 
 
 class FeedTaskResult(models.Model):
@@ -250,8 +300,3 @@ class FeedTaskResult(models.Model):
         if self.started_at and self.completed_at:
             return (self.completed_at - self.started_at).total_seconds()
         return None
-        verbose_name = "RSS Everything Source"
-        verbose_name_plural = "RSS Everything Sources"
-
-    def __str__(self):
-        return f"RSSEverything: {self.feed.title} ({self.url})"
