@@ -208,6 +208,8 @@ export const ko: Translations = {
     previewEmpty: '셀렉터를 설정하고 미리보기를 실행하세요',
     // Save Step
     saveFeed: '피드 저장',
+    addSource: '소스 추가',
+    addSourceDescription: '이 소스를 피드에 추가합니다',
     feedName: '피드 이름',
     feedNamePlaceholder: '내 커스텀 피드',
     feedInfo: '피드 정보',

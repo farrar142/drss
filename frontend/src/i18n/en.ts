@@ -208,6 +208,8 @@ export const en: Translations = {
     previewEmpty: 'Set selectors and run preview',
     // Save Step
     saveFeed: 'Save Feed',
+    addSource: 'Add Source',
+    addSourceDescription: 'Add this source to your feed',
     feedName: 'Feed Name',
     feedNamePlaceholder: 'My Custom Feed',
     feedInfo: 'Feed Information',

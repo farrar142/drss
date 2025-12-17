@@ -210,6 +210,8 @@ export interface Translations {
     previewEmpty: string;
     // Save Step
     saveFeed: string;
+    addSource: string;
+    addSourceDescription: string;
     feedName: string;
     feedNamePlaceholder: string;
     feedInfo: string;

@@ -7,6 +7,7 @@ import {
   feedsRouterFetchHtml,
   feedsRouterPreviewItems,
   feedsRouterCreateSource,
+  feedsRouterCreateFeed,
   feedsRouterGetSource,
   feedsRouterUpdateSourceRss,
   feedsRouterListCategories,
@@ -15,6 +16,8 @@ import {
   RSSEverythingCreateRequest,
   RSSEverythingUpdateRequest,
   PreviewItem,
+  FeedCreateSchema,
+  SourceCreateSchema,
 } from '@/services/api';
 import { ListSelectors, DetailSelectors } from '@/components/SelectorBuilder';
 import { SourceConfig } from '@/components/rss-everything/SourceTypeStep';
@@ -593,41 +596,82 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
   // Save RSS Everything source (page_scraping / detail_page_scraping)
   const handleSave = useCallback(async () => {
-    // feedId 필수 (기존 피드에 소스 추가)
+    // 새 피드 생성 시에만 카테고리/이름 필수
     if (!context?.feedId) {
-      setError('Feed ID is required');
-      return;
+      if (!selectedCategoryId) {
+        setError('Category is required');
+        return;
+      }
+      if (!name) {
+        setError('Feed name is required');
+        return;
+      }
     }
 
     setIsSaving(true);
     setError(null);
 
     try {
-      const sourceType = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
+      const sourceTypeValue = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
 
-      const request: RSSEverythingCreateRequest = {
-        feed_id: context.feedId,
-        url,
-        source_type: sourceType,
-        item_selector: listSelectors.itemSelector,
-        title_selector: listSelectors.titleSelector,
-        link_selector: listSelectors.linkSelector,
-        description_selector: listSelectors.descriptionSelector,
-        date_selector: listSelectors.dateSelector,
-        image_selector: listSelectors.imageSelector,
-        follow_links: parseMode === 'detail',
-        detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
-        detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-        detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
-        detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
-        detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
-        use_browser: useBrowser,
-        wait_selector: waitSelector,
-        date_formats: dateFormats,
-        exclude_selectors: excludeSelectors,
-      };
+      if (context?.feedId) {
+        // 기존 피드에 소스 추가
+        const request: RSSEverythingCreateRequest = {
+          feed_id: context.feedId,
+          url,
+          source_type: sourceTypeValue,
+          item_selector: listSelectors.itemSelector,
+          title_selector: listSelectors.titleSelector,
+          link_selector: listSelectors.linkSelector,
+          description_selector: listSelectors.descriptionSelector,
+          date_selector: listSelectors.dateSelector,
+          image_selector: listSelectors.imageSelector,
+          follow_links: parseMode === 'detail',
+          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
+          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
+          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
+          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
+          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
+          use_browser: useBrowser,
+          wait_selector: waitSelector,
+          date_formats: dateFormats,
+          exclude_selectors: excludeSelectors,
+          custom_headers: customHeaders,
+        };
 
-      await feedsRouterCreateSource(request);
+        await feedsRouterCreateSource(request);
+      } else {
+        // 새 피드 + 소스 함께 생성
+        const sourceData: SourceCreateSchema = {
+          source_type: sourceTypeValue,
+          url,
+          item_selector: listSelectors.itemSelector,
+          title_selector: listSelectors.titleSelector,
+          link_selector: listSelectors.linkSelector,
+          description_selector: listSelectors.descriptionSelector,
+          date_selector: listSelectors.dateSelector,
+          image_selector: listSelectors.imageSelector,
+          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
+          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
+          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
+          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
+          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
+          use_browser: useBrowser,
+          wait_selector: waitSelector,
+          date_formats: dateFormats,
+          exclude_selectors: excludeSelectors,
+          custom_headers: customHeaders,
+        };
+
+        const feedData: FeedCreateSchema = {
+          category_id: selectedCategoryId!,
+          title: name,
+          refresh_interval: refreshInterval,
+          source: sourceData,
+        };
+
+        await feedsRouterCreateFeed(feedData);
+      }
 
       // 카테고리 & 피드 새로고침
       const updatedCategories = await feedsRouterListCategories();
@@ -645,7 +689,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, customHeaders, name, selectedCategoryId, refreshInterval, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {

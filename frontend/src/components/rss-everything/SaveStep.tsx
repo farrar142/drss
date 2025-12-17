@@ -15,6 +15,7 @@ interface SaveStepProps {
   customHeaders: Record<string, string>;
   categories: CategorySchema[];
   isSaving: boolean;
+  isAddingToExistingFeed?: boolean; // 기존 피드에 소스 추가 모드
   onNameChange: (name: string) => void;
   onCategoryChange: (categoryId: number | null) => void;
   onRefreshIntervalChange: (interval: number) => void;
@@ -30,6 +31,7 @@ export function SaveStep({
   customHeaders,
   categories,
   isSaving,
+  isAddingToExistingFeed = false,
   onNameChange,
   onCategoryChange,
   onRefreshIntervalChange,
@@ -68,49 +70,58 @@ export function SaveStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t.rssEverything.saveFeed}</CardTitle>
+        <CardTitle>
+          {isAddingToExistingFeed ? t.rssEverything.addSource : t.rssEverything.saveFeed}
+        </CardTitle>
         <CardDescription>
-          {t.rssEverything.description}
+          {isAddingToExistingFeed 
+            ? t.rssEverything.addSourceDescription
+            : t.rssEverything.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">{t.rssEverything.feedName}</Label>
-          <Input
-            id="name"
-            placeholder={t.rssEverything.feedNamePlaceholder}
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-          />
-        </div>
+        {/* 새 피드 생성 시에만 표시 */}
+        {!isAddingToExistingFeed && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">{t.rssEverything.feedName}</Label>
+              <Input
+                id="name"
+                placeholder={t.rssEverything.feedNamePlaceholder}
+                value={name}
+                onChange={(e) => onNameChange(e.target.value)}
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="category">{t.rssEverything.selectCategory}</Label>
-          <select
-            id="category"
-            className="w-full px-3 py-2 border rounded-md bg-background"
-            value={selectedCategoryId || ''}
-            onChange={(e) => onCategoryChange(e.target.value ? Number(e.target.value) : null)}
-          >
-            <option value="">{t.common.none}</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">{t.rssEverything.selectCategory}</Label>
+              <select
+                id="category"
+                className="w-full px-3 py-2 border rounded-md bg-background"
+                value={selectedCategoryId || ''}
+                onChange={(e) => onCategoryChange(e.target.value ? Number(e.target.value) : null)}
+              >
+                <option value="">{t.common.none}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="refresh">{t.rssEverything.refreshInterval} ({t.rssEverything.refreshIntervalUnit})</Label>
-          <Input
-            id="refresh"
-            type="number"
-            min={5}
-            value={refreshInterval}
-            onChange={(e) => onRefreshIntervalChange(Number(e.target.value))}
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="refresh">{t.rssEverything.refreshInterval} ({t.rssEverything.refreshIntervalUnit})</Label>
+              <Input
+                id="refresh"
+                type="number"
+                min={5}
+                value={refreshInterval}
+                onChange={(e) => onRefreshIntervalChange(Number(e.target.value))}
+              />
+            </div>
+          </>
+        )}
 
         {/* Custom Headers */}
         <div className="space-y-2">
@@ -166,7 +177,7 @@ export function SaveStep({
           <Button
             className="flex-1"
             onClick={onSave}
-            disabled={!name || isSaving}
+            disabled={(!isAddingToExistingFeed && (!name || !selectedCategoryId)) || isSaving}
           >
             {isSaving ? (
               <>
@@ -176,7 +187,7 @@ export function SaveStep({
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {t.common.save}
+                {isAddingToExistingFeed ? t.rssEverything.addSource : t.common.save}
               </>
             )}
           </Button>

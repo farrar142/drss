@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { RSSItem } from '../types/rss';
+import { useMediaModalStore } from '../stores/mediaModalStore';
 
 export interface MediaItem {
   src: string;
@@ -36,10 +37,19 @@ export interface UseMediaModalReturn {
 }
 
 export function useMediaModal({ items }: UseMediaModalOptions): UseMediaModalReturn {
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpenLocal] = useState(false);
   const [modalMedia, setModalMedia] = useState<{ type: 'image' | 'video'; src: string; itemId?: number } | null>(null);
   const mediaListRef = useRef<MediaItem[]>([]);
   const [currentMediaIndex, setCurrentMediaIndex] = useState<number | null>(null);
+
+  // Global state for hiding header/tabs when modal is open
+  const { setMediaModalOpen } = useMediaModalStore();
+
+  // Sync local state with global store
+  const setModalOpen = useCallback((open: boolean) => {
+    setModalOpenLocal(open);
+    setMediaModalOpen(open);
+  }, [setMediaModalOpen]);
 
   // Keep a ref in sync with currentMediaIndex so click handlers always read the latest value
   const currentMediaIndexRef = useRef<number | null>(null);

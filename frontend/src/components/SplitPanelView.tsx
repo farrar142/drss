@@ -8,7 +8,7 @@ import { ContentRenderer } from './ContentRenderer';
 import { cn } from '@/lib/utils';
 
 interface SplitPanelViewProps {
-  // 스크롤 숨김 기능 제거됨
+  isMediaModalOpen?: boolean;
 }
 
 // 개별 패널 컴포넌트 - 각자 스크롤 관리
@@ -19,6 +19,7 @@ interface PanelViewProps {
   index: number;
   showDropIndicator: boolean;
   dragOverSide: 'left' | 'right' | null;
+  hideTabBar?: boolean;
   onPanelClick: () => void;
   onTabClick: (tab: Tab) => void;
   onTabClose: (tabId: string) => void;
@@ -39,6 +40,7 @@ const PanelView: React.FC<PanelViewProps> = ({
   index,
   showDropIndicator,
   dragOverSide,
+  hideTabBar,
   onPanelClick,
   onTabClick,
   onTabClose,
@@ -116,25 +118,30 @@ const PanelView: React.FC<PanelViewProps> = ({
         )
       )}
 
-      {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정 */}
-      <div className="sticky top-0 z-30">
-        <TabBar
-          panelId={panel.id}
-          tabs={panel.tabs}
-          activeTabId={panel.activeTabId}
-          onTabClick={onTabClick}
-          onTabClose={onTabClose}
-          onAddTab={onAddTab}
-          onTabDragStart={onDragStart}
-          onColumnsChange={onColumnsChange}
-          canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
-        />
-      </div>
+      {/* 탭바 - sticky로 스크롤 컨테이너 위에 고정, 미디어 모달 열릴 때 숨김 */}
+      {!hideTabBar && (
+        <div className="sticky top-0 z-30">
+          <TabBar
+            panelId={panel.id}
+            tabs={panel.tabs}
+            activeTabId={panel.activeTabId}
+            onTabClick={onTabClick}
+            onTabClose={onTabClose}
+            onAddTab={onAddTab}
+            onTabDragStart={onDragStart}
+            onColumnsChange={onColumnsChange}
+            canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
+          />
+        </div>
+      )}
 
       {/* 컨텐츠 - 개별 스크롤 */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto relative z-10"
+        className={cn(
+          "flex-1 min-h-0 relative",
+          hideTabBar ? "overflow-hidden" : "overflow-y-auto"
+        )}
         onScroll={handleScroll}
         style={{
           ['--header-offset' as string]: effectiveHeaderOffset,
@@ -148,7 +155,7 @@ const PanelView: React.FC<PanelViewProps> = ({
   );
 };
 
-export const SplitPanelView: React.FC<SplitPanelViewProps> = () => {
+export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen }) => {
   const router = useRouter();
   const {
     panels,
@@ -340,7 +347,10 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = () => {
   }, [panels, saveScrollPosition]);
 
   return (
-    <div className="flex w-full h-[calc(100vh-3.5rem)]">
+    <div className={cn(
+      "flex w-full h-[calc(100vh-3.5rem)]",
+      isMediaModalOpen && "relative z-0"
+    )}>
       {panels.map((panel, index) => {
         const isActive = panel.id === activePanelId;
         const showDropIndicator = dragOverPanel === panel.id;
@@ -355,6 +365,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = () => {
             index={index}
             showDropIndicator={showDropIndicator}
             dragOverSide={dragOverSide}
+            hideTabBar={isMediaModalOpen}
             onPanelClick={() => handlePanelClick(panel.id)}
             onTabClick={(tab) => handleTabClick(panel.id, tab)}
             onTabClose={handleTabClose}

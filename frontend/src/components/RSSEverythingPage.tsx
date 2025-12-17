@@ -216,6 +216,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
             customHeaders={customHeaders}
             categories={categories}
             isSaving={isSaving}
+            isAddingToExistingFeed={!!context?.feedId}
             onNameChange={setName}
             onCategoryChange={setSelectedCategoryId}
             onRefreshIntervalChange={setRefreshInterval}

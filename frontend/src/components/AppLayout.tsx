@@ -35,6 +35,7 @@ import { useRSSStore } from '../stores/rssStore';
 import { useThemeStore } from '../stores/themeStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useTranslation } from '../stores/languageStore';
+import { useMediaModalStore } from '../stores/mediaModalStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { SplitPanelView } from './SplitPanelView';
 import { useTabStore } from '../stores/tabStore';
@@ -66,6 +67,8 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   const { openTab } = useTabStore();
 
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
+
+  const { isMediaModalOpen } = useMediaModalStore();
 
   // Local state
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -130,9 +133,12 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Header - hidden when media modal is open */}
       <header
-        className="fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        className={cn(
+          "fixed left-0 right-0 z-50 h-14 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-transform duration-200",
+          isMediaModalOpen && "-translate-y-full"
+        )}
         style={{ top: 0 }}
       >
         <div className="flex h-full items-center gap-4 px-4">
@@ -251,9 +257,9 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Sidebar */}
+      {/* Sidebar - hidden when media modal is open */}
       <CategoryDrawer
-        open={drawerOpen}
+        open={drawerOpen && !isMediaModalOpen}
         pathname={pathname}
         variant={isMobile ? 'temporary' : 'persistent'}
         onClose={toggleDrawer}
@@ -262,14 +268,14 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
       {/* Main Content with Split Panel View */}
       <main
         className={cn(
-          "min-h-screen transition-all duration-300"
+          "min-h-screen transition-all duration-200"
         )}
         style={{
-          marginLeft: drawerOpen && !isMobile ? DRAWER_WIDTH : 0,
-          paddingTop: '3.5rem',
+          marginLeft: drawerOpen && !isMobile && !isMediaModalOpen ? DRAWER_WIDTH : 0,
+          paddingTop: isMediaModalOpen ? 0 : '3.5rem',
         }}
       >
-        <SplitPanelView />
+        <SplitPanelView isMediaModalOpen={isMediaModalOpen} />
       </main>
     </div>
   );
