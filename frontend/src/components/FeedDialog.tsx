@@ -9,6 +9,7 @@ import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
 import { validateFeed, FeedValidationResponse } from '../services/api';
 import { useTranslation } from '../stores/languageStore';
+import { useToast } from '../stores/toastStore';
 import { SourceType, RSSSource, RSSSourceCreate } from '../types/rss';
 
 interface HeaderEntry {
@@ -100,6 +101,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   onSubmit,
 }) => {
   const { t } = useTranslation();
+  const toast = useToast();
   const dialogTitle = title ?? (mode === 'create' ? t.feed.add : t.feed.edit);
   const dialogSubmitLabel = submitLabel ?? (mode === 'create' ? t.common.add : t.common.save);
 
@@ -178,7 +180,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
 
   const handleValidate = async () => {
     if (!url.trim()) {
-      alert(t.feed.enterUrl);
+      toast.warning(t.feed.enterUrl);
       return;
     }
     setValidating(true);
@@ -190,7 +192,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       if (!description && result.description) setDescription(result.description);
     } catch (error) {
       console.error(error);
-      alert(t.feed.validationFailed + ': ' + ((error as any)?.message || t.errors.unknownError));
+      toast.error(t.feed.validationFailed + ': ' + ((error as any)?.message || t.errors.unknownError));
       setValidationResult(null);
     } finally {
       setValidating(false);

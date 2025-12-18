@@ -3,6 +3,7 @@
 import { AuthProvider } from './context/AuthContext';
 import { AppBarProvider } from './context/AppBarContext';
 import AppLayout from './components/AppLayout';
+import { NotificationProvider } from './components/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useEffect, useMemo } from 'react';
 
@@ -70,7 +71,9 @@ export function ClientLayout({
   return (
     <AuthProvider>
       <AppBarProvider>
-        <AppLayout authChildren={children} />
+        <NotificationProvider>
+          <AppLayout authChildren={children} />
+        </NotificationProvider>
       </AppBarProvider>
     </AuthProvider>
   );

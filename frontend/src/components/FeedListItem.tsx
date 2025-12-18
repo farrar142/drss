@@ -22,6 +22,7 @@ import {
 } from '@/ui/dropdown-menu';
 import { useRSSStore } from '../stores/rssStore';
 import { useTabStore } from '../stores/tabStore';
+import { useToast, useConfirm } from '../stores/toastStore';
 import {
   FeedSchema,
   deleteFeed,
@@ -41,6 +42,8 @@ interface FeedListItemProps {
 export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
   const { updateFeed, removeFeed } = useRSSStore();
   const { openTab, closeTabsByFeedId } = useTabStore();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // 피드 수정 - FeedEdit 탭 열기
   const handleEdit = () => {
@@ -59,14 +62,19 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   const handleRefresh = async () => {
     try {
       await refreshFeed(feed.id);
-      alert('피드 새로고침이 예약되었습니다.');
+      toast.success('피드 새로고침이 예약되었습니다.');
     } catch (error) {
       console.error(error);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('정말로 이 피드를 삭제하시겠습니까?')) return;
+    const confirmed = await confirm({
+      title: '피드 삭제',
+      description: '정말로 이 피드를 삭제하시겠습니까?',
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
     try {
       await deleteFeed(feed.id);
       removeFeed(feed.id);
@@ -80,7 +88,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   const handleMarkAllRead = async () => {
     try {
       await markAllFeedItemsRead(feed.id);
-      alert('모든 아이템을 읽음으로 표시했습니다.');
+      toast.success('모든 아이템을 읽음으로 표시했습니다.');
     } catch (error) {
       console.error(error);
     }

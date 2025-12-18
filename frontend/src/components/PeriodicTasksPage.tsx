@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Button } from '@/ui/button';
 import { Badge } from '@/ui/badge';
 import { Input } from '@/ui/input';
+import { useToast, useConfirm } from '@/stores/toastStore';
 import {
   RefreshCw,
   Trash2,
@@ -58,6 +59,8 @@ function formatInterval(interval: { every: number; period: string } | null): str
 }
 
 export default function PeriodicTasksPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [tasks, setTasks] = useState<PeriodicTaskSchema[]>([]);
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [total, setTotal] = useState(0);
@@ -122,7 +125,12 @@ export default function PeriodicTasksPage() {
   };
 
   const handleDeleteTask = async (id: number) => {
-    if (!confirm('이 주기적 태스크를 삭제하시겠습니까?')) {
+    const confirmed = await confirm({
+      title: '태스크 삭제',
+      description: '이 주기적 태스크를 삭제하시겠습니까?',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
     try {
@@ -146,7 +154,7 @@ export default function PeriodicTasksPage() {
   const handleSaveInterval = async (taskId: number) => {
     const intervalMinutes = parseInt(editingInterval, 10);
     if (isNaN(intervalMinutes) || intervalMinutes <= 0) {
-      alert('올바른 분 단위 값을 입력하세요.');
+      toast.warning('올바른 분 단위 값을 입력하세요.');
       return;
     }
     try {

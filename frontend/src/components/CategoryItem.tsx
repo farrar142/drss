@@ -27,6 +27,7 @@ import { FeedListItem } from './FeedListItem';
 import { useRSSStore } from '../stores/rssStore';
 import { useTabStore } from '../stores/tabStore';
 import { useTranslation, interpolate } from '../stores/languageStore';
+import { useToast, useConfirm } from '../stores/toastStore';
 import {
   updateCategory as updateCategoryApi,
   refreshCategoryFeeds,
@@ -71,6 +72,8 @@ export const CategoryItem: FC<{
     const { addFeed, updateCategory, updateFeed } = useRSSStore();
     const { openTab } = useTabStore();
     const { t } = useTranslation();
+    const toast = useToast();
+    const confirm = useConfirm();
     const [expanded, setExpanded] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [editName, setEditName] = useState(category.name);
@@ -142,14 +145,19 @@ export const CategoryItem: FC<{
     const handleRefresh = async () => {
       try {
         await refreshCategoryFeeds(category.id);
-        alert(t.category.refreshing);
+        toast.success(t.category.refreshing);
       } catch (error) {
         console.error('Failed to refresh category feeds', error);
       }
     };
 
     const handleDelete = async () => {
-      if (!confirm(t.category.deleteConfirm)) return;
+      const confirmed = await confirm({
+        title: t.category.delete,
+        description: t.category.deleteConfirm,
+        variant: 'destructive',
+      });
+      if (!confirmed) return;
       await deleteCategory(category);
     };
 

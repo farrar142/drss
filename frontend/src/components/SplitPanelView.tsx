@@ -30,6 +30,7 @@ interface PanelViewProps {
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent, panelId: PanelId) => void;
   onColumnsChange: (tabId: string, columns: number) => void;
+  onCloseAllTabs: (panelId: PanelId) => void;
   onScrollChange: (panelId: PanelId, tabId: string | null, scrollTop: number) => void;
   savedScrollPosition: number;
 }
@@ -51,6 +52,7 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
   onDragLeave,
   onDrop,
   onColumnsChange,
+  onCloseAllTabs,
   onScrollChange,
   savedScrollPosition,
 }) => {
@@ -116,6 +118,10 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
     onAddTab(panel.id);
   }, [onAddTab, panel.id]);
 
+  const handleCloseAllTabs = useCallback(() => {
+    onCloseAllTabs(panel.id);
+  }, [onCloseAllTabs, panel.id]);
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     onDragOver(e, panel.id);
   }, [onDragOver, panel.id]);
@@ -165,6 +171,7 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
           onAddTab={handleAddTab}
           onTabDragStart={onDragStart}
           onColumnsChange={onColumnsChange}
+          onCloseAllTabs={handleCloseAllTabs}
           canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
         />
       </div>
@@ -207,6 +214,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     createSplitPanel,
     closeSplitPanel,
     setTabColumns,
+    closeAllTabs,
   } = useTabStore();
 
   const [dragOverPanel, setDragOverPanel] = useState<PanelId | null>(null);
@@ -245,6 +253,10 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
       path: '/home',
     });
   }, [setActivePanel, openTab]);
+
+  const handleCloseAllTabs = useCallback((panelId: PanelId) => {
+    closeAllTabs(panelId);
+  }, [closeAllTabs]);
 
   const handlePanelClick = useCallback((panelId: PanelId) => {
     if (activePanelId !== panelId) {
@@ -414,6 +426,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onColumnsChange={handleColumnsChange}
+            onCloseAllTabs={handleCloseAllTabs}
             onScrollChange={handleScrollChange}
             savedScrollPosition={savedScrollPosition}
           />

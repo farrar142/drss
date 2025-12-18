@@ -21,6 +21,7 @@ import { Switch } from '@/ui/switch';
 import { useTranslation } from '../stores/languageStore';
 import { useTabStore, FeedEditContext } from '../stores/tabStore';
 import { useRSSStore } from '../stores/rssStore';
+import { useToast, useConfirm } from '../stores/toastStore';
 import {
   FeedSchema,
   SourceSchema,
@@ -54,6 +55,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const { t } = useTranslation();
   const { openTab, updateTab, panels, activePanelId } = useTabStore();
   const { categories, addFeed, updateFeed: updateFeedInStore } = useRSSStore();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   // 피드 정보
   const [feed, setFeed] = useState<FeedSchema | null>(null);
@@ -103,7 +106,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 피드 저장
   const handleSave = async () => {
     if (!title.trim()) {
-      alert(t.rssEverything.feedNameRequired);
+      toast.warning(t.rssEverything.feedNameRequired);
       return;
     }
 
@@ -130,7 +133,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           updateTab(activeTab.id, { title: `${updatedFeed.title} - ${t.common.edit}` });
         }
 
-        alert('피드가 업데이트되었습니다.');
+        toast.success('피드가 업데이트되었습니다.');
       } else if (context?.mode === 'create' && categoryId) {
         // 피드 생성 - 소스 없이 피드만 생성
         const newFeed = await createFeed({
@@ -158,7 +161,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           });
         }
 
-        alert(t.rssEverything.createSuccess);
+        toast.success(t.rssEverything.createSuccess);
       }
     } catch (err) {
       console.error('Failed to save feed:', err);
@@ -171,7 +174,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 소스 추가 버튼
   const handleAddSource = () => {
     if (!feed) {
-      alert('먼저 피드를 저장하세요.');
+      toast.warning('먼저 피드를 저장하세요.');
       return;
     }
 
@@ -207,7 +210,12 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 소스 삭제 버튼
   const handleDeleteSource = async (source: SourceSchema) => {
     if (!feed) return;
-    if (!confirm(`이 소스를 삭제하시겠습니까?\n${source.url}`)) return;
+    const confirmed = await confirm({
+      title: '소스 삭제',
+      description: `이 소스를 삭제하시겠습니까?\n${source.url}`,
+      variant: 'destructive',
+    });
+    if (!confirmed) return;
 
     try {
       await deleteFeedSource(feed.id, source.id);
@@ -215,7 +223,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       await loadFeed();
     } catch (err) {
       console.error('Failed to delete source:', err);
-      alert('소스 삭제에 실패했습니다.');
+      toast.error('소스 삭제에 실패했습니다.');
     }
   };
 
@@ -223,10 +231,10 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const handleRefreshSource = async (source: SourceSchema) => {
     try {
       await refreshRssEverythingSource(source.id);
-      alert('소스 새로고침이 예약되었습니다.');
+      toast.success('소스 새로고침이 예약되었습니다.');
     } catch (err) {
       console.error('Failed to refresh source:', err);
-      alert('소스 새로고침에 실패했습니다.');
+      toast.error('소스 새로고침에 실패했습니다.');
     }
   };
 
@@ -259,7 +267,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       // Clipboard API 사용 가능 여부 확인
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(JSON.stringify(sourceConfig, null, 2));
-        alert('소스 설정이 클립보드에 복사되었습니다.');
+        toast.success('소스 설정이 클립보드에 복사되었습니다.');
       } else {
         // Fallback: 텍스트 선택 방식
         const textArea = document.createElement('textarea');
@@ -273,17 +281,17 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
 
         try {
           document.execCommand('copy');
-          alert('소스 설정이 클립보드에 복사되었습니다.');
+          toast.success('소스 설정이 클립보드에 복사되었습니다.');
         } catch (fallbackErr) {
           console.error('Fallback copy failed:', fallbackErr);
-          alert('복사에 실패했습니다. 브라우저가 클립보드 접근을 지원하지 않습니다.');
+          toast.error('복사에 실패했습니다. 브라우저가 클립보드 접근을 지원하지 않습니다.');
         } finally {
           document.body.removeChild(textArea);
         }
       }
     } catch (err) {
       console.error('Failed to copy:', err);
-      alert('복사에 실패했습니다.');
+      toast.error('복사에 실패했습니다.');
     }
   };
 

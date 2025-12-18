@@ -98,6 +98,9 @@ interface TabStore {
 
   // 특정 피드와 관련된 모든 탭 닫기
   closeTabsByFeedId: (feedId: number) => void;
+
+  // 특정 패널의 모든 탭 닫기 (홈 탭 제외)
+  closeAllTabs: (panelId?: PanelId) => void;
 }
 
 // 고유 ID 생성
@@ -493,6 +496,27 @@ export const useTabStore = create<TabStore>()(
       for (const tabId of tabsToClose.reverse()) {
         removeTab(tabId);
       }
+    },
+
+    closeAllTabs: (panelId) => {
+      const { panels, activePanelId } = get();
+      const targetPanelId = panelId || activePanelId;
+
+      set((state) => ({
+        panels: state.panels.map(p => {
+          if (p.id !== targetPanelId) return p;
+
+          // 홈 탭은 유지, 없으면 새로 생성
+          const homeTab = p.tabs.find(t => t.type === 'home');
+          const newTabs = homeTab ? [homeTab] : [{ ...DEFAULT_HOME_TAB }];
+
+          return {
+            ...p,
+            tabs: newTabs,
+            activeTabId: newTabs[0].id,
+          };
+        }),
+      }));
     },
   }))
 );

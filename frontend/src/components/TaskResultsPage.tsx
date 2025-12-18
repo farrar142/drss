@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
 import { Button } from '@/ui/button';
 import { Badge } from '@/ui/badge';
+import { useConfirm } from '@/stores/toastStore';
 import {
   RefreshCw,
   Trash2,
@@ -56,6 +57,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 export default function TaskResultsPage() {
+  const confirm = useConfirm();
   const [results, setResults] = useState<TaskResultSchema[]>([]);
   const [stats, setStats] = useState<TaskStatsSchema | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,7 +153,12 @@ export default function TaskResultsPage() {
   };
 
   const handleClearResults = async (status?: TaskResultStatus) => {
-    if (!confirm(status ? `모든 ${status} 상태의 결과를 삭제하시겠습니까?` : '모든 결과를 삭제하시겠습니까?')) {
+    const confirmed = await confirm({
+      title: '결과 삭제',
+      description: status ? `모든 ${status} 상태의 결과를 삭제하시겠습니까?` : '모든 결과를 삭제하시겠습니까?',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
     try {

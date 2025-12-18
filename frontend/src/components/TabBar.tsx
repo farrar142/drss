@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList } from 'lucide-react';
+import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Tab, TabType, PanelId } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
@@ -62,6 +62,7 @@ interface TabBarProps {
   showSplitButton?: boolean;
   onSplitPanel?: (side: 'left' | 'right') => void;
   onColumnsChange?: (tabId: string, columns: number) => void;
+  onCloseAllTabs?: () => void;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({
@@ -76,6 +77,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   canClose = true,
   showSplitButton = false,
   onColumnsChange,
+  onCloseAllTabs,
 }) => {
   const tabsContainerRef = useRef<HTMLDivElement>(null);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
@@ -240,6 +242,20 @@ export const TabBar: React.FC<TabBarProps> = ({
           </div>
         ))}
       </div>
+
+      {/* 모든 탭 닫기 버튼 */}
+      {onCloseAllTabs && tabs.length > 1 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCloseAllTabs();
+          }}
+          className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50"
+          title="모든 탭 닫기"
+        >
+          <XCircle className="w-4 h-4 text-muted-foreground" />
+        </button>
+      )}
 
       {/* 새 탭 추가 버튼 */}
       <button
