@@ -27,7 +27,7 @@ import {
   feedsRouterCreateFeed,
   feedsRouterUpdateFeed,
   feedsRouterListFeeds,
-  feedsRouterDeleteSourceRss,
+  feedsRouterDeleteSource,
   feedsRouterRefreshSource,
 } from '../services/api';
 
@@ -206,10 +206,11 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
 
   // 소스 삭제 버튼
   const handleDeleteSource = async (source: SourceSchema) => {
+    if (!feed) return;
     if (!confirm(`이 소스를 삭제하시겠습니까?\n${source.url}`)) return;
 
     try {
-      await feedsRouterDeleteSourceRss(source.id);
+      await feedsRouterDeleteSource(feed.id, source.id);
       // 피드 데이터 다시 로드
       await loadFeed();
     } catch (err) {
