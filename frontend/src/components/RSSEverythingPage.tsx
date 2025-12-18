@@ -34,7 +34,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     detailSelectors,
     previewItems,
     previewLoading,
-    refreshInterval,
     customHeaders,
     dateFormats,
     excludeSelectors,
@@ -66,7 +65,6 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     setListSelectors,
     setDetailUrl,
     setDetailSelectors,
-    setRefreshInterval,
     setCustomHeaders,
     setDateFormats,
     setExcludeSelectors,
@@ -112,12 +110,10 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
         {currentStep === 'rss-save' && (
           <RssSaveStep
             url={url}
-            refreshInterval={refreshInterval}
             isSaving={isSaving}
             isEditMode={isEditMode}
             validationResult={rssValidationResult}
             onUrlChange={setUrl}
-            onRefreshIntervalChange={setRefreshInterval}
             onBack={goBack}
             onSave={handleSaveRssFeed}
           />
@@ -196,11 +192,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
 
         {currentStep === 'save' && (
           <SaveStep
-            refreshInterval={refreshInterval}
-            customHeaders={customHeaders}
             isSaving={isSaving}
-            onRefreshIntervalChange={setRefreshInterval}
-            onCustomHeadersChange={setCustomHeaders}
             onBack={goBack}
             onSave={handleSave}
           />

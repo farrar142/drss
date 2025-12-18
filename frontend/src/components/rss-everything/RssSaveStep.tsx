@@ -11,7 +11,6 @@ import { useTranslation } from '@/stores/languageStore';
 
 interface RssSaveStepProps {
   url: string;
-  refreshInterval: number;
   isSaving: boolean;
   isEditMode?: boolean;  // 수정 모드 여부
   validationResult?: {
@@ -20,19 +19,16 @@ interface RssSaveStepProps {
     items_count: number;
   } | null;
   onUrlChange?: (url: string) => void;  // URL 변경 핸들러
-  onRefreshIntervalChange: (interval: number) => void;
   onBack: () => void;
   onSave: () => void;
 }
 
 export const RssSaveStep: React.FC<RssSaveStepProps> = ({
   url,
-  refreshInterval,
   isSaving,
   isEditMode = false,
   validationResult,
   onUrlChange,
-  onRefreshIntervalChange,
   onBack,
   onSave,
 }) => {
@@ -141,21 +137,6 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* 새로고침 간격 */}
-          <div className="space-y-2">
-            <Label htmlFor="refresh-interval">
-              {t.rssEverything?.refreshInterval || '새로고침 간격'} ({t.rssEverything?.refreshIntervalUnit || '분'})
-            </Label>
-            <Input
-              id="refresh-interval"
-              type="number"
-              min={5}
-              max={1440}
-              value={refreshInterval}
-              onChange={(e) => onRefreshIntervalChange(parseInt(e.target.value) || 60)}
-            />
           </div>
         </CardContent>
       </Card>
