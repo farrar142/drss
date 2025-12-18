@@ -185,6 +185,9 @@ export const usePagination = <T extends { id: number }>(
     // 새로 생긴 글 불러오기 (newer items)
     if (newestCursor) {
       loadItems(newestCursor, 'after');
+    } else {
+      // 빈 화면에서는 초기 로드 수행
+      loadItems(undefined, 'before');
     }
   }, [newestCursor, loadItems]);
 

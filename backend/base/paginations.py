@@ -3,6 +3,7 @@ from django.db.models import Model, QuerySet
 from django.http import HttpRequest
 from ninja import Schema
 from ninja.pagination import PaginationBase
+from datetime import datetime
 
 
 class CursorPagination[T:Model](PaginationBase):
@@ -11,6 +12,9 @@ class CursorPagination[T:Model](PaginationBase):
     'before' (이전/구형 데이터) 및 'after' (다음/신규 데이터) 탐색을 지원합니다.
     """
 
+    # 클래스 레벨 기본 ordering_field
+    ordering_field = "id"
+
     class Input(Schema):
         # 커서 값: 다음 페이지를 가져올 기준점
         cursor: Optional[str] = None
@@ -18,8 +22,8 @@ class CursorPagination[T:Model](PaginationBase):
         limit: int = 10
         # 데이터 탐색 방향: "after" (이후 데이터) 또는 "before" (이전 데이터)
         direction: str = "after"
-        # 정렬 기준으로 사용할 모델 필드 이름 (기본값: "id")
-        ordering_field: str = "id"
+        # 정렬 기준으로 사용할 모델 필드 이름 (클라이언트가 전달하지 않으면 클래스의 default_ordering_field 사용)
+        ordering_field: Optional[str] = None
 
     class Output(Schema):
         items: List[Any]
@@ -31,6 +35,11 @@ class CursorPagination[T:Model](PaginationBase):
         has_next: bool = False
         # 이전 페이지가 있는지 여부
         has_prev: bool = False
+
+    def __init__(self, ordering_field: Optional[str] = None,**kwargs):
+        super().__init__(**kwargs)
+        if ordering_field:
+            self.ordering_field = ordering_field
 
     def _get_cursor_value(self, item: T, field_name: str) -> Optional[str]:
         """
@@ -50,25 +59,70 @@ class CursorPagination[T:Model](PaginationBase):
             # 기타 타입 (int, uuid 등) 처리
             return str(cursor_field)
 
+    def _parse_cursor_value(self, cursor: str, queryset: QuerySet[T], field_name: str) -> Any:
+        """
+        문자열 커서 값을 필드의 원래 타입으로 변환합니다.
+        """
+        # QuerySet의 모델 클래스 가져오기
+        model = queryset.model
+
+        # 필드의 타입 확인
+        field = model._meta.get_field(field_name)
+        field_type = field.__class__.__name__
+
+        try:
+            # IntegerField, BigIntegerField, SmallIntegerField 등 정수형 필드
+            if 'IntegerField' in field_type or field_type in ['AutoField', 'BigAutoField']:
+                return int(cursor)
+            # DateTimeField
+            elif field_type == 'DateTimeField':
+                # ISO 형식의 날짜 문자열 파싱
+                if cursor.endswith('Z'):
+                    cursor = cursor[:-1] + '+00:00'
+                return datetime.fromisoformat(cursor)
+            # DateField
+            elif field_type == 'DateField':
+                return datetime.fromisoformat(cursor).date()
+            # FloatField
+            elif field_type == 'FloatField':
+                return float(cursor)
+            # 기타 (CharField, TextField, UUIDField 등)
+            else:
+                return cursor
+        except (ValueError, TypeError):
+            # 변환 실패 시 원본 반환
+            return cursor
+
     def paginate_queryset(self, queryset: QuerySet[T], pagination: Input, request: HttpRequest, **params: Any) -> Any:
         cursor = pagination.cursor
         direction = pagination.direction.lower()
         field_name = pagination.ordering_field
         limit = pagination.limit
+        print("CursorPagination paginate_queryset called with:", {
+            "cursor": cursor,
+            "direction": direction,
+            "field_name": field_name,
+            "limit": limit,
+        })
+        if not field_name:
+            field_name = self.ordering_field
 
         # 1. 초기 정렬 설정 및 커서 필터링
         if cursor and cursor != "None":
+            # 커서 값을 적절한 타입으로 변환
+            parsed_cursor = self._parse_cursor_value(cursor, queryset, field_name)
+
             if direction == "before":
                 # 이전 데이터 (커서보다 작은 값) 요청 시:
                 # 데이터를 오름차순으로 가져온 후, 순서를 뒤집어 클라이언트에게 최신순으로 전달
-                queryset = queryset.filter(**{f"{field_name}__lt": cursor})
+                queryset = queryset.filter(**{f"{field_name}__lt": parsed_cursor})
                 # 오름차순 정렬 (예: 1, 2, 3... 순)
                 queryset = queryset.order_by(field_name)
 
             elif direction == "after":
                 # 다음 데이터 (커서보다 큰 값) 요청 시:
                 # 데이터를 오름차순으로 가져와 최신순으로 전달 (커서 이후 항목)
-                queryset = queryset.filter(**{f"{field_name}__gt": cursor})
+                queryset = queryset.filter(**{f"{field_name}__gt": parsed_cursor})
                 # 오름차순 정렬 (예: 11, 12, 13... 순)
                 queryset = queryset.order_by(field_name)
             else:
