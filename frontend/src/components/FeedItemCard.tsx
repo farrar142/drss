@@ -498,6 +498,18 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         )}
       </div>
 
+      {/* Thumbnail Image (shown when collapsed in board mode) */}
+      {item.image && viewMode === 'board' && collapsed && (
+        <div className="mt-2">
+          <FeedImage
+            src={item.image}
+            alt={item.title}
+            onClick={() => stableMediaClick(item.image!, 'image', item.id)}
+            className="w-full max-h-48 object-cover rounded-md"
+          />
+        </div>
+      )}
+
       {/* Description */}
       {(viewMode === 'feed' || !collapsed) && (
         <div className={cn(
@@ -505,6 +517,15 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           "mt-2 sm:mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
           fontSize.body
         )}>
+          {/* Show thumbnail if image exists and not already in description */}
+          {item.image && !item.description?.includes(item.image) && (
+            <FeedImage
+              src={item.image}
+              alt={item.title}
+              onClick={() => stableMediaClick(item.image!, 'image', item.id)}
+              className="float-right ml-3 mb-2 w-32 sm:w-48 max-h-48 object-cover rounded-md"
+            />
+          )}
           {description}
         </div>
       )}

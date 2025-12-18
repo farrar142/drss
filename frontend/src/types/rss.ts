@@ -95,6 +95,7 @@ export interface RSSItem {
     title: string;
     link: string;
     description: string;
+    image?: string;
     author?: string;
     categories?: string[];
     published_at: string;
