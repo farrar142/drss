@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  feedsRouterListTaskResults,
-  feedsRouterGetTaskStats,
-  feedsRouterDeleteTaskResult,
-  feedsRouterClearTaskResults,
+  listTaskResults,
+  getTaskStats,
+  deleteTaskResult,
+  clearTaskResults,
   TaskResultSchema,
   TaskStatsSchema,
 } from '@/services/api';
@@ -77,7 +77,7 @@ export default function TaskResultsPage() {
         params.status = statusFilter;
       }
 
-      const response = await feedsRouterListTaskResults(params as Parameters<typeof feedsRouterListTaskResults>[0]);
+      const response = await listTaskResults(params as Parameters<typeof listTaskResults>[0]);
       setResults(response.items);
       setHasNext(response.has_next ?? false);
       setHasPrev(response.has_prev ?? false);
@@ -88,7 +88,7 @@ export default function TaskResultsPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await feedsRouterGetTaskStats();
+      const response = await getTaskStats();
       setStats(response);
     } catch (error) {
       console.error('Failed to fetch task stats:', error);
@@ -143,7 +143,7 @@ export default function TaskResultsPage() {
 
   const handleDeleteResult = async (id: number) => {
     try {
-      await feedsRouterDeleteTaskResult(id);
+      await deleteTaskResult(id);
       await loadData(cursor);
     } catch (error) {
       console.error('Failed to delete task result:', error);
@@ -155,7 +155,7 @@ export default function TaskResultsPage() {
       return;
     }
     try {
-      await feedsRouterClearTaskResults(status ? { status } : undefined);
+      await clearTaskResults(status ? { status } : undefined);
       setCursor(null);
       setCursorHistory([null]);
       await loadData(null);

@@ -6,7 +6,7 @@ import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
-import { feedsRouterValidateFeed, FeedValidationResponse } from '@/services/api';
+import { validateFeed, FeedValidationResponse } from '@/services/api';
 import { useTranslation } from '@/stores/languageStore';
 
 interface RssSaveStepProps {
@@ -52,7 +52,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
     setLocalValidationResult(null);
 
     try {
-      const result = await feedsRouterValidateFeed({ url });
+      const result = await validateFeed({ url });
       setLocalValidationResult(result);
     } catch (error) {
       console.error('Validation error:', error);

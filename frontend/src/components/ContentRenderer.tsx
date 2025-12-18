@@ -11,9 +11,9 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { useTabStore, Tab, PanelId } from '../stores/tabStore';
 import { RSSItem } from '../types/rss';
 import {
-  feedsRouterListAllItems,
-  feedsRouterListItemsByCategory,
-  feedsRouterListItemsByFeed,
+  listAllItems,
+  listItemsByCategory,
+  listItemsByFeed,
 } from '../services/api';
 import { usePagination, PaginationFilters } from '../hooks/usePagination';
 
@@ -35,7 +35,7 @@ const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive:
   }, [filter]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-    feedsRouterListAllItems,
+    listAllItems,
     (item) => item.published_at,
     'home',
     filters,
@@ -75,7 +75,7 @@ const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRe
   }, [filter]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-    (args) => feedsRouterListItemsByCategory(categoryId, args),
+    (args) => listItemsByCategory(categoryId, args),
     (item) => item.published_at,
     `category-${categoryId}`,
     filters,
@@ -115,7 +115,7 @@ const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: {
   }, [filter]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-    (args) => feedsRouterListItemsByFeed(feedId, args),
+    (args) => listItemsByFeed(feedId, args),
     (item) => item.published_at,
     `feed-${feedId}`,
     filters,

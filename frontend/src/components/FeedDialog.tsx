@@ -7,7 +7,7 @@ import { Label } from '@/ui/label';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
-import { feedsRouterValidateFeed, FeedValidationResponse } from '../services/api';
+import { validateFeed, FeedValidationResponse } from '../services/api';
 import { useTranslation } from '../stores/languageStore';
 import { SourceType, RSSSource, RSSSourceCreate } from '../types/rss';
 
@@ -184,7 +184,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
     setValidating(true);
     try {
       const parsedHeaders = entriesToHeaders(headerEntries);
-      const result = await feedsRouterValidateFeed({ url, custom_headers: parsedHeaders });
+      const result = await validateFeed({ url, custom_headers: parsedHeaders });
       setValidationResult(result);
       if (!feedTitle && result.title) setFeedTitle(result.title);
       if (!description && result.description) setDescription(result.description);

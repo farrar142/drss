@@ -3,7 +3,7 @@
 import { CheckCircle, Heart, User, Tag } from "lucide-react";
 import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
-import { feedsRouterToggleItemFavorite, feedsRouterToggleItemRead } from "../services/api";
+import { toggleItemFavorite, toggleItemRead } from "../services/api";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../stores/settingsStore";
 import { RSSItem } from "../types/rss";
@@ -329,7 +329,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
 
   const handleToggleFavorite = useCallback(async () => {
     try {
-      await feedsRouterToggleItemFavorite(item.id);
+      await toggleItemFavorite(item.id);
       setIsFavorite(!isFavorite);
     } catch (error) {
       console.error(error);
@@ -338,7 +338,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
 
   const handleToggleRead = useCallback(async () => {
     try {
-      await feedsRouterToggleItemRead(item.id);
+      await toggleItemRead(item.id);
       setIsRead(!isRead);
     } catch (error) {
       console.error(error);

@@ -24,11 +24,11 @@ import { useRSSStore } from '../stores/rssStore';
 import {
   FeedSchema,
   SourceSchema,
-  feedsRouterCreateFeed,
-  feedsRouterUpdateFeed,
-  feedsRouterListFeeds,
-  feedsRouterDeleteSource,
-  feedsRouterRefreshSource,
+  createFeed,
+  updateFeed,
+  listFeeds,
+  deleteFeedSource,
+  refreshRssEverythingSource,
 } from '../services/api';
 
 interface FeedEditPageProps {
@@ -74,8 +74,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       setLoading(true);
       setError(null);
       try {
-        // feedsRouterListFeeds를 통해 피드 목록에서 해당 피드를 찾음
-        const feeds = await feedsRouterListFeeds();
+        // listFeeds를 통해 피드 목록에서 해당 피드를 찾음
+        const feeds = await listFeeds();
         const foundFeed = feeds.find(f => f.id === context.feedId);
         if (foundFeed) {
           setFeed(foundFeed);
@@ -113,7 +113,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     try {
       if (context?.mode === 'edit' && context.feedId) {
         // 피드 수정
-        const updatedFeed = await feedsRouterUpdateFeed(context.feedId, {
+        const updatedFeed = await updateFeed(context.feedId, {
           title,
           description,
           visible,
@@ -133,7 +133,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         alert('피드가 업데이트되었습니다.');
       } else if (context?.mode === 'create' && categoryId) {
         // 피드 생성 - 소스 없이 피드만 생성
-        const newFeed = await feedsRouterCreateFeed({
+        const newFeed = await createFeed({
           category_id: categoryId,
           title,
           description,
@@ -210,7 +210,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     if (!confirm(`이 소스를 삭제하시겠습니까?\n${source.url}`)) return;
 
     try {
-      await feedsRouterDeleteSource(feed.id, source.id);
+      await deleteFeedSource(feed.id, source.id);
       // 피드 데이터 다시 로드
       await loadFeed();
     } catch (err) {
@@ -222,7 +222,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 소스 새로고침 버튼
   const handleRefreshSource = async (source: SourceSchema) => {
     try {
-      await feedsRouterRefreshSource(source.id);
+      await refreshRssEverythingSource(source.id);
       alert('소스 새로고침이 예약되었습니다.');
     } catch (err) {
       console.error('Failed to refresh source:', err);

@@ -24,7 +24,7 @@ from feeds.schemas import (
     SourceCreateSchema,
     SourceUpdateSchema,
 )
-from feeds.utils import fetch_feed_data, extract_favicon_url
+from feeds.utils.feed_fetcher import fetch_feed_data, extract_favicon_url
 
 
 class FeedService:

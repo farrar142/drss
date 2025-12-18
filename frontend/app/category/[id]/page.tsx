@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { FeedViewer } from '@/components/FeedViewer';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { RSSItem } from '@/types/rss';
-import { feedsRouterListItemsByCategory } from '@/services/api';
+import { listItemsByCategory } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 
 export default function CategoryPage() {
@@ -27,7 +27,7 @@ export default function CategoryPage() {
     }, [filter]);
 
     const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-        (args) => feedsRouterListItemsByCategory(categoryId, args),
+        (args) => listItemsByCategory(categoryId, args),
         (item) => item.published_at,
         `category-${categoryId}`,
         filters

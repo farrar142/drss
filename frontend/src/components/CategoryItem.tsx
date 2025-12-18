@@ -28,9 +28,9 @@ import { useRSSStore } from '../stores/rssStore';
 import { useTabStore } from '../stores/tabStore';
 import { useTranslation, interpolate } from '../stores/languageStore';
 import {
-  feedsRouterUpdateCategory,
-  feedsRouterRefreshCategoryFeeds,
-  feedsRouterUpdateFeed,
+  updateCategory as updateCategoryApi,
+  refreshCategoryFeeds,
+  updateFeed as updateFeedApi,
   FeedSchema,
 } from '../services/api';
 
@@ -116,7 +116,7 @@ export const CategoryItem: FC<{
 
     const handleEditSave = async () => {
       try {
-        const updated = await feedsRouterUpdateCategory(category.id, ({
+        const updated = await updateCategoryApi(category.id, ({
           name: editName,
           description: editDescription,
           visible: editVisible,
@@ -130,7 +130,7 @@ export const CategoryItem: FC<{
 
     const handleToggleVisible = async () => {
       try {
-        const updated = await feedsRouterUpdateCategory(category.id, ({
+        const updated = await updateCategoryApi(category.id, ({
           visible: !category.visible,
         } as any));
         updateCategory({ ...(updated as any), visible: (updated as any).visible ?? true });
@@ -141,7 +141,7 @@ export const CategoryItem: FC<{
 
     const handleRefresh = async () => {
       try {
-        await feedsRouterRefreshCategoryFeeds(category.id);
+        await refreshCategoryFeeds(category.id);
         alert(t.category.refreshing);
       } catch (error) {
         console.error('Failed to refresh category feeds', error);
@@ -178,13 +178,13 @@ export const CategoryItem: FC<{
         if (fromCategoryId === category.id) return;
 
         // API 호출로 카테고리 변경
-        const updated = await feedsRouterUpdateFeed(feedId, { category_id: category.id });
+        const updated = await updateFeedApi(feedId, { category_id: category.id });
         updateFeed(updated);
         onFeedMoved?.(feedId, category.id);
       } catch (error) {
         console.error('Failed to move feed:', error);
       }
-    }, [category.id, updateFeed, onFeedMoved]);
+    }, [category.id, updateFeedApi, onFeedMoved]);
 
     return (
       <>

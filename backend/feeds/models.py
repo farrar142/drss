@@ -15,6 +15,7 @@ class RSSCategory(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")
     order = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -37,6 +38,7 @@ class RSSFeed(BaseModel):
     favicon_url = models.URLField(blank=True)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")
     refresh_interval = models.IntegerField(
         default=60, help_text="자동 새로고침 주기 (분)"
     )

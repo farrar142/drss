@@ -4,12 +4,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRSSStore } from '@/stores/rssStore';
 import { useTabStore, RSSEverythingContext } from '@/stores/tabStore';
 import {
-  feedsRouterFetchHtml,
-  feedsRouterPreviewItems,
-  feedsRouterCreateSource,
-  feedsRouterGetSource,
-  feedsRouterUpdateSourceRss,
-  feedsRouterListCategories,
+  fetchHtml,
+  previewItems as previewItemsApi,
+  createRssEverythingSource,
+  getRssEverythingSource,
+  updateRssEverythingSource,
+  listCategories,
   FetchHTMLRequest,
   PreviewItemRequest,
   RSSEverythingCreateRequest,
@@ -138,7 +138,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       if (context?.mode === 'edit' && context.sourceId) {
         setIsLoading(true);
         try {
-          const source = await feedsRouterGetSource(context.sourceId);
+          const source = await getRssEverythingSource(context.sourceId);
           setEditingSourceId(source.id);
 
           // 기본 정보 설정
@@ -316,7 +316,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           custom_headers: customHeaders,
         };
 
-        await feedsRouterUpdateSourceRss(editingSourceId, updateData);
+        await updateRssEverythingSource(editingSourceId, updateData);
 
         // 성공 메시지 후 탭 닫기
         alert('소스가 업데이트되었습니다.');
@@ -329,10 +329,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           custom_headers: customHeaders,
         };
 
-        await feedsRouterCreateSource(sourceData);
+        await createRssEverythingSource(sourceData);
 
         // 카테고리 새로고침 (피드 목록도 함께 갱신됨)
-        const updatedCategories = await feedsRouterListCategories();
+        const updatedCategories = await listCategories();
         setCategories(updatedCategories);
       }
 
@@ -366,7 +366,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         custom_headers: customHeaders,
       };
 
-      const response = await feedsRouterFetchHtml(request);
+      const response = await fetchHtml(request);
 
       if (response.success && response.html) {
         setListHtml(response.html);
@@ -400,7 +400,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         custom_headers: customHeaders,
       };
 
-      const response = await feedsRouterFetchHtml(request);
+      const response = await fetchHtml(request);
 
       if (response.success && response.html) {
         setDetailHtml(response.html);
@@ -583,7 +583,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detail_image_selector: detailSelectors.detailImageSelector,
       };
 
-      const response = await feedsRouterPreviewItems(request);
+      const response = await previewItemsApi(request);
 
       if (response.success) {
         setPreviewItems(response.items || []);
@@ -635,10 +635,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         custom_headers: customHeaders,
       };
 
-      await feedsRouterCreateSource(request);
+      await createRssEverythingSource(request);
 
       // 카테고리 & 피드 새로고침
-      const updatedCategories = await feedsRouterListCategories();
+      const updatedCategories = await listCategories();
       setCategories(updatedCategories);
 
       // 현재 탭 닫고 홈으로

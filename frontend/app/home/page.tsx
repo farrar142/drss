@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { FeedViewer } from '@/components/FeedViewer';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { RSSItem } from '@/types/rss';
-import { feedsRouterListAllItems } from '@/services/api';
+import { listAllItems } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
 
 export default function HomePage() {
@@ -24,7 +24,7 @@ export default function HomePage() {
   }, [filter]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-    feedsRouterListAllItems,
+    listAllItems,
     (item) => item.published_at,
     'home',
     filters

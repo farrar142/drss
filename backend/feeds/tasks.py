@@ -7,7 +7,8 @@ from celery import shared_task
 from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.utils import timezone as django_timezone
-from feeds.utils import fetch_feed_data, parse_date
+from feeds.utils.feed_fetcher import fetch_feed_data
+from feeds.utils.date_parser import parse_date
 import os
 from django.conf import settings
 from django.core.files.base import ContentFile

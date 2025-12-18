@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  feedsRouterListPeriodicTasks,
-  feedsRouterGetPeriodicTaskStats,
-  feedsRouterTogglePeriodicTask,
-  feedsRouterDeletePeriodicTask,
-  feedsRouterUpdatePeriodicTask,
+  listPeriodicTasks,
+  getPeriodicTaskStats,
+  togglePeriodicTask,
+  deletePeriodicTask,
+  updatePeriodicTask,
   PeriodicTaskSchema,
 } from '@/services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
@@ -79,7 +79,7 @@ export default function PeriodicTasksPage() {
         params.enabled = enabledFilter;
       }
 
-      const response = await feedsRouterListPeriodicTasks(params as Parameters<typeof feedsRouterListPeriodicTasks>[0]);
+      const response = await listPeriodicTasks(params as Parameters<typeof listPeriodicTasks>[0]);
       setTasks(response.items);
       setTotal(response.total);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function PeriodicTasksPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await feedsRouterGetPeriodicTaskStats() as unknown as TaskStats;
+      const response = await getPeriodicTaskStats() as unknown as TaskStats;
       setStats(response);
     } catch (error) {
       console.error('Failed to fetch task stats:', error);
@@ -114,7 +114,7 @@ export default function PeriodicTasksPage() {
 
   const handleToggleTask = async (id: number) => {
     try {
-      await feedsRouterTogglePeriodicTask(id);
+      await togglePeriodicTask(id);
       await loadData();
     } catch (error) {
       console.error('Failed to toggle periodic task:', error);
@@ -126,7 +126,7 @@ export default function PeriodicTasksPage() {
       return;
     }
     try {
-      await feedsRouterDeletePeriodicTask(id);
+      await deletePeriodicTask(id);
       await loadData();
     } catch (error) {
       console.error('Failed to delete periodic task:', error);
@@ -150,7 +150,7 @@ export default function PeriodicTasksPage() {
       return;
     }
     try {
-      await feedsRouterUpdatePeriodicTask(taskId, { interval_minutes: intervalMinutes });
+      await updatePeriodicTask(taskId, { interval_minutes: intervalMinutes });
       setEditingTaskId(null);
       setEditingInterval('');
       await loadData();

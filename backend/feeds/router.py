@@ -5,10 +5,11 @@ Feeds Router - 모든 피드 관련 API 엔드포인트
 from typing import Optional
 from ninja import Router
 from ninja.pagination import paginate
+from django.http import HttpResponse
 
 from base.authentications import JWTAuth
 from base.paginations import CursorPagination
-from feeds.models import RSSItem, FeedTaskResult
+from feeds.models import RSSItem, FeedTaskResult, RSSFeed, RSSCategory
 from feeds.services import (
     CategoryService,
     FeedService,
@@ -261,6 +262,230 @@ def list_items_by_feed(
     return ItemService.list_items_by_feed(
         request.auth, feed_id, is_read, is_favorite, search
     )
+
+
+# ============== RSS/Atom Feed Export Endpoints ==============
+
+
+def generate_rss_xml(items, title: str, link: str, description: str) -> str:
+    """RSSItem 목록을 RSS 2.0 XML로 변환"""
+    from xml.etree.ElementTree import Element, SubElement, tostring
+    from xml.dom import minidom
+    from datetime import timezone as tz
+
+    rss = Element("rss", version="2.0")
+    rss.set("xmlns:atom", "http://www.w3.org/2005/Atom")
+    rss.set("xmlns:content", "http://purl.org/rss/1.0/modules/content/")
+
+    channel = SubElement(rss, "channel")
+    SubElement(channel, "title").text = title
+    SubElement(channel, "link").text = link
+    SubElement(channel, "description").text = description
+    SubElement(channel, "language").text = "ko"
+
+    for item in items:
+        item_elem = SubElement(channel, "item")
+        SubElement(item_elem, "title").text = item.title
+        SubElement(item_elem, "link").text = item.link
+        SubElement(item_elem, "guid", isPermaLink="false").text = item.guid
+
+        # pubDate in RFC 822 format
+        if item.published_at:
+            pub_date = item.published_at
+            if pub_date.tzinfo is None:
+                pub_date = pub_date.replace(tzinfo=tz.utc)
+            SubElement(item_elem, "pubDate").text = pub_date.strftime("%a, %d %b %Y %H:%M:%S %z")
+
+        if item.description:
+            desc_elem = SubElement(item_elem, "description")
+            desc_elem.text = item.description
+
+        if item.author:
+            SubElement(item_elem, "author").text = item.author
+
+        if item.image:
+            enclosure = SubElement(item_elem, "enclosure")
+            enclosure.set("url", item.image)
+            enclosure.set("type", "image/jpeg")
+
+    xml_str = tostring(rss, encoding="unicode")
+    # Pretty print
+    dom = minidom.parseString(xml_str)
+    return dom.toprettyxml(indent="  ", encoding=None)
+
+
+def generate_atom_xml(items, title: str, link: str, feed_id: str) -> str:
+    """RSSItem 목록을 Atom 1.0 XML로 변환"""
+    from xml.etree.ElementTree import Element, SubElement, tostring
+    from xml.dom import minidom
+    from datetime import timezone as tz
+
+    feed = Element("feed")
+    feed.set("xmlns", "http://www.w3.org/2005/Atom")
+
+    SubElement(feed, "title").text = title
+    SubElement(feed, "id").text = f"urn:drss:feed:{feed_id}"
+
+    link_elem = SubElement(feed, "link")
+    link_elem.set("href", link)
+    link_elem.set("rel", "alternate")
+
+    # Updated time (latest item or now)
+    from django.utils import timezone
+    if items:
+        latest = max(items, key=lambda x: x.published_at if x.published_at else timezone.now())
+        updated = latest.published_at or timezone.now()
+    else:
+        updated = timezone.now()
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=tz.utc)
+    SubElement(feed, "updated").text = updated.isoformat()
+
+    for item in items:
+        entry = SubElement(feed, "entry")
+        SubElement(entry, "title").text = item.title
+        SubElement(entry, "id").text = item.guid
+
+        entry_link = SubElement(entry, "link")
+        entry_link.set("href", item.link)
+        entry_link.set("rel", "alternate")
+
+        if item.published_at:
+            pub_date = item.published_at
+            if pub_date.tzinfo is None:
+                pub_date = pub_date.replace(tzinfo=tz.utc)
+            SubElement(entry, "published").text = pub_date.isoformat()
+            SubElement(entry, "updated").text = pub_date.isoformat()
+
+        if item.description:
+            content = SubElement(entry, "content")
+            content.set("type", "html")
+            content.text = item.description
+
+            summary = SubElement(entry, "summary")
+            summary.set("type", "html")
+            summary.text = item.description[:500] if len(item.description) > 500 else item.description
+
+        if item.author:
+            author_elem = SubElement(entry, "author")
+            SubElement(author_elem, "name").text = item.author
+
+    xml_str = tostring(feed, encoding="unicode")
+    dom = minidom.parseString(xml_str)
+    return dom.toprettyxml(indent="  ", encoding=None)
+
+
+@item_router.get("/rss", auth=None)
+def export_all_items_rss(
+    request,
+    page: int = 1,
+    page_size: int = 50,
+    format: str = "rss",  # "rss" or "atom"
+):
+    """공개된 카테고리/피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
+    offset = (page - 1) * page_size
+
+    # is_public=True인 카테고리와 피드만 조회
+    items = list(
+        RSSItem.objects.filter(
+            feed__is_public=True,
+            feed__category__is_public=True,
+        ).order_by("-published_at")[offset:offset + page_size]
+    )
+
+    title = "DRSS - Public Items"
+    link = "https://drss.app/"
+    description = "Public RSS items from DRSS"
+
+    if format == "atom":
+        xml_content = generate_atom_xml(items, title, link, "all-public")
+        content_type = "application/atom+xml; charset=utf-8"
+    else:
+        xml_content = generate_rss_xml(items, title, link, description)
+        content_type = "application/rss+xml; charset=utf-8"
+
+    return HttpResponse(xml_content, content_type=content_type)
+
+
+@item_router.get("/category/{category_id}/rss", auth=None)
+def export_category_items_rss(
+    request,
+    category_id: int,
+    page: int = 1,
+    page_size: int = 50,
+    format: str = "rss",
+):
+    """공개된 카테고리의 공개 피드 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
+    from ninja.errors import HttpError
+
+    # 카테고리가 존재하고 is_public=True인지 확인
+    category = RSSCategory.objects.filter(id=category_id, is_public=True).first()
+    if not category:
+        raise HttpError(404, "Category not found or not public")
+
+    offset = (page - 1) * page_size
+
+    # 해당 카테고리의 is_public=True인 피드들의 아이템만 조회
+    items = list(
+        RSSItem.objects.filter(
+            feed__category_id=category_id,
+            feed__is_public=True,
+        ).order_by("-published_at")[offset:offset + page_size]
+    )
+
+    title = f"DRSS - {category.name}"
+    link = f"https://drss.app/category/{category_id}"
+    description = f"Public RSS items from category: {category.name}"
+
+    if format == "atom":
+        xml_content = generate_atom_xml(items, title, link, f"category-{category_id}")
+        content_type = "application/atom+xml; charset=utf-8"
+    else:
+        xml_content = generate_rss_xml(items, title, link, description)
+        content_type = "application/rss+xml; charset=utf-8"
+
+    return HttpResponse(xml_content, content_type=content_type)
+
+
+@item_router.get("/feed/{feed_id}/rss", auth=None)
+def export_feed_items_rss(
+    request,
+    feed_id: int,
+    page: int = 1,
+    page_size: int = 50,
+    format: str = "rss",
+):
+    """공개된 피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
+    from ninja.errors import HttpError
+
+    # 피드가 존재하고 is_public=True이고, 카테고리도 is_public=True인지 확인
+    feed = RSSFeed.objects.filter(
+        id=feed_id,
+        is_public=True,
+        category__is_public=True,
+    ).first()
+    if not feed:
+        raise HttpError(404, "Feed not found or not public")
+
+    offset = (page - 1) * page_size
+
+    items = list(
+        RSSItem.objects.filter(feed_id=feed_id)
+        .order_by("-published_at")[offset:offset + page_size]
+    )
+
+    title = f"DRSS - {feed.title}"
+    link = f"https://drss.app/feed/{feed_id}"
+    description = f"RSS items from feed: {feed.title}"
+
+    if format == "atom":
+        xml_content = generate_atom_xml(items, title, link, f"feed-{feed_id}")
+        content_type = "application/atom+xml; charset=utf-8"
+    else:
+        xml_content = generate_rss_xml(items, title, link, description)
+        content_type = "application/rss+xml; charset=utf-8"
+
+    return HttpResponse(xml_content, content_type=content_type)
 
 
 # ============== RSS Everything (Source) Endpoints ==============
