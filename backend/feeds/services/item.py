@@ -20,10 +20,10 @@ class ItemService:
     ) -> QuerySet[RSSItem]:
         """
         검색 필터 적용 - PostgreSQL 전문 검색 + icontains 하이브리드
-        
+
         1. 전문 검색 (SearchVector): 단어 단위 검색으로 관련도 랭킹
         2. icontains: 부분 문자열 매칭 (한국어/특수문자에 효과적)
-        
+
         두 방식을 OR로 결합하여 어느 쪽이든 매칭되면 결과에 포함
         """
         if not search:

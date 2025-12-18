@@ -101,6 +101,9 @@ interface TabStore {
 
   // 특정 패널의 모든 탭 닫기 (홈 탭 제외)
   closeAllTabs: (panelId?: PanelId) => void;
+
+  // 탭 히스토리 관리
+  goBackTab: (panelId?: PanelId) => boolean;
 }
 
 // 고유 ID 생성
@@ -517,6 +520,26 @@ export const useTabStore = create<TabStore>()(
           };
         }),
       }));
+    },
+
+    goBackTab: (panelId) => {
+      const { panels, activePanelId, setActiveTab } = get();
+      const targetPanelId = panelId || activePanelId;
+      const panel = panels.find(p => p.id === targetPanelId);
+      
+      if (!panel || !panel.activeTabId) return false;
+
+      // 현재 활성 탭의 인덱스 찾기
+      const currentIndex = panel.tabs.findIndex(t => t.id === panel.activeTabId);
+      
+      // 이전 탭이 있으면 이동
+      if (currentIndex > 0) {
+        const prevTab = panel.tabs[currentIndex - 1];
+        setActiveTab(prevTab.id);
+        return true;
+      }
+      
+      return false;
     },
   }))
 );
