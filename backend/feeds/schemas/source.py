@@ -5,8 +5,8 @@ Source Schemas - RSS Everything 소스 관련 스키마
 from datetime import datetime
 from typing import Optional, Literal
 from ninja import Schema
-from pydantic import BaseModel, Field
-
+# from pydantic import BaseModel, Field
+from ninja import Schema as BaseModel, Field
 
 # Source 타입 정의
 SourceType = Literal["rss", "page_scraping", "detail_page_scraping"]
@@ -304,10 +304,10 @@ class RSSEverythingSchema(BaseModel):
     wait_selector: str
     timeout: int
     custom_headers: dict
-    last_crawled_at: Optional[str]
+    last_crawled_at: Optional[datetime]
     last_error: str
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     @staticmethod
     def from_orm(obj) -> "RSSEverythingSchema":

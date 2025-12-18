@@ -2,8 +2,10 @@
 Task Result Schemas - 태스크 결과 관련 스키마
 """
 
+from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+# from pydantic import BaseModel
+from ninja import Schema as BaseModel
 
 
 class FeedInfo(BaseModel):
@@ -23,26 +25,10 @@ class TaskResultSchema(BaseModel):
     items_found: int
     items_created: int
     error_message: str
-    started_at: Optional[str]
-    completed_at: Optional[str]
-    created_at: str
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+    created_at: datetime
     duration_seconds: Optional[float]
-
-    @staticmethod
-    def from_orm(obj) -> "TaskResultSchema":
-        return TaskResultSchema(
-            id=obj.id,
-            feed=FeedInfo(id=obj.feed.id, title=obj.feed.title),
-            task_id=obj.task_id,
-            status=obj.status,
-            items_found=obj.items_found,
-            items_created=obj.items_created,
-            error_message=obj.error_message,
-            started_at=obj.started_at.isoformat() if obj.started_at else None,
-            completed_at=obj.completed_at.isoformat() if obj.completed_at else None,
-            created_at=obj.created_at.isoformat(),
-            duration_seconds=obj.duration_seconds,
-        )
 
 
 class TaskResultListResponse(BaseModel):
