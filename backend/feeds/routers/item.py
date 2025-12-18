@@ -32,7 +32,7 @@ def toggle_item_read(request, item_id: int):
 
 
 @router.get("", response=list[ItemSchema], operation_id="listAllItems")
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
+@paginate(CursorPagination[RSSItem], ordering_field="id")
 def list_all_items(
     request,
     is_read: Optional[bool] = None,
@@ -44,7 +44,7 @@ def list_all_items(
 
 
 @router.get("/category/{category_id}", response=list[ItemSchema], operation_id="listItemsByCategory")
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
+@paginate(CursorPagination[RSSItem], ordering_field="id")
 def list_items_by_category(
     request,
     category_id: int,
@@ -63,7 +63,7 @@ def list_items_by_category(
 
 
 @router.get("/feed/{feed_id}", response=list[ItemSchema], operation_id="listItemsByFeed")
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
+@paginate(CursorPagination[RSSItem], ordering_field="id")
 def list_items_by_feed(
     request,
     feed_id: int,

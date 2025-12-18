@@ -44,7 +44,7 @@ const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive:
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     listAllItems,
-    (item) => item.published_at,
+    (item) => item.id.toString(),
     'home',
     filters,
     isActive  // 활성 탭에서만 데이터 로드
@@ -91,7 +91,7 @@ const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRe
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     (args) => listItemsByCategory(categoryId, args),
-    (item) => item.published_at,
+    (item) => item.id.toString(),
     `category-${categoryId}`,
     filters,
     isActive  // 활성 탭에서만 데이터 로드
@@ -138,7 +138,7 @@ const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: {
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     (args) => listItemsByFeed(feedId, args),
-    (item) => item.published_at,
+    (item) => item.id.toString(),
     `feed-${feedId}`,
     filters,
     isActive  // 활성 탭에서만 데이터 로드
