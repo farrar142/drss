@@ -86,12 +86,15 @@ const DrawerContent = memo(({
     setDragOverCategoryId(category.id);
   }, []);
 
-  const handleCategoryDragLeave = useCallback(() => {
+  const handleCategoryDragLeave = useCallback((e: React.DragEvent) => {
+    // 자식 요소로 이동할 때는 무시
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
     setDragOverCategoryId(null);
   }, []);
 
   const handleCategoryDrop = useCallback((e: React.DragEvent, targetCategory: RSSCategory) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverCategoryId(null);
     setDraggingCategoryId(null);
 

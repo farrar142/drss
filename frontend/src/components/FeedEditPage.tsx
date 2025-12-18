@@ -255,8 +255,31 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     };
 
     try {
-      await navigator.clipboard.writeText(JSON.stringify(sourceConfig, null, 2));
-      alert('소스 설정이 클립보드에 복사되었습니다.');
+      // Clipboard API 사용 가능 여부 확인
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(JSON.stringify(sourceConfig, null, 2));
+        alert('소스 설정이 클립보드에 복사되었습니다.');
+      } else {
+        // Fallback: 텍스트 선택 방식
+        const textArea = document.createElement('textarea');
+        textArea.value = JSON.stringify(sourceConfig, null, 2);
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          document.execCommand('copy');
+          alert('소스 설정이 클립보드에 복사되었습니다.');
+        } catch (fallbackErr) {
+          console.error('Fallback copy failed:', fallbackErr);
+          alert('복사에 실패했습니다. 브라우저가 클립보드 접근을 지원하지 않습니다.');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
     } catch (err) {
       console.error('Failed to copy:', err);
       alert('복사에 실패했습니다.');

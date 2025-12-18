@@ -278,14 +278,15 @@ export const CategoryItem: FC<{
                 </span>
               )}
 
-              {/* 더보기 메뉴 */}
+              {/* 더보기 메뉴 - 모바일 친화적으로 항상 표시 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     className={cn(
-                      'p-1 rounded-md opacity-0 group-hover:opacity-100',
-                      'hover:bg-sidebar-accent/80 transition-all',
-                      'focus:opacity-100'
+                      'p-1 rounded-md transition-all',
+                      'hover:bg-sidebar-accent/80',
+                      'opacity-70 hover:opacity-100 focus:opacity-100',
+                      'md:opacity-0 md:group-hover:opacity-100' // 데스크톱에서만 hover 시 표시
                     )}
                     onClick={(e) => e.stopPropagation()}
                   >

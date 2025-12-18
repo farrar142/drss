@@ -79,6 +79,7 @@ class RSSItem(BaseModel):
     categories = models.JSONField(
         default=list, blank=True, help_text="카테고리 목록 (예: ['Tech', 'News'])"
     )
+    image = models.URLField(blank=True, default="", help_text="아이템 이미지 URL")
     published_at = models.DateTimeField()
     guid = models.CharField(max_length=500, unique=True)
     is_read = models.BooleanField(default=False)

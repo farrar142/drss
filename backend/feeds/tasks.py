@@ -223,6 +223,22 @@ def _update_from_rss_source(feed, source):
                 if term:
                     categories.append(str(term))
 
+        # 이미지 추출 (RSS 피드에서)
+        image = ""
+        if hasattr(entry, "enclosures") and entry.enclosures:
+            for enclosure in entry.enclosures:
+                if hasattr(enclosure, "type") and enclosure.type and "image" in enclosure.type:
+                    image = getattr(enclosure, "href", "")
+                    break
+
+        # RSS 피드에 이미지가 없으면 description에서 첫 번째 img 태그 찾기
+        if not image and description and isinstance(description, str):
+            from bs4 import BeautifulSoup
+            desc_soup = BeautifulSoup(description, "html.parser")
+            img_tag = desc_soup.find("img")
+            if img_tag and img_tag.get("src"):
+                image = img_tag.get("src")
+
         new_items.append(
             RSSItem(
                 feed=feed,
@@ -231,6 +247,7 @@ def _update_from_rss_source(feed, source):
                 description=description,
                 author=author,
                 categories=categories,
+                image=image,
                 published_at=published_at,
                 guid=guid,
             )
@@ -403,6 +420,14 @@ def _crawl_list_page(source, items, existing_guids):
                 el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
             ][:10]
 
+        # 이미지 추출
+        image = ""
+        if source.image_selector:
+            img_el = item.select_one(source.image_selector)
+            if img_el:
+                from feeds.services.source import SourceService
+                image = SourceService.extract_src(img_el, source.url)
+
         new_items.append(
             RSSItem(
                 title=title[:199],
@@ -412,6 +437,7 @@ def _crawl_list_page(source, items, existing_guids):
                 guid=guid[:499],
                 author=author,
                 categories=categories,
+                image=image,
             )
         )
 
@@ -552,6 +578,13 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                     el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
                 ][:10]
 
+            # 이미지 추출
+            image = ""
+            if source.detail_image_selector:
+                img_el = detail_soup.select_one(source.detail_image_selector)
+                if img_el:
+                    image = SourceService.extract_src(img_el, item_info["link"])
+
             new_items.append(
                 RSSItem(
                     title=title[:199],
@@ -561,6 +594,7 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                     guid=item_info["link"][:499],
                     author=author,
                     categories=categories,
+                    image=image,
                 )
             )
         except Exception as e:
@@ -618,4 +652,4 @@ def crawl_rss_everything_source(source_id):
         return f"RSSEverythingSource {source_id} does not exist"
 
     # 연결된 피드를 통해 업데이트 실행
-    return _update_feed_from_rss_everything(source.feed)
+    return update_feed_items.delay(source.feed.id)
