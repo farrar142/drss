@@ -45,7 +45,6 @@ export const FeedVideo: FC<{
       src={src}
       poster={poster}
       className={className}
-      muted
       loop
       playsInline
       controls
@@ -63,6 +62,8 @@ export const FeedVideo: FC<{
         }
       }}
       {...filteredProps}
+      muted
+
     />
   );
 };
