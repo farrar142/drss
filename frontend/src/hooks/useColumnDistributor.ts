@@ -153,7 +153,7 @@ export function useColumnDistributor<T extends { id: number }>({
       }
       return;
     }
-    
+
     if (queueRef.current.length === 0) return;
     if (isInitialDistributingRef.current) return;
 
@@ -223,7 +223,7 @@ export function useColumnDistributor<T extends { id: number }>({
 
     const currentColumns = columnsRef.current;
     const newColumnItems: T[][] = Array.from({ length: currentColumns }, () => []);
-    
+
     // 라운드로빈으로 모든 아이템 배분
     let colIndex = 0;
     while (queueRef.current.length > 0) {
@@ -274,7 +274,7 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 컬럼 수 변경 시 리셋 (리사이즈 완료 후 처리)
   const pendingColumnChangeRef = useRef(false);
-  
+
   useEffect(() => {
     if (prevColumnsRef.current !== columns) {
       // 리사이즈 중이면 완료 후 처리
@@ -292,10 +292,10 @@ export function useColumnDistributor<T extends { id: number }>({
         }
         return;
       }
-      
+
       handleColumnChange(columns);
     }
-    
+
     function handleColumnChange(targetColumns: number) {
       prevColumnsRef.current = targetColumns;
 
@@ -348,7 +348,7 @@ export function useColumnDistributor<T extends { id: number }>({
         (entries) => {
           // 리사이즈 중에는 처리 건너뛰기
           if (isResizing) return;
-          
+
           entries.forEach(entry => {
             if (entry.isIntersecting) {
               visibleSentinelsRef.current.add(columnIndex);

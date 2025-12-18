@@ -296,6 +296,15 @@ export interface CategoryReorderSchema {
   category_ids: number[];
 }
 
+export type InputCursor = string | null;
+
+export interface Input {
+  cursor?: InputCursor;
+  limit?: number;
+  direction?: string;
+  ordering_field?: string;
+}
+
 /**
  * 아이템 스키마
  */
@@ -312,12 +321,16 @@ export interface ItemSchema {
   is_favorite: boolean;
 }
 
-export type PaginatedResponseItemSchemaNextCursor = string | null;
+export type PagedItemSchemaNextCursor = string | null;
 
-export interface PaginatedResponseItemSchema {
+export type PagedItemSchemaPrevCursor = string | null;
+
+export interface PagedItemSchema {
   items: ItemSchema[];
-  has_next: boolean;
-  next_cursor?: PaginatedResponseItemSchemaNextCursor;
+  next_cursor?: PagedItemSchemaNextCursor;
+  prev_cursor?: PagedItemSchemaPrevCursor;
+  has_next?: boolean;
+  has_prev?: boolean;
 }
 
 export interface LoginResponse {
@@ -642,12 +655,16 @@ export interface FeedInfo {
   title: string;
 }
 
-/**
- * 태스크 결과 목록 응답
- */
-export interface TaskResultListResponse {
+export type PagedTaskResultSchemaNextCursor = string | null;
+
+export type PagedTaskResultSchemaPrevCursor = string | null;
+
+export interface PagedTaskResultSchema {
   items: TaskResultSchema[];
-  total: number;
+  next_cursor?: PagedTaskResultSchemaNextCursor;
+  prev_cursor?: PagedTaskResultSchemaPrevCursor;
+  has_next?: boolean;
+  has_prev?: boolean;
 }
 
 export type TaskResultSchemaStartedAt = string | null;
@@ -742,34 +759,39 @@ export type FeedsRouterListAllItemsParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
-limit?: number;
 cursor?: string | null;
+limit?: number;
 direction?: string;
+ordering_field?: string;
 };
 
 export type FeedsRouterListItemsByCategoryParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
-limit?: number;
 cursor?: string | null;
+limit?: number;
 direction?: string;
+ordering_field?: string;
 };
 
 export type FeedsRouterListItemsByFeedParams = {
 is_read?: boolean | null;
 is_favorite?: boolean | null;
 search?: string;
-limit?: number;
 cursor?: string | null;
+limit?: number;
 direction?: string;
+ordering_field?: string;
 };
 
 export type FeedsRouterListTaskResultsParams = {
 feed_id?: number | null;
 status?: string | null;
+cursor?: string | null;
 limit?: number;
-offset?: number;
+direction?: string;
+ordering_field?: string;
 };
 
 export type FeedsRouterClearTaskResultsParams = {
@@ -1089,7 +1111,7 @@ export const feedsRouterToggleItemRead = (
 export const feedsRouterListAllItems = (
     params?: FeedsRouterListAllItemsParams,
  ) => {
-      return axiosInstance<PaginatedResponseItemSchema>(
+      return axiosInstance<PagedItemSchema>(
       {url: `/api/items`, method: 'GET',
         params
     },
@@ -1104,7 +1126,7 @@ export const feedsRouterListItemsByCategory = (
     categoryId: number,
     params?: FeedsRouterListItemsByCategoryParams,
  ) => {
-      return axiosInstance<PaginatedResponseItemSchema>(
+      return axiosInstance<PagedItemSchema>(
       {url: `/api/items/category/${categoryId}`, method: 'GET',
         params
     },
@@ -1119,7 +1141,7 @@ export const feedsRouterListItemsByFeed = (
     feedId: number,
     params?: FeedsRouterListItemsByFeedParams,
  ) => {
-      return axiosInstance<PaginatedResponseItemSchema>(
+      return axiosInstance<PagedItemSchema>(
       {url: `/api/items/feed/${feedId}`, method: 'GET',
         params
     },
@@ -1313,7 +1335,7 @@ export const feedsRouterRefreshSource = (
 export const feedsRouterListTaskResults = (
     params?: FeedsRouterListTaskResultsParams,
  ) => {
-      return axiosInstance<TaskResultListResponse>(
+      return axiosInstance<PagedTaskResultSchema>(
       {url: `/api/task-results`, method: 'GET',
         params
     },

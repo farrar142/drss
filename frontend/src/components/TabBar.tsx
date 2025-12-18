@@ -93,16 +93,16 @@ export const TabBar: React.FC<TabBarProps> = ({
   // 화면 너비 감지 (디바운싱 적용)
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    
+
     const checkScreenSize = () => {
       setIsSmallScreen(window.innerWidth < 640); // sm breakpoint
     };
-    
+
     const debouncedCheck = () => {
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = setTimeout(checkScreenSize, 150);
     };
-    
+
     checkScreenSize();
     window.addEventListener('resize', debouncedCheck, { passive: true });
     return () => {

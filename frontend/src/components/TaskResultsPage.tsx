@@ -58,18 +58,20 @@ function formatDate(dateStr: string | null): string {
 export default function TaskResultsPage() {
   const [results, setResults] = useState<TaskResultSchema[]>([]);
   const [stats, setStats] = useState<TaskStatsSchema | null>(null);
-  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<TaskResultStatus | 'all'>('all');
-  const [page, setPage] = useState(0);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const limit = 20;
 
-  const fetchResults = useCallback(async () => {
+  const fetchResults = useCallback(async (cursorValue: string | null = null) => {
     try {
       const params: Record<string, unknown> = {
         limit,
-        offset: page * limit,
+        cursor: cursorValue,
       };
       if (statusFilter !== 'all') {
         params.status = statusFilter;
@@ -77,11 +79,12 @@ export default function TaskResultsPage() {
 
       const response = await feedsRouterListTaskResults(params as Parameters<typeof feedsRouterListTaskResults>[0]);
       setResults(response.items);
-      setTotal(response.total);
+      setHasNext(response.has_next ?? false);
+      setHasPrev(response.has_prev ?? false);
     } catch (error) {
       console.error('Failed to fetch task results:', error);
     }
-  }, [page, statusFilter]);
+  }, [statusFilter]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -92,26 +95,56 @@ export default function TaskResultsPage() {
     }
   }, []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (cursorValue: string | null = null) => {
     setLoading(true);
-    await Promise.all([fetchResults(), fetchStats()]);
+    await Promise.all([fetchResults(cursorValue), fetchStats()]);
     setLoading(false);
   }, [fetchResults, fetchStats]);
 
   useEffect(() => {
+    // Reset cursor history when filter changes
+    setCursor(null);
+    setCursorHistory([null]);
+    loadData(null);
+  }, [statusFilter]);
+
+  // Initial load
+  useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, []);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    setCursor(null);
+    setCursorHistory([null]);
+    await loadData(null);
     setRefreshing(false);
+  };
+
+  const handleNextPage = async () => {
+    if (results.length > 0 && hasNext) {
+      const lastItem = results[results.length - 1];
+      const nextCursor = lastItem.created_at;
+      setCursorHistory((prev) => [...prev, nextCursor]);
+      setCursor(nextCursor);
+      await loadData(nextCursor);
+    }
+  };
+
+  const handlePrevPage = async () => {
+    if (cursorHistory.length > 1) {
+      const newHistory = cursorHistory.slice(0, -1);
+      const prevCursor = newHistory[newHistory.length - 1];
+      setCursorHistory(newHistory);
+      setCursor(prevCursor);
+      await loadData(prevCursor);
+    }
   };
 
   const handleDeleteResult = async (id: number) => {
     try {
       await feedsRouterDeleteTaskResult(id);
-      await loadData();
+      await loadData(cursor);
     } catch (error) {
       console.error('Failed to delete task result:', error);
     }
@@ -123,13 +156,13 @@ export default function TaskResultsPage() {
     }
     try {
       await feedsRouterClearTaskResults(status ? { status } : undefined);
-      await loadData();
+      setCursor(null);
+      setCursorHistory([null]);
+      await loadData(null);
     } catch (error) {
       console.error('Failed to clear task results:', error);
     }
   };
-
-  const totalPages = Math.ceil(total / limit);
 
   return (
     <div className="container mx-auto p-4 max-w-6xl">
@@ -195,7 +228,6 @@ export default function TaskResultsPage() {
               size="sm"
               onClick={() => {
                 setStatusFilter(status);
-                setPage(0);
               }}
             >
               {status === 'all' && 'All'}
@@ -218,7 +250,7 @@ export default function TaskResultsPage() {
               실패 기록 삭제
             </Button>
           )}
-          {total > 0 && (
+          {stats && stats.total > 0 && (
             <Button
               variant="outline"
               size="sm"
@@ -237,7 +269,7 @@ export default function TaskResultsPage() {
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">실행 내역</CardTitle>
           <CardDescription>
-            총 {total}개의 기록 중 {page * limit + 1}-{Math.min((page + 1) * limit, total)}
+            {stats?.total ? `총 ${stats.total}개의 기록` : '기록 목록'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -311,24 +343,24 @@ export default function TaskResultsPage() {
           )}
 
           {/* 페이지네이션 */}
-          {totalPages > 1 && (
+          {(hasPrev || hasNext) && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
+                onClick={handlePrevPage}
+                disabled={!hasPrev || cursorHistory.length <= 1}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground">
-                {page + 1} / {totalPages}
+                페이지 {cursorHistory.length}
               </span>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
+                onClick={handleNextPage}
+                disabled={!hasNext}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

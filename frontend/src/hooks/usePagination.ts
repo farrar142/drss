@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 
 type PaginatedResponse<T> = {
   items: T[]
-  has_next: boolean;
+  has_next?: boolean;
   next_cursor?: string | null;
 }
 
@@ -137,7 +137,7 @@ export const usePagination = <T extends { id: number }>(
 
       if (direction === 'before') {
         // Update cursor for loading older items
-        setHasNext(response.has_next);
+        setHasNext(response.has_next ?? false);
         setNextCursor(response.next_cursor || null);
       }
 
