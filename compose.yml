@@ -10,7 +10,7 @@ x-django-config: &backend
     - DJANGO_SETTINGS_MODULE=base.settings
     - TZ=Asia/Seoul
     - PUPPETEER_WS_ENDPOINT=ws://browserless:3000
-    - PUPPETEER_REAL_BROWSER_SERVICE=http://real-browser:3000
+    - PUPPETEER_REAL_BROWSER_SERVICE=http://browserless:3000
     - PYTHONUNBUFFERED=1
     - PYTHONDONTWRITEBYTECODE=1
   env_file:
@@ -90,6 +90,9 @@ services:
     # marked
     image: browserless/chrome # marked
     restart: always # marked
+    ports:
+      # marked
+      - '3002:3000' # marked
     ulimits:
       # marked
       core:

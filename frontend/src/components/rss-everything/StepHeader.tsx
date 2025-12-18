@@ -66,7 +66,7 @@ export function StepHeader({ currentStepIndex, sourceType, onReset }: StepHeader
 
         <div className="hidden md:flex items-center gap-1 text-sm text-muted-foreground">
           {steps.map((step, index) => (
-            <React.Fragment key={step}>
+            <React.Fragment key={index}>
               {index > 0 && <ChevronRight className="h-4 w-4" />}
               <span className={index === currentStepIndex ? 'text-primary font-medium' : ''}>
                 {index + 1}. {step}
