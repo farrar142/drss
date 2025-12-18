@@ -35,7 +35,7 @@ class RSSFeed(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
     title = models.CharField(max_length=500, blank=True)
-    favicon_url = models.URLField(blank=True)
+    favicon_url = models.URLField(blank=True,null=True)
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")

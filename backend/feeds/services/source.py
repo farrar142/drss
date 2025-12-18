@@ -84,6 +84,8 @@ class SourceService:
             href = link_tag.get("href")
             if not href:
                 continue
+            if not isinstance(href, str):
+                continue
 
             css_url = urljoin(base_url, href)
 

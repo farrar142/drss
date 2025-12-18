@@ -1,20 +1,10 @@
 from logging import getLogger
 from time import struct_time
-import feedparser
-import requests
 from datetime import datetime, timezone
-from celery import shared_task
-from django.contrib.auth import get_user_model
-from django.apps import apps
+from base.celery_helper import shared_task
 from django.utils import timezone as django_timezone
 from feeds.utils.feed_fetcher import fetch_feed_data
 from feeds.utils.date_parser import parse_date
-import os
-from django.conf import settings
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
-from io import BytesIO
-from PIL import Image
 from urllib.parse import urljoin
 
 # Image caching has been removed. The previous cache_image_task is intentionally
