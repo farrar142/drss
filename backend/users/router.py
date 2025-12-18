@@ -73,8 +73,8 @@ def login(request, data: LoginRequest):
 def signup(request, data: SignupRequest):
     from users.models import User
 
-    if SettingService.get_global_setting().admin_signed:
-        raise errors.AuthorizationError(message="Admin has already signed up.")
+    # if SettingService.get_global_setting().admin_signed:
+    #     raise errors.AuthorizationError(message="Admin has already signed up.")
 
     if User.objects.filter(username=data.username).exists():
         raise errors.AuthorizationError(message="Username already exists")

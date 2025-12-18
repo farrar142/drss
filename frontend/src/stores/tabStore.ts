@@ -45,6 +45,8 @@ export interface Panel {
   id: PanelId;
   tabs: Tab[];
   activeTabId: string | null;
+  // 탭 방문 히스토리 (탭 ID 배열, 최근 방문이 뒤에)
+  tabHistory: string[];
 }
 
 // 영속화할 상태
@@ -123,6 +125,7 @@ const DEFAULT_LEFT_PANEL: Panel = {
   id: 'left',
   tabs: [DEFAULT_HOME_TAB],
   activeTabId: 'tab_home',
+  tabHistory: ['tab_home'],
 };
 
 // 헬퍼: 모든 패널에서 탭 찾기
@@ -163,17 +166,25 @@ const loadFromStorage = (userId: number): PersistedState | null => {
 
     // 마이그레이션: 기존 tabs 구조에서 panels 구조로
     if (parsed.tabs && !parsed.panels) {
+      const activeTabId = parsed.activeTabId || parsed.tabs[0]?.id || null;
       return {
         panels: [{
           id: 'left' as PanelId,
           tabs: parsed.tabs,
-          activeTabId: parsed.activeTabId || parsed.tabs[0]?.id || null,
+          activeTabId,
+          tabHistory: activeTabId ? [activeTabId] : [],
         }],
         activePanelId: 'left' as PanelId,
       };
     }
 
-    return parsed as PersistedState;
+    // 마이그레이션: tabHistory가 없는 패널에 추가
+    const migratedPanels = parsed.panels.map((panel: Panel) => ({
+      ...panel,
+      tabHistory: panel.tabHistory || (panel.activeTabId ? [panel.activeTabId] : []),
+    }));
+
+    return { ...parsed, panels: migratedPanels } as PersistedState;
   } catch {
     return null;
   }
@@ -225,7 +236,7 @@ export const useTabStore = create<TabStore>()(
       } else {
         set({
           _userId: userId,
-          panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }] }],
+          panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }], tabHistory: ['tab_home'] }],
           activePanelId: 'left',
         });
       }
@@ -235,7 +246,7 @@ export const useTabStore = create<TabStore>()(
     clearForLogout: () => {
       set({
         _userId: null,
-        panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }] }],
+        panels: [{ ...DEFAULT_LEFT_PANEL, tabs: [{ ...DEFAULT_HOME_TAB }], tabHistory: ['tab_home'] }],
         activePanelId: 'left',
       });
     },
@@ -266,6 +277,7 @@ export const useTabStore = create<TabStore>()(
             id: 'left',
             tabs: [...targetPanel.tabs, tab],
             activeTabId: tab.id,
+            tabHistory: [...targetPanel.tabHistory, tab.id],
           }],
           activePanelId: 'left',
         });
@@ -276,12 +288,15 @@ export const useTabStore = create<TabStore>()(
         panels: state.panels.map(p => {
           if (p.id === sourcePanel.id) {
             const newTabs = p.tabs.filter(t => t.id !== tabId);
+            const newHistory = p.tabHistory.filter(tid => tid !== tabId);
+            const newActiveId = p.activeTabId === tabId
+              ? (newHistory[newHistory.length - 1] || newTabs[Math.min(index, newTabs.length - 1)]?.id || null)
+              : p.activeTabId;
             return {
               ...p,
               tabs: newTabs,
-              activeTabId: p.activeTabId === tabId
-                ? newTabs[Math.min(index, newTabs.length - 1)]?.id || null
-                : p.activeTabId,
+              activeTabId: newActiveId,
+              tabHistory: newHistory,
             };
           }
           if (p.id === targetPanelId) {
@@ -289,6 +304,7 @@ export const useTabStore = create<TabStore>()(
               ...p,
               tabs: [...p.tabs, tab],
               activeTabId: tab.id,
+              tabHistory: [...p.tabHistory, tab.id],
             };
           }
           return p;
@@ -314,19 +330,25 @@ export const useTabStore = create<TabStore>()(
       const newPanelId: PanelId = side === 'left' ? 'left' : 'right';
       const existingPanelId: PanelId = side === 'left' ? 'right' : 'left';
 
+      const newSourceTabs = sourcePanel.tabs.filter(t => t.id !== tabId);
+      const newSourceHistory = sourcePanel.tabHistory.filter(tid => tid !== tabId);
+      const newSourceActiveId = sourcePanel.activeTabId === tabId
+        ? (newSourceHistory[newSourceHistory.length - 1] || newSourceTabs[Math.min(index, newSourceTabs.length - 1)]?.id || null)
+        : sourcePanel.activeTabId;
+
       const updatedSourcePanel: Panel = {
         ...sourcePanel,
         id: existingPanelId,
-        tabs: sourcePanel.tabs.filter(t => t.id !== tabId),
-        activeTabId: sourcePanel.activeTabId === tabId
-          ? sourcePanel.tabs.filter(t => t.id !== tabId)[Math.min(index, sourcePanel.tabs.length - 2)]?.id || null
-          : sourcePanel.activeTabId,
+        tabs: newSourceTabs,
+        activeTabId: newSourceActiveId,
+        tabHistory: newSourceHistory,
       };
 
       const newPanel: Panel = {
         id: newPanelId,
         tabs: [tab],
         activeTabId: tab.id,
+        tabHistory: [tab.id],
       };
 
       const newPanels = side === 'left'
@@ -353,6 +375,8 @@ export const useTabStore = create<TabStore>()(
           ...remainingPanel,
           id: 'left',
           tabs: [...remainingPanel.tabs, ...panelToClose.tabs],
+          // 남은 패널의 히스토리 유지 (닫히는 패널의 탭들은 히스토리에서 제외)
+          tabHistory: remainingPanel.tabHistory,
         }],
         activePanelId: 'left',
       });
@@ -368,7 +392,13 @@ export const useTabStore = create<TabStore>()(
       set((state) => ({
         panels: state.panels.map(p =>
           p.id === targetPanelId
-            ? { ...p, tabs: [...p.tabs, newTab], activeTabId: id }
+            ? {
+                ...p,
+                tabs: [...p.tabs, newTab],
+                activeTabId: id,
+                // 히스토리에 새 탭 추가
+                tabHistory: [...p.tabHistory.filter(tid => tid !== id), id],
+              }
             : p
         ),
         activePanelId: targetPanelId,
@@ -392,17 +422,26 @@ export const useTabStore = create<TabStore>()(
       }
 
       const newTabs = panel.tabs.filter(t => t.id !== tabId);
+      // 히스토리에서 해당 탭 제거
+      const newHistory = panel.tabHistory.filter(tid => tid !== tabId);
       let newActiveId = panel.activeTabId;
 
       if (panel.activeTabId === tabId) {
-        const newIndex = Math.min(index, newTabs.length - 1);
-        newActiveId = newTabs[newIndex]?.id || null;
+        // 히스토리에서 가장 최근에 방문한 탭으로 이동 (현재 탭 제외)
+        const lastInHistory = newHistory[newHistory.length - 1];
+        if (lastInHistory && newTabs.some(t => t.id === lastInHistory)) {
+          newActiveId = lastInHistory;
+        } else {
+          // 히스토리에 유효한 탭이 없으면 인덱스 기반
+          const newIndex = Math.min(index, newTabs.length - 1);
+          newActiveId = newTabs[newIndex]?.id || null;
+        }
       }
 
       set((state) => ({
         panels: state.panels.map(p =>
           p.id === panel.id
-            ? { ...p, tabs: newTabs, activeTabId: newActiveId }
+            ? { ...p, tabs: newTabs, activeTabId: newActiveId, tabHistory: newHistory }
             : p
         ),
       }));
@@ -416,7 +455,12 @@ export const useTabStore = create<TabStore>()(
       set((state) => ({
         panels: state.panels.map(p =>
           p.id === found.panel.id
-            ? { ...p, activeTabId: tabId }
+            ? {
+                ...p,
+                activeTabId: tabId,
+                // 히스토리에서 해당 탭을 제거하고 끝에 추가 (최근 방문)
+                tabHistory: [...p.tabHistory.filter(tid => tid !== tabId), tabId],
+              }
             : p
         ),
         activePanelId: found.panel.id,
@@ -512,34 +556,68 @@ export const useTabStore = create<TabStore>()(
           // 홈 탭은 유지, 없으면 새로 생성
           const homeTab = p.tabs.find(t => t.type === 'home');
           const newTabs = homeTab ? [homeTab] : [{ ...DEFAULT_HOME_TAB }];
+          const homeTabId = newTabs[0].id;
 
           return {
             ...p,
             tabs: newTabs,
-            activeTabId: newTabs[0].id,
+            activeTabId: homeTabId,
+            // 히스토리도 리셋
+            tabHistory: [homeTabId],
           };
         }),
       }));
     },
 
     goBackTab: (panelId) => {
-      const { panels, activePanelId, setActiveTab } = get();
+      const { panels, activePanelId } = get();
       const targetPanelId = panelId || activePanelId;
       const panel = panels.find(p => p.id === targetPanelId);
       
       if (!panel || !panel.activeTabId) return false;
 
-      // 현재 활성 탭의 인덱스 찾기
-      const currentIndex = panel.tabs.findIndex(t => t.id === panel.activeTabId);
+      // 히스토리에서 현재 탭이 마지막이어야 함
+      const history = panel.tabHistory;
+      if (history.length <= 1) return false;
+
+      // 히스토리에서 현재 탭(마지막)을 제거하고 그 이전 탭을 찾음
+      const currentTabId = panel.activeTabId;
+      const currentIndex = history.lastIndexOf(currentTabId);
       
-      // 이전 탭이 있으면 이동
-      if (currentIndex > 0) {
-        const prevTab = panel.tabs[currentIndex - 1];
-        setActiveTab(prevTab.id);
-        return true;
+      if (currentIndex <= 0) return false;
+
+      // 이전 탭 ID
+      const prevTabId = history[currentIndex - 1];
+      
+      // 이전 탭이 실제로 존재하는지 확인
+      const prevTabExists = panel.tabs.some(t => t.id === prevTabId);
+      if (!prevTabExists) {
+        // 존재하지 않으면 히스토리에서 제거하고 재귀적으로 시도
+        set((state) => ({
+          panels: state.panels.map(p =>
+            p.id === targetPanelId
+              ? { ...p, tabHistory: p.tabHistory.filter(tid => tid !== prevTabId) }
+              : p
+          ),
+        }));
+        return get().goBackTab(targetPanelId);
       }
+
+      // 히스토리에서 현재 탭을 제거하고 이전 탭을 활성화
+      set((state) => ({
+        panels: state.panels.map(p =>
+          p.id === targetPanelId
+            ? {
+                ...p,
+                activeTabId: prevTabId,
+                // 현재 탭을 히스토리에서 제거
+                tabHistory: p.tabHistory.slice(0, currentIndex),
+              }
+            : p
+        ),
+      }));
       
-      return false;
+      return true;
     },
   }))
 );
