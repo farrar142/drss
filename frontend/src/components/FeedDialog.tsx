@@ -282,8 +282,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                       type="button"
                       onClick={() => setSourceType(type)}
                       className={`p-3 rounded-lg border text-left transition-all ${sourceType === type
-                          ? 'border-primary bg-primary/10 ring-1 ring-primary'
-                          : 'border-border hover:border-primary/50'
+                        ? 'border-primary bg-primary/10 ring-1 ring-primary'
+                        : 'border-border hover:border-primary/50'
                         }`}
                     >
                       <div className="flex items-center gap-2 mb-1">

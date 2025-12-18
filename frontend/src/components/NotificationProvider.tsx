@@ -7,13 +7,13 @@ import { useToastStore, useConfirmStore } from '@/stores/toastStore';
 
 export function ToastProvider() {
   const { toasts, removeToast } = useToastStore();
-  
+
   return <ToastContainer toasts={toasts} onDismiss={removeToast} />;
 }
 
 export function ConfirmProvider() {
   const { isOpen, options, handleConfirm, handleCancel } = useConfirmStore();
-  
+
   return (
     <ConfirmDialog
       open={isOpen}
