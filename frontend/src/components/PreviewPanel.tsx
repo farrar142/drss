@@ -31,7 +31,7 @@ export function PreviewPanel({ items }: PreviewPanelProps) {
   }, []);
 
   // PreviewItem들을 RSSItem으로 변환
-  const rssItems = useMemo(() => 
+  const rssItems = useMemo(() =>
     items.map((item, index) => convertToRSSItem(item, index)),
     [items]
   );

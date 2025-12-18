@@ -8,6 +8,7 @@ import TaskResultsPage from './TaskResultsPage';
 import PeriodicTasksPage from './PeriodicTasksPage';
 import FeedEditPage from './FeedEditPage';
 import { useSettingsStore } from '../stores/settingsStore';
+import { useRSSStore } from '../stores/rssStore';
 import { useTabStore, Tab, PanelId } from '../stores/tabStore';
 import { RSSItem } from '../types/rss';
 import {
@@ -20,19 +21,26 @@ import { usePagination, PaginationFilters } from '../hooks/usePagination';
 // 홈 피드 컴포넌트
 const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
+  const { searchQuery } = useRSSStore();
 
   const filters: PaginationFilters = useMemo(() => {
+    const base: PaginationFilters = {};
     switch (filter) {
       case 'unread':
-        return { is_read: false };
+        base.is_read = false;
+        break;
       case 'read':
-        return { is_read: true };
+        base.is_read = true;
+        break;
       case 'favorite':
-        return { is_favorite: true };
-      default:
-        return {};
+        base.is_favorite = true;
+        break;
     }
-  }, [filter]);
+    if (searchQuery.trim()) {
+      base.search = searchQuery.trim();
+    }
+    return base;
+  }, [filter, searchQuery]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     listAllItems,
@@ -60,19 +68,26 @@ HomeFeed.displayName = 'HomeFeed';
 // 카테고리 피드 컴포넌트
 const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRef }: { categoryId: number; isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
+  const { searchQuery } = useRSSStore();
 
   const filters: PaginationFilters = useMemo(() => {
+    const base: PaginationFilters = {};
     switch (filter) {
       case 'unread':
-        return { is_read: false };
+        base.is_read = false;
+        break;
       case 'read':
-        return { is_read: true };
+        base.is_read = true;
+        break;
       case 'favorite':
-        return { is_favorite: true };
-      default:
-        return {};
+        base.is_favorite = true;
+        break;
     }
-  }, [filter]);
+    if (searchQuery.trim()) {
+      base.search = searchQuery.trim();
+    }
+    return base;
+  }, [filter, searchQuery]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     (args) => listItemsByCategory(categoryId, args),
@@ -100,19 +115,26 @@ CategoryFeed.displayName = 'CategoryFeed';
 // 개별 피드 컴포넌트
 const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: { feedId: number; isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {
   const { filter } = useSettingsStore();
+  const { searchQuery } = useRSSStore();
 
   const filters: PaginationFilters = useMemo(() => {
+    const base: PaginationFilters = {};
     switch (filter) {
       case 'unread':
-        return { is_read: false };
+        base.is_read = false;
+        break;
       case 'read':
-        return { is_read: true };
+        base.is_read = true;
+        break;
       case 'favorite':
-        return { is_favorite: true };
-      default:
-        return {};
+        base.is_favorite = true;
+        break;
     }
-  }, [filter]);
+    if (searchQuery.trim()) {
+      base.search = searchQuery.trim();
+    }
+    return base;
+  }, [filter, searchQuery]);
 
   const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
     (args) => listItemsByFeed(feedId, args),

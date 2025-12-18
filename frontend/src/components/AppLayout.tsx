@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Menu,
@@ -18,6 +18,7 @@ import {
   LogOut,
   Palette,
   Ship,
+  X,
 } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -44,6 +45,82 @@ import { FloatingAppBarToggle } from './FloatingAppBarToggle';
 import { useTabStore } from '../stores/tabStore';
 import { cn } from '@/lib/utils';
 
+// 검색 입력 컴포넌트 - 디바운스 적용으로 불필요한 리렌더링 방지
+const SearchInput = memo(({ placeholder }: { placeholder: string }) => {
+  const { searchQuery, setSearchQuery } = useRSSStore();
+  const [localValue, setLocalValue] = useState(searchQuery);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // searchQuery가 외부에서 변경되면 (예: 초기화) localValue도 동기화
+  useEffect(() => {
+    setLocalValue(searchQuery);
+  }, [searchQuery]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalValue(value);
+
+    // 디바운스 적용 (300ms)
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(value);
+    }, 300);
+  }, [setSearchQuery]);
+
+  const handleClear = useCallback(() => {
+    setLocalValue('');
+    setSearchQuery('');
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+  }, [setSearchQuery]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // 즉시 검색 적용
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      setSearchQuery(localValue);
+    } else if (e.key === 'Escape') {
+      handleClear();
+    }
+  }, [localValue, setSearchQuery, handleClear]);
+
+  // 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative hidden md:block">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder={placeholder}
+        value={localValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        className="w-64 pl-9 pr-8 bg-muted/50"
+      />
+      {localValue && (
+        <button
+          onClick={handleClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted"
+        >
+          <X className="h-3 w-3 text-muted-foreground" />
+        </button>
+      )}
+    </div>
+  );
+});
+SearchInput.displayName = 'SearchInput';
+
 interface AppLayoutProps {
   authChildren?: React.ReactNode;
 }
@@ -55,11 +132,6 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
   const { t } = useTranslation();
 
   // Zustand stores
-  const {
-    searchQuery,
-    setSearchQuery,
-  } = useRSSStore();
-
   const {
     filter,
     viewMode,
@@ -119,10 +191,6 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
     router.push('/auth/signin');
   };
 
-  const handleSearch = async () => {
-    // TODO: Implement search
-  };
-
   const getThemeIcon = () => {
     switch (themeMode) {
       case 'light':
@@ -164,16 +232,7 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
           <div className="flex-1" />
 
           {/* Search */}
-          <div className="relative hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={`${t.common.search}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="w-64 pl-9 bg-muted/50"
-            />
-          </div>
+          <SearchInput placeholder={`${t.common.search}...`} />
 
           {/* Filter Buttons */}
           <div className="hidden lg:flex items-center">

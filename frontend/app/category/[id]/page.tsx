@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { FeedViewer } from '@/components/FeedViewer';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { useRSSStore } from '@/stores/rssStore';
 import { RSSItem } from '@/types/rss';
 import { listItemsByCategory } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/usePagination';
@@ -12,19 +13,26 @@ export default function CategoryPage() {
     const params = useParams();
     const categoryId = parseInt(params.id as string);
     const { filter } = useSettingsStore();
+    const { searchQuery } = useRSSStore();
 
     const filters: PaginationFilters = useMemo(() => {
+        const base: PaginationFilters = {};
         switch (filter) {
             case 'unread':
-                return { is_read: false };
+                base.is_read = false;
+                break;
             case 'read':
-                return { is_read: true };
+                base.is_read = true;
+                break;
             case 'favorite':
-                return { is_favorite: true };
-            default:
-                return {};
+                base.is_favorite = true;
+                break;
         }
-    }, [filter]);
+        if (searchQuery.trim()) {
+            base.search = searchQuery.trim();
+        }
+        return base;
+    }, [filter, searchQuery]);
 
     const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
         (args) => listItemsByCategory(categoryId, args),
