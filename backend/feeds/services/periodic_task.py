@@ -49,7 +49,7 @@ class PeriodicTaskService:
         # 사용자의 피드에 해당하는 태스크만 필터링
         tasks_with_feeds = []
         feeds_map = {
-            f.id: f.title for f in RSSFeed.objects.filter(id__in=user_feed_ids)
+            f.pk: f.title for f in RSSFeed.objects.filter(id__in=user_feed_ids)
         }
 
         for task in queryset:

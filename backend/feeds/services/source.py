@@ -185,7 +185,7 @@ class SourceService:
         use_browser: bool = True,
         wait_selector: str = "body",
         timeout: int = 30000,
-        custom_headers: dict = None,
+        custom_headers: Optional[dict] = None,
     ) -> dict:
         """URL에서 HTML을 가져옴"""
         try:
@@ -270,8 +270,8 @@ class SourceService:
         image_selector: str = "",
         use_browser: bool = True,
         wait_selector: str = "body",
-        custom_headers: dict = None,
-        exclude_selectors: list = None,
+        custom_headers: Optional[dict] = None,
+        exclude_selectors: Optional[list] = None,
         follow_links: bool = False,
         detail_title_selector: str = "",
         detail_description_selector: str = "",

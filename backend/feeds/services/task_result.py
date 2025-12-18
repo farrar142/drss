@@ -23,12 +23,10 @@ class TaskResultService:
         user,
         feed_id: Optional[int] = None,
         status: Optional[str] = None,
-        limit: int = 20,
-        offset: int = 0,
-    ) -> dict:
-        """태스크 결과 목록 조회"""
+    ) -> QuerySet[FeedTaskResult]:
+        """태스크 결과 목록 조회 - QuerySet 반환 (페이지네이션용)"""
         user_feeds = TaskResultService.get_user_feed_ids(user)
-        queryset = FeedTaskResult.objects.filter(feed_id__in=user_feeds)
+        queryset = FeedTaskResult.objects.filter(feed_id__in=user_feeds).select_related("feed")
 
         if feed_id:
             queryset = queryset.filter(feed_id=feed_id)
@@ -36,13 +34,7 @@ class TaskResultService:
         if status:
             queryset = queryset.filter(status=status)
 
-        total = queryset.count()
-        results = queryset.order_by("-created_at")[offset : offset + limit]
-
-        return {
-            "items": list(results),
-            "total": total,
-        }
+        return queryset
 
     @staticmethod
     def get_task_stats(user, feed_id: Optional[int] = None) -> dict:

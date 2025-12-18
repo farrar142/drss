@@ -8,7 +8,7 @@ from ninja.pagination import paginate
 
 from base.authentications import JWTAuth
 from base.paginations import CursorPagination
-from feeds.models import RSSItem
+from feeds.models import RSSItem, FeedTaskResult
 from feeds.services import (
     CategoryService,
     FeedService,
@@ -372,22 +372,15 @@ def refresh_source(request, source_id: int):
 # ============== Task Result Endpoints ==============
 
 
-@task_result_router.get("", response=TaskResultListResponse, auth=JWTAuth())
+@task_result_router.get("", response=list[TaskResultSchema], auth=JWTAuth())
+@paginate(CursorPagination[FeedTaskResult], ordering_field="created_at")
 def list_task_results(
     request,
     feed_id: Optional[int] = None,
     status: Optional[str] = None,
-    limit: int = 20,
-    offset: int = 0,
 ):
     """Task 결과 목록 조회"""
-    result = TaskResultService.list_task_results(
-        request.auth, feed_id, status, limit, offset
-    )
-    return TaskResultListResponse(
-        items=[TaskResultSchema.from_orm(r) for r in result["items"]],
-        total=result["total"],
-    )
+    return TaskResultService.list_task_results(request.auth, feed_id, status)
 
 
 @task_result_router.get("/stats", response=TaskStatsSchema, auth=JWTAuth())

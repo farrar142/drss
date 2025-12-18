@@ -1,12 +1,16 @@
-from typing import Optional
+from typing import Callable, Optional
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 User = get_user_model()
 
+class BaseModel(models.Model):
+    id:int
+    class Meta:
+        abstract = True
 
-class RSSCategory(models.Model):
+class RSSCategory(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -26,7 +30,7 @@ class RSSCategory(models.Model):
         return self.name
 
 
-class RSSFeed(models.Model):
+class RSSFeed(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
     title = models.CharField(max_length=500, blank=True)
@@ -39,6 +43,8 @@ class RSSFeed(models.Model):
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sources: models.QuerySet["RSSEverythingSource"]
+
+    category_id:int
 
     class Meta:
         indexes = [
@@ -64,7 +70,7 @@ class RSSFeed(models.Model):
         return first_source.custom_headers if first_source else {}
 
 
-class RSSItem(models.Model):
+class RSSItem(BaseModel):
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
     title = models.CharField(max_length=500)
     link = models.URLField()
@@ -94,7 +100,7 @@ class RSSItem(models.Model):
         return self.title
 
 
-class RSSEverythingSource(models.Model):
+class RSSEverythingSource(BaseModel):
     """
     RSSEverything: RSS 피드의 아이템 소스를 정의합니다.
     소스 타입에 따라 클래식 RSS, 페이지 스크래핑, 상세 페이지 스크래핑 방식을 지원합니다.
@@ -231,6 +237,9 @@ class RSSEverythingSource(models.Model):
     def __str__(self):
         return f"{self.get_source_type_display()}: {self.feed.title} ({self.url})"
 
+    feed_id:int
+    get_source_type_display:Callable[[], str]
+
     @property
     def is_rss(self) -> bool:
         return self.source_type == self.SourceType.RSS
@@ -248,7 +257,7 @@ class RSSEverythingSource(models.Model):
         return self.source_type == self.SourceType.DETAIL_PAGE_SCRAPING
 
 
-class FeedTaskResult(models.Model):
+class FeedTaskResult(BaseModel):
     """
     피드 수집 Task의 실행 결과를 저장합니다.
     성공/실패 여부, 수집된 아이템 수, 에러 메시지 등을 기록합니다.
