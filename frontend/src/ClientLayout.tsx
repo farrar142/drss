@@ -92,7 +92,7 @@ function URLParamHandler() {
   useEffect(() => {
     // 한 번만 처리
     if (hasProcessed.current) return;
-    
+
     const openCategory = searchParams.get('openCategory');
     const openFeed = searchParams.get('openFeed');
     const categoryId = searchParams.get('categoryId');
@@ -140,10 +140,10 @@ function TabHistoryManager() {
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault();
-      
+
       // 탭 히스토리에서 이전 탭으로 이동
       const wentBack = goBackTab(activePanelId);
-      
+
       // 탭 히스토리가 없으면 현재 상태 유지
       if (!wentBack) {
         window.history.pushState({ tab: true }, '', '/home');

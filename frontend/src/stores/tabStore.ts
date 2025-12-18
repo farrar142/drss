@@ -393,12 +393,12 @@ export const useTabStore = create<TabStore>()(
         panels: state.panels.map(p =>
           p.id === targetPanelId
             ? {
-                ...p,
-                tabs: [...p.tabs, newTab],
-                activeTabId: id,
-                // 히스토리에 새 탭 추가
-                tabHistory: [...p.tabHistory.filter(tid => tid !== id), id],
-              }
+              ...p,
+              tabs: [...p.tabs, newTab],
+              activeTabId: id,
+              // 히스토리에 새 탭 추가
+              tabHistory: [...p.tabHistory.filter(tid => tid !== id), id],
+            }
             : p
         ),
         activePanelId: targetPanelId,
@@ -456,11 +456,11 @@ export const useTabStore = create<TabStore>()(
         panels: state.panels.map(p =>
           p.id === found.panel.id
             ? {
-                ...p,
-                activeTabId: tabId,
-                // 히스토리에서 해당 탭을 제거하고 끝에 추가 (최근 방문)
-                tabHistory: [...p.tabHistory.filter(tid => tid !== tabId), tabId],
-              }
+              ...p,
+              activeTabId: tabId,
+              // 히스토리에서 해당 탭을 제거하고 끝에 추가 (최근 방문)
+              tabHistory: [...p.tabHistory.filter(tid => tid !== tabId), tabId],
+            }
             : p
         ),
         activePanelId: found.panel.id,
@@ -573,7 +573,7 @@ export const useTabStore = create<TabStore>()(
       const { panels, activePanelId } = get();
       const targetPanelId = panelId || activePanelId;
       const panel = panels.find(p => p.id === targetPanelId);
-      
+
       if (!panel || !panel.activeTabId) return false;
 
       // 히스토리에서 현재 탭이 마지막이어야 함
@@ -583,12 +583,12 @@ export const useTabStore = create<TabStore>()(
       // 히스토리에서 현재 탭(마지막)을 제거하고 그 이전 탭을 찾음
       const currentTabId = panel.activeTabId;
       const currentIndex = history.lastIndexOf(currentTabId);
-      
+
       if (currentIndex <= 0) return false;
 
       // 이전 탭 ID
       const prevTabId = history[currentIndex - 1];
-      
+
       // 이전 탭이 실제로 존재하는지 확인
       const prevTabExists = panel.tabs.some(t => t.id === prevTabId);
       if (!prevTabExists) {
@@ -608,15 +608,15 @@ export const useTabStore = create<TabStore>()(
         panels: state.panels.map(p =>
           p.id === targetPanelId
             ? {
-                ...p,
-                activeTabId: prevTabId,
-                // 현재 탭을 히스토리에서 제거
-                tabHistory: p.tabHistory.slice(0, currentIndex),
-              }
+              ...p,
+              activeTabId: prevTabId,
+              // 현재 탭을 히스토리에서 제거
+              tabHistory: p.tabHistory.slice(0, currentIndex),
+            }
             : p
         ),
       }));
-      
+
       return true;
     },
   }))
