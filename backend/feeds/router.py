@@ -4,8 +4,11 @@ Feeds Router - 모든 피드 관련 API 엔드포인트
 
 from typing import Optional
 from ninja import Router
+from ninja.pagination import paginate
 
 from base.authentications import JWTAuth
+from base.paginations import CursorPagination
+from feeds.models import RSSItem
 from feeds.services import (
     CategoryService,
     FeedService,
@@ -212,32 +215,28 @@ def toggle_item_read(request, item_id: int):
     return ItemService.toggle_read(request.auth, item_id)
 
 
-@item_router.get("", response=PaginatedResponse[ItemSchema])
+@item_router.get("", response=list[ItemSchema])
+@paginate(CursorPagination[RSSItem],ordering_field="published_at")
 def list_all_items(
     request,
     is_read: Optional[bool] = None,
     is_favorite: Optional[bool] = None,
     search: str = "",
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    direction: str = "before",
 ):
     """메인 화면 아이템 목록"""
     return ItemService.list_all_items(
-        request.auth, is_read, is_favorite, search, limit, cursor, direction
+        request.auth, is_read, is_favorite, search
     )
 
 
-@item_router.get("/category/{category_id}", response=PaginatedResponse[ItemSchema])
+@item_router.get("/category/{category_id}", response=list[ItemSchema])
+@paginate(CursorPagination[RSSItem],ordering_field="published_at")
 def list_items_by_category(
     request,
     category_id: int,
     is_read: Optional[bool] = None,
     is_favorite: Optional[bool] = None,
     search: str = "",
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    direction: str = "before",
 ):
     """카테고리별 아이템 목록"""
     return ItemService.list_items_by_category(
@@ -246,26 +245,21 @@ def list_items_by_category(
         is_read,
         is_favorite,
         search,
-        limit,
-        cursor,
-        direction,
     )
 
 
-@item_router.get("/feed/{feed_id}", response=PaginatedResponse[ItemSchema])
+@item_router.get("/feed/{feed_id}", response=list[ItemSchema])
+@paginate(CursorPagination[RSSItem],ordering_field="published_at")
 def list_items_by_feed(
     request,
     feed_id: int,
     is_read: Optional[bool] = None,
     is_favorite: Optional[bool] = None,
     search: str = "",
-    limit: int = 20,
-    cursor: Optional[str] = None,
-    direction: str = "before",
 ):
     """피드별 아이템 목록"""
     return ItemService.list_items_by_feed(
-        request.auth, feed_id, is_read, is_favorite, search, limit, cursor, direction
+        request.auth, feed_id, is_read, is_favorite, search
     )
 
 

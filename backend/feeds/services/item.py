@@ -30,45 +30,6 @@ class ItemService:
         item.save()
         return {"success": True, "is_read": item.is_read}
 
-    @staticmethod
-    def get_paginated_items[T: Model](
-        queryset: QuerySet[T],
-        limit: int,
-        cursor: Optional[str],
-        direction: str,
-        field_name: str,
-    ) -> dict:
-        """커서 기반 페이지네이션"""
-        if cursor and cursor != "None":
-            cursor_date = datetime.fromisoformat(cursor.replace("Z", "+00:00"))
-            if direction == "before":
-                queryset = queryset.filter(**{f"{field_name}__lt": cursor_date})
-                queryset = queryset.order_by(f"-{field_name}")
-            elif direction == "after":
-                queryset = queryset.filter(**{f"{field_name}__gt": cursor_date})
-                queryset = queryset.order_by(field_name)
-        else:
-            queryset = queryset.order_by(f"-{field_name}")
-
-        paginated_items = list(queryset[: limit + 1])
-        has_next = len(paginated_items) > limit
-        items_list = paginated_items[:limit]
-
-        next_cursor = None
-        if has_next and items_list:
-            next_cursor_field = getattr(items_list[-1], field_name)
-            if isinstance(next_cursor_field, str):
-                next_cursor = next_cursor_field
-            elif hasattr(next_cursor_field, "isoformat"):
-                next_cursor = next_cursor_field.isoformat().replace("+00:00", "Z")
-            else:
-                next_cursor = str(next_cursor_field)
-
-        return {
-            "items": items_list,
-            "has_next": has_next,
-            "next_cursor": next_cursor,
-        }
 
     @staticmethod
     def list_all_items(
@@ -76,10 +37,7 @@ class ItemService:
         is_read: Optional[bool] = None,
         is_favorite: Optional[bool] = None,
         search: str = "",
-        limit: int = 20,
-        cursor: Optional[str] = None,
-        direction: str = "before",
-    ) -> dict:
+    ) -> QuerySet[RSSItem]:
         """메인 화면 아이템 목록"""
         items = RSSItem.objects.filter(feed__user=user).filter(
             feed__visible=True, feed__category__visible=True
@@ -94,9 +52,7 @@ class ItemService:
                 description__icontains=search
             )
 
-        return ItemService.get_paginated_items(
-            items, limit, cursor, direction, field_name="published_at"
-        )
+        return items
 
     @staticmethod
     def list_items_by_category(
@@ -105,10 +61,7 @@ class ItemService:
         is_read: Optional[bool] = None,
         is_favorite: Optional[bool] = None,
         search: str = "",
-        limit: int = 20,
-        cursor: Optional[str] = None,
-        direction: str = "before",
-    ) -> dict:
+    ) -> QuerySet[RSSItem]:
         """카테고리별 아이템 목록"""
         items = RSSItem.objects.filter(
             feed__user=user,
@@ -125,9 +78,7 @@ class ItemService:
                 description__icontains=search
             )
 
-        return ItemService.get_paginated_items(
-            items, limit, cursor, direction, field_name="published_at"
-        )
+        return items
 
     @staticmethod
     def list_items_by_feed(
@@ -136,10 +87,7 @@ class ItemService:
         is_read: Optional[bool] = None,
         is_favorite: Optional[bool] = None,
         search: str = "",
-        limit: int = 20,
-        cursor: Optional[str] = None,
-        direction: str = "before",
-    ) -> dict:
+    ) -> QuerySet[RSSItem]:
         """피드별 아이템 목록"""
         items = RSSItem.objects.filter(feed__user=user, feed_id=feed_id)
 
@@ -152,6 +100,4 @@ class ItemService:
                 description__icontains=search
             )
 
-        return ItemService.get_paginated_items(
-            items, limit, cursor, direction, field_name="published_at"
-        )
+        return items
