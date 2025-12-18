@@ -63,7 +63,6 @@ class FeedPaginationTest(TestCase):
         self.feed = RSSFeed.objects.create(
             user=self.user,
             category=self.category,
-            url="http://example.com/rss",
             title="Test Feed",
         )
         self.client = TestClient(item_router)
@@ -85,22 +84,22 @@ class FeedPaginationTest(TestCase):
             )
             items.append(item)
 
-        # Sort items by published_at desc
-        items.sort(key=lambda x: x.published_at, reverse=True)
+        # Sort items by id desc (default ordering)
+        items.sort(key=lambda x: x.pk, reverse=True)
 
-        # First page
-        response = self.client.get("/?limit=10", headers=self.headers)
+        # First page (no cursor, returns newest items first)
+        response = self.client.get("/?limit=10&direction=before", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
         self.assertTrue(data["has_next"])
         self.assertIsNotNone(data["next_cursor"])
 
-        # Check items are in correct order
+        # Check items are in correct order (newest first by id)
         for i, item in enumerate(data["items"]):
             self.assertEqual(item["id"], items[i].id)
 
-        # Second page
+        # Second page (use next_cursor with direction=before to get older items)
         cursor = data["next_cursor"]
         response = self.client.get(
             f"/?limit=10&cursor={cursor}&direction=before", headers=self.headers
@@ -135,15 +134,16 @@ class FeedPaginationTest(TestCase):
             )
             items.append(item)
 
-        # First page
-        response = self.client.get("/?limit=10", headers=self.headers)
+        # First page - get newest items (by id, descending)
+        response = self.client.get("/?limit=10&direction=before", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
-        # Use base_time as cursor - all new items will be after this
-        cursor = base_time.isoformat().replace("+00:00", "Z")
 
-        # Create 30 more items (newer than base_time)
+        # Store the highest id from first batch as cursor reference
+        first_batch_max_id = max(item.id for item in items)
+
+        # Create 30 more items (newer than first batch by id)
         new_items = []
         for i in range(30):
             item = RSSItem.objects.create(
@@ -157,7 +157,11 @@ class FeedPaginationTest(TestCase):
             new_items.append(item)
 
         new_item_ids_set = {item.id for item in new_items}
-        # Request newer items using after direction
+
+        # Use first_batch_max_id as cursor to get items with id > first_batch_max_id
+        cursor = str(first_batch_max_id)
+
+        # Request newer items using after direction (id > cursor)
         response = self.client.get(
             f"/?limit=10&cursor={cursor}&direction=after",
             headers=self.headers,

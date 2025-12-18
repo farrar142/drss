@@ -98,12 +98,7 @@ class CursorPagination[T:Model](PaginationBase):
         direction = pagination.direction.lower()
         field_name = pagination.ordering_field
         limit = pagination.limit
-        print("CursorPagination paginate_queryset called with:", {
-            "cursor": cursor,
-            "direction": direction,
-            "field_name": field_name,
-            "limit": limit,
-        })
+
         if not field_name:
             field_name = self.ordering_field
 
@@ -114,14 +109,14 @@ class CursorPagination[T:Model](PaginationBase):
 
             if direction == "before":
                 # 이전 데이터 (커서보다 작은 값) 요청 시:
-                # 데이터를 오름차순으로 가져온 후, 순서를 뒤집어 클라이언트에게 최신순으로 전달
+                # 커서보다 작은 값 중에서 가장 큰 값들부터 가져오기 위해 내림차순 정렬
                 queryset = queryset.filter(**{f"{field_name}__lt": parsed_cursor})
-                # 오름차순 정렬 (예: 1, 2, 3... 순)
-                queryset = queryset.order_by(field_name)
+                # 내림차순 정렬 (예: 27, 26, 25... 순) - 커서 바로 아래부터 가져옴
+                queryset = queryset.order_by(f"-{field_name}")
 
             elif direction == "after":
                 # 다음 데이터 (커서보다 큰 값) 요청 시:
-                # 데이터를 오름차순으로 가져와 최신순으로 전달 (커서 이후 항목)
+                # 커서보다 큰 값 중에서 가장 작은 값들부터 가져오기 위해 오름차순 정렬
                 queryset = queryset.filter(**{f"{field_name}__gt": parsed_cursor})
                 # 오름차순 정렬 (예: 11, 12, 13... 순)
                 queryset = queryset.order_by(field_name)
@@ -135,12 +130,7 @@ class CursorPagination[T:Model](PaginationBase):
         # 2. 항목 가져오기 (limit + 1)
         paginated_items = list(queryset[: limit + 1])
 
-        # 3. before 요청 시 순서 뒤집기 (클라이언트에게 올바른 순서로 보여주기 위해)
-        if cursor and direction == "before":
-            # 오름차순으로 가져온 항목을 뒤집어 내림차순으로 만듭니다.
-            paginated_items.reverse()
-
-        # 4. 페이지네이션 상태 계산
+        # 3. 페이지네이션 상태 계산
         # limit+1개의 항목 중 limit개를 제외한 나머지로 다음/이전 페이지 여부 판단
 
         # 최초 요청이나 'after' 요청 시:
@@ -157,12 +147,14 @@ class CursorPagination[T:Model](PaginationBase):
         # 'before' 요청 시:
         elif direction == "before":
             items_list = paginated_items[:limit]
-            has_prev = len(paginated_items) > limit # limit+1개 중 마지막 1개는 이전 페이지가 있다는 의미
-            has_next = True # 'before'로 왔다는 것은 일반적으로 'after'로 돌아갈 수 있다는 의미 (다만 정확한 체크는 복잡함, 여기서는 단순화)
+            # before 방향에서 has_next는 "더 오래된 데이터가 있는가" = limit+1개를 가져왔는가
+            has_next = len(paginated_items) > limit
+            # before 방향에서 has_prev는 "더 최신 데이터가 있는가" = 커서가 있었으므로 True
+            has_prev = True
 
-            # 'next' 커서는 리스트의 마지막 항목을 기준으로 설정
-            next_cursor = self._get_cursor_value(items_list[-1], field_name) if items_list else None
-            # 'prev' 커서는 리스트의 첫 번째 항목을 기준으로 설정
+            # 'next' 커서는 리스트의 마지막 항목을 기준으로 설정 (더 오래된 데이터 요청용)
+            next_cursor = self._get_cursor_value(items_list[-1], field_name) if has_next and items_list else None
+            # 'prev' 커서는 리스트의 첫 번째 항목을 기준으로 설정 (더 최신 데이터 요청용)
             prev_cursor = self._get_cursor_value(items_list[0], field_name) if has_prev and items_list else None
 
 
