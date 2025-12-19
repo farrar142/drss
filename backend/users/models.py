@@ -28,7 +28,7 @@ class GlobalSetting(models.Model):
         default=True,
         help_text="새로운 사용자의 회원가입 허용 여부"
     )
-    
+
     # 사이트 설정 예시
     site_name = models.CharField(
         max_length=100,
@@ -45,16 +45,16 @@ class GlobalSetting(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(1440)],
         help_text="기본 새로고침 간격 (분)"
     )
-    
+
     class Meta:
         verbose_name = "Global Setting"
         verbose_name_plural = "Global Settings"
-    
+
     def save(self, *args, **kwargs):
         # 싱글턴 패턴: 항상 pk=1로 저장
         self.pk = 1
         super().save(*args, **kwargs)
-    
+
     @classmethod
     def get_instance(cls):
         """싱글턴 인스턴스 반환"""

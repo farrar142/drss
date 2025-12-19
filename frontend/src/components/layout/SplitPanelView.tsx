@@ -231,6 +231,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     setActivePanel,
     setActiveTab,
     removeTab,
+    addTab,
     openTab,
     saveScrollPosition,
     getScrollPosition,
@@ -301,7 +302,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
   }, [moveTabToPanelAtIndex]);
 
   // 피드 탭 생성 핸들러 (탭바에서 호출)
-  const handleCreateFeedTab = useCallback((panelId: PanelId, feedId: number, feedTitle: string, faviconUrl?: string, _targetIndex?: number) => {
+  const handleCreateFeedTab = useCallback((panelId: PanelId, feedId: number, feedTitle: string, faviconUrl?: string, targetIndex?: number) => {
     const tabData = {
       type: 'feed' as const,
       title: feedTitle,
@@ -310,11 +311,17 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
       favicon: faviconUrl,
     };
     setActivePanel(panelId);
-    openTab(tabData, panelId);
-  }, [setActivePanel, openTab]);
+    // 기존 탭이 있는지 확인
+    const existingTab = panels.flatMap(p => p.tabs).find(t => t.type === 'feed' && t.resourceId === feedId);
+    if (existingTab) {
+      setActiveTab(existingTab.id);
+    } else {
+      addTab(tabData, panelId, targetIndex);
+    }
+  }, [setActivePanel, addTab, setActiveTab, panels]);
 
   // 카테고리 탭 생성 핸들러 (탭바에서 호출)
-  const handleCreateCategoryTab = useCallback((panelId: PanelId, categoryId: number, categoryName: string, _targetIndex?: number) => {
+  const handleCreateCategoryTab = useCallback((panelId: PanelId, categoryId: number, categoryName: string, targetIndex?: number) => {
     const tabData = {
       type: 'category' as const,
       title: categoryName,
@@ -322,8 +329,14 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
       resourceId: categoryId,
     };
     setActivePanel(panelId);
-    openTab(tabData, panelId);
-  }, [setActivePanel, openTab]);
+    // 기존 탭이 있는지 확인
+    const existingTab = panels.flatMap(p => p.tabs).find(t => t.type === 'category' && t.resourceId === categoryId);
+    if (existingTab) {
+      setActiveTab(existingTab.id);
+    } else {
+      addTab(tabData, panelId, targetIndex);
+    }
+  }, [setActivePanel, addTab, setActiveTab, panels]);
 
   // 드래그 앤 드롭 핸들러 (패널 영역 - 탭만 처리, 분할/이동용)
   const handleDragStart = useCallback((e: React.DragEvent, tab: Tab) => {

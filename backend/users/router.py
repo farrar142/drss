@@ -170,11 +170,11 @@ def get_global_settings(request):
 def update_global_settings(request, data: GlobalSettingUpdateSchema):
     """글로벌 설정 업데이트 (관리자 전용)"""
     require_admin(request.auth)
-    
+
     # None이 아닌 필드만 업데이트
     update_data = {k: v for k, v in data.dict().items() if v is not None}
     setting = SettingService.update_settings(update_data)
-    
+
     return GlobalSettingSchema(
         admin_signed=setting.admin_signed,
         allow_signup=setting.allow_signup,
@@ -187,11 +187,14 @@ def update_global_settings(request, data: GlobalSettingUpdateSchema):
 # 회원가입 가능 여부 공개 API (인증 불필요)
 class SignupStatusSchema(Schema):
     allow_signup: bool
+    site_name: str
 
 
 @router.get("/signup-status", response=SignupStatusSchema, auth=None)
 def get_signup_status(request):
-    """회원가입 허용 여부 확인 (공개 API)"""
+    """회원가입 허용 여부 및 사이트 정보 확인 (공개 API)"""
+    setting = SettingService.get_global_setting()
     return SignupStatusSchema(
-        allow_signup=SettingService.is_signup_allowed()
+        allow_signup=setting.allow_signup,
+        site_name=setting.site_name,
     )

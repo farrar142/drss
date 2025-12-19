@@ -216,6 +216,7 @@ export const TabBar: React.FC<TabBarProps> = ({
     if (!sourceType) return;
     
     e.preventDefault();
+    e.stopPropagation(); // 패널로 이벤트 전파 방지
     e.dataTransfer.dropEffect = 'move';
     
     setDragSourceType(sourceType);
@@ -313,6 +314,7 @@ export const TabBar: React.FC<TabBarProps> = ({
     if (!sourceType) return;
     
     e.preventDefault();
+    e.stopPropagation(); // 패널로 이벤트 전파 방지
     e.dataTransfer.dropEffect = 'move';
     
     setDragSourceType(sourceType);
@@ -332,6 +334,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   };
 
   const handleContainerDrop = (e: React.DragEvent) => {
+    e.stopPropagation(); // 패널로 이벤트 전파 방지
     // 탭 사이가 아닌 빈 공간에 드롭했을 때
     if (dragOverIndex === tabs.length) {
       handleTabDrop(e, tabs.length);

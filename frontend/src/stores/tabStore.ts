@@ -82,7 +82,7 @@ interface TabStore {
   reorderTabs: (panelId: PanelId, fromIndex: number, toIndex: number) => void;
 
   // 탭 액션들
-  addTab: (tab: Omit<Tab, 'id'>, panelId?: PanelId) => string;
+  addTab: (tab: Omit<Tab, 'id'>, panelId?: PanelId, atIndex?: number) => string;
   removeTab: (tabId: string) => void;
   setActiveTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<Tab>) => void;
@@ -468,7 +468,7 @@ export const useTabStore = create<TabStore>()(
       });
     },
 
-    addTab: (tabData, panelId) => {
+    addTab: (tabData, panelId, atIndex) => {
       const { activePanelId, panels } = get();
       const targetPanelId = panelId || activePanelId;
 
@@ -476,17 +476,25 @@ export const useTabStore = create<TabStore>()(
       const newTab: Tab = { ...tabData, id, columns: tabData.columns ?? 3 };
 
       set((state) => ({
-        panels: state.panels.map(p =>
-          p.id === targetPanelId
-            ? {
-              ...p,
-              tabs: [...p.tabs, newTab],
-              activeTabId: id,
-              // 히스토리에 새 탭 추가
-              tabHistory: [...p.tabHistory.filter(tid => tid !== id), id],
-            }
-            : p
-        ),
+        panels: state.panels.map(p => {
+          if (p.id !== targetPanelId) return p;
+          
+          // atIndex가 지정되면 해당 위치에 삽입, 아니면 마지막에 추가
+          const newTabs = [...p.tabs];
+          if (atIndex !== undefined && atIndex >= 0 && atIndex <= newTabs.length) {
+            newTabs.splice(atIndex, 0, newTab);
+          } else {
+            newTabs.push(newTab);
+          }
+          
+          return {
+            ...p,
+            tabs: newTabs,
+            activeTabId: id,
+            // 히스토리에 새 탭 추가
+            tabHistory: [...p.tabHistory.filter(tid => tid !== id), id],
+          };
+        }),
         activePanelId: targetPanelId,
       }));
       return id;
