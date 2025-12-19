@@ -276,7 +276,8 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   const fontSizeLevel = fontSizeOverride || storeFontSize;
   const fontSize = fontSizeConfig[fontSizeLevel];
 
-  const [collapsed, setCollapsed] = useState(true);
+  // Feed 모드에서는 기본적으로 펼쳐진 상태, Board 모드에서는 접힌 상태
+  const [collapsed, setCollapsed] = useState(viewMode !== 'feed');
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
   const localRef = useRef<HTMLDivElement | null>(null);
@@ -373,16 +374,16 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         className={cn(
           "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
           fontSize.gap,
-          // Apply sticky when content is visible (feed mode or expanded in board mode)
-          (viewMode === 'feed' || !collapsed) && "sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[top] duration-300"
+          // Apply sticky when content is visible (expanded state)
+          !collapsed && "sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[top] duration-300"
         )}
         style={{
           // CSS 변수로 헤더 오프셋 사용 (기본값 92px)
-          top: (viewMode === 'feed' || !collapsed) ? 'var(--header-offset, 92px)' : undefined,
+          top: !collapsed ? 'var(--header-offset, 92px)' : undefined,
         }}
         onClick={(e) => {
           // When sticky header is clicked and it's actually stuck at top, scroll the card to top
-          if (viewMode === 'feed' || !collapsed) {
+          if (!collapsed) {
             const cardEl = localRef.current;
             if (!cardEl) return;
 
@@ -406,15 +407,23 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             const stickyAreaTop = containerRect.top + tabBarHeight;
 
             // 카드 상단이 스티키 영역보다 위에 있으면 (= 스티키 상태)
-            // 카드 상단을 탭바 바로 아래로 스크롤
-            if (cardRect.top < stickyAreaTop + 50) { // 50px 여유로 클릭 감지 영역 확대
+            // 단, 이미 목표 위치 근처에 있으면 접기 동작 수행
+            const isSticky = cardRect.top < stickyAreaTop - 5; // 스티키 상태: 카드 상단이 탭바 위에 있을 때
+            const isNearTargetPosition = Math.abs(cardRect.top - stickyAreaTop - 8) < 20; // 목표 위치 근처
+            
+            if (isSticky && !isNearTargetPosition) {
               e.stopPropagation();
               // 카드 상단을 탭바 바로 아래로 이동
               const currentScrollTop = scrollContainer.scrollTop;
               const cardOffsetFromContainer = cardRect.top - containerRect.top;
               const targetScrollTop = currentScrollTop + cardOffsetFromContainer - tabBarHeight - 8;
-              console.log(Math.max(0, targetScrollTop))
               scrollContainer.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+            } else {
+              // 스티키가 아닌 상태이거나 이미 목표 위치에 있을 때 타이틀 클릭하면 접기
+              e.stopPropagation();
+              const newCollapsed = !collapsed;
+              setCollapsed(newCollapsed);
+              onCollapseChange && onCollapseChange(item.id, newCollapsed);
             }
           }
         }}
@@ -511,7 +520,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       )}
 
       {/* Description */}
-      {(viewMode === 'feed' || !collapsed) && (
+      {!collapsed && (
         <div className={cn(
           `rss-scope-${item.id}`,
           "mt-2 sm:mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
