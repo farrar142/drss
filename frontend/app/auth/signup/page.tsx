@@ -9,6 +9,8 @@ import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/stores/languageStore';
+import { usersRouterGetSignupStatus } from '@/services/api';
+import { UserX } from 'lucide-react';
 
 export default function SignUp() {
     const { user, signup, loading } = useAuth();
@@ -19,6 +21,24 @@ export default function SignUp() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
+    const [signupAllowed, setSignupAllowed] = useState<boolean | null>(null);
+    const [checkingStatus, setCheckingStatus] = useState(true);
+
+    // 회원가입 허용 상태 확인
+    useEffect(() => {
+        const checkSignupStatus = async () => {
+            try {
+                const status = await usersRouterGetSignupStatus();
+                setSignupAllowed(status.allow_signup);
+            } catch {
+                // 에러 시 기본적으로 허용
+                setSignupAllowed(true);
+            } finally {
+                setCheckingStatus(false);
+            }
+        };
+        checkSignupStatus();
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -26,10 +46,36 @@ export default function SignUp() {
         }
     }, [user, router]);
 
-    if (loading) {
+    if (loading || checkingStatus) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <p className="text-muted-foreground">{t.common.loading}</p>
+            </div>
+        );
+    }
+
+    // 회원가입이 비활성화된 경우
+    if (signupAllowed === false) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className={cn(
+                    "w-full max-w-md p-8 rounded-2xl",
+                    "bg-card/80 backdrop-blur-xl",
+                    "border border-border shadow-2xl text-center"
+                )}>
+                    <UserX className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h1 className="text-2xl font-bold mb-2">
+                        {t.auth.signupDisabled || '회원가입 비활성화'}
+                    </h1>
+                    <p className="text-muted-foreground mb-6">
+                        {t.auth.signupDisabledMessage || '현재 새로운 회원가입이 비활성화되어 있습니다. 관리자에게 문의하세요.'}
+                    </p>
+                    <Link href="/auth/signin">
+                        <Button variant="outline">
+                            {t.auth.signIn}
+                        </Button>
+                    </Link>
+                </div>
             </div>
         );
     }

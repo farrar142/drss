@@ -145,6 +145,8 @@ export interface Translations {
     forgotPassword: string;
     noAccount: string;
     hasAccount: string;
+    signupDisabled: string;
+    signupDisabledMessage: string;
   };
 
   // Errors

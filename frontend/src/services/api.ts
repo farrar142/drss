@@ -345,6 +345,8 @@ export interface UserResponse {
   id: number;
   username: string;
   email: string;
+  is_staff: boolean;
+  is_superuser: boolean;
 }
 
 export interface LoginRequest {
@@ -365,6 +367,39 @@ export interface SignupRequest {
 
 export interface ProtectedResponse {
   message: string;
+}
+
+/**
+ * 글로벌 설정 스키마
+ */
+export interface GlobalSettingSchema {
+  admin_signed: boolean;
+  allow_signup: boolean;
+  site_name: string;
+  max_feeds_per_user: number;
+  default_refresh_interval: number;
+}
+
+export type GlobalSettingUpdateSchemaAllowSignup = boolean | null;
+
+export type GlobalSettingUpdateSchemaSiteName = string | null;
+
+export type GlobalSettingUpdateSchemaMaxFeedsPerUser = number | null;
+
+export type GlobalSettingUpdateSchemaDefaultRefreshInterval = number | null;
+
+/**
+ * 글로벌 설정 업데이트 스키마 (부분 업데이트 가능)
+ */
+export interface GlobalSettingUpdateSchema {
+  allow_signup?: GlobalSettingUpdateSchemaAllowSignup;
+  site_name?: GlobalSettingUpdateSchemaSiteName;
+  max_feeds_per_user?: GlobalSettingUpdateSchemaMaxFeedsPerUser;
+  default_refresh_interval?: GlobalSettingUpdateSchemaDefaultRefreshInterval;
+}
+
+export interface SignupStatusSchema {
+  allow_signup: boolean;
 }
 
 export type FetchHTMLResponseHtml = string | null;
@@ -1266,6 +1301,47 @@ export const usersRouterMe = (
     }
   
 /**
+ * 글로벌 설정 조회 (관리자 전용)
+ * @summary Get Global Settings
+ */
+export const usersRouterGetGlobalSettings = (
+    
+ ) => {
+      return axiosInstance<GlobalSettingSchema>(
+      {url: `/api/auth/admin/settings`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * 글로벌 설정 업데이트 (관리자 전용)
+ * @summary Update Global Settings
+ */
+export const usersRouterUpdateGlobalSettings = (
+    globalSettingUpdateSchema: GlobalSettingUpdateSchema,
+ ) => {
+      return axiosInstance<GlobalSettingSchema>(
+      {url: `/api/auth/admin/settings`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: globalSettingUpdateSchema
+    },
+      );
+    }
+  
+/**
+ * 회원가입 허용 여부 확인 (공개 API)
+ * @summary Get Signup Status
+ */
+export const usersRouterGetSignupStatus = (
+    
+ ) => {
+      return axiosInstance<SignupStatusSchema>(
+      {url: `/api/auth/signup-status`, method: 'GET'
+    },
+      );
+    }
+  
+/**
  * URL에서 HTML을 가져옴
  * @summary Fetch Html
  */
@@ -1574,6 +1650,9 @@ export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof users
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
 export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRouterMe>>>
+export type UsersRouterGetGlobalSettingsResult = NonNullable<Awaited<ReturnType<typeof usersRouterGetGlobalSettings>>>
+export type UsersRouterUpdateGlobalSettingsResult = NonNullable<Awaited<ReturnType<typeof usersRouterUpdateGlobalSettings>>>
+export type UsersRouterGetSignupStatusResult = NonNullable<Awaited<ReturnType<typeof usersRouterGetSignupStatus>>>
 export type FetchHtmlResult = NonNullable<Awaited<ReturnType<typeof fetchHtml>>>
 export type ExtractElementsResult = NonNullable<Awaited<ReturnType<typeof extractElements>>>
 export type PreviewItemsResult = NonNullable<Awaited<ReturnType<typeof previewItems>>>

@@ -12,6 +12,7 @@
     "api": "npm run get-api && npm run generate-api"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.2.6",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-virtual": "^3.13.13",
     "axios": "^1.13.2",

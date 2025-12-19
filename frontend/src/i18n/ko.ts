@@ -143,6 +143,8 @@ export const ko: Translations = {
     forgotPassword: '비밀번호 찾기',
     noAccount: '계정이 없으신가요?',
     hasAccount: '이미 계정이 있으신가요?',
+    signupDisabled: '회원가입 비활성화',
+    signupDisabledMessage: '현재 새로운 회원가입이 비활성화되어 있습니다. 관리자에게 문의하세요.',
   },
 
   // Errors

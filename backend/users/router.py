@@ -20,6 +20,8 @@ class UserResponse(Schema):
     id: int
     username: str
     email: str
+    is_staff: bool
+    is_superuser: bool
 
 
 class LoginResponse(Schema):
@@ -65,6 +67,8 @@ def login(request, data: LoginRequest):
             id=user.pk,
             username=user.username,
             email=user.email,
+            is_staff=user.is_staff,
+            is_superuser=user.is_superuser,
         ),
     )
 
@@ -73,8 +77,9 @@ def login(request, data: LoginRequest):
 def signup(request, data: SignupRequest):
     from users.models import User
 
-    # if SettingService.get_global_setting().admin_signed:
-    #     raise errors.AuthorizationError(message="Admin has already signed up.")
+    # 회원가입 허용 여부 확인
+    if not SettingService.is_signup_allowed():
+        raise errors.AuthorizationError(message="회원가입이 비활성화되어 있습니다.")
 
     if User.objects.filter(username=data.username).exists():
         raise errors.AuthorizationError(message="Username already exists")
@@ -97,6 +102,8 @@ def signup(request, data: SignupRequest):
             id=user.pk,
             username=user.username,
             email=user.email,
+            is_staff=user.is_staff,
+            is_superuser=user.is_superuser,
         ),
     )
 
@@ -115,4 +122,76 @@ def me(request):
         id=user.id,
         username=user.username,
         email=user.email,
+        is_staff=user.is_staff,
+        is_superuser=user.is_superuser,
+    )
+
+
+# ===== 관리자 설정 API =====
+
+class GlobalSettingSchema(Schema):
+    """글로벌 설정 스키마"""
+    admin_signed: bool
+    allow_signup: bool
+    site_name: str
+    max_feeds_per_user: int
+    default_refresh_interval: int
+
+
+class GlobalSettingUpdateSchema(Schema):
+    """글로벌 설정 업데이트 스키마 (부분 업데이트 가능)"""
+    allow_signup: bool | None = None
+    site_name: str | None = None
+    max_feeds_per_user: int | None = None
+    default_refresh_interval: int | None = None
+
+
+def require_admin(user):
+    """관리자 권한 확인"""
+    if not user.is_staff and not user.is_superuser:
+        raise errors.AuthorizationError(message="관리자 권한이 필요합니다.")
+
+
+@router.get("/admin/settings", response=GlobalSettingSchema, auth=JWTAuth())
+def get_global_settings(request):
+    """글로벌 설정 조회 (관리자 전용)"""
+    require_admin(request.auth)
+    setting = SettingService.get_global_setting()
+    return GlobalSettingSchema(
+        admin_signed=setting.admin_signed,
+        allow_signup=setting.allow_signup,
+        site_name=setting.site_name,
+        max_feeds_per_user=setting.max_feeds_per_user,
+        default_refresh_interval=setting.default_refresh_interval,
+    )
+
+
+@router.patch("/admin/settings", response=GlobalSettingSchema, auth=JWTAuth())
+def update_global_settings(request, data: GlobalSettingUpdateSchema):
+    """글로벌 설정 업데이트 (관리자 전용)"""
+    require_admin(request.auth)
+    
+    # None이 아닌 필드만 업데이트
+    update_data = {k: v for k, v in data.dict().items() if v is not None}
+    setting = SettingService.update_settings(update_data)
+    
+    return GlobalSettingSchema(
+        admin_signed=setting.admin_signed,
+        allow_signup=setting.allow_signup,
+        site_name=setting.site_name,
+        max_feeds_per_user=setting.max_feeds_per_user,
+        default_refresh_interval=setting.default_refresh_interval,
+    )
+
+
+# 회원가입 가능 여부 공개 API (인증 불필요)
+class SignupStatusSchema(Schema):
+    allow_signup: bool
+
+
+@router.get("/signup-status", response=SignupStatusSchema, auth=None)
+def get_signup_status(request):
+    """회원가입 허용 여부 확인 (공개 API)"""
+    return SignupStatusSchema(
+        allow_signup=SettingService.is_signup_allowed()
     )

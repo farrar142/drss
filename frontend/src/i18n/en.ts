@@ -143,6 +143,8 @@ export const en: Translations = {
     forgotPassword: 'Forgot Password',
     noAccount: "Don't have an account?",
     hasAccount: 'Already have an account?',
+    signupDisabled: 'Sign Up Disabled',
+    signupDisabledMessage: 'New registrations are currently disabled. Please contact the administrator.',
   },
 
   // Errors

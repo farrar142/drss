@@ -7,6 +7,7 @@ import RSSEverythingPage from '../rss-everything/RSSEverythingPage';
 import TaskResultsPage from '../settings/TaskResultsPage';
 import PeriodicTasksPage from '../settings/PeriodicTasksPage';
 import FeedEditPage from '../settings/FeedEditPage';
+import AdminPage from '../settings/AdminPage';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useRSSStore } from '../../stores/rssStore';
 import { useTabStore, Tab, PanelId } from '../../stores/tabStore';
@@ -163,6 +164,7 @@ SingleFeed.displayName = 'SingleFeed';
 const getTabContentKey = (tab: Tab): string => {
   if (tab.type === 'home') return 'home';
   if (tab.type === 'settings') return 'settings';
+  if (tab.type === 'admin') return 'admin';
   if (tab.type === 'rss-everything') return `rss-everything-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'feed-edit') return `feed-edit-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'task-results') return 'task-results';
@@ -199,6 +201,8 @@ const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: T
       return <TaskResultsPage />;
     case 'periodic-tasks':
       return <PeriodicTasksPage />;
+    case 'admin':
+      return <AdminPage />;
     default:
       return null;
   }

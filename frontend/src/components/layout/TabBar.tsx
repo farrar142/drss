@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList, XCircle } from 'lucide-react';
+import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList, XCircle, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Tab, TabType, PanelId } from '@/stores/tabStore';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,8 @@ const TabIcon: React.FC<{ type: TabType; favicon?: string; className?: string }>
       return <ClipboardList className={className} />;
     case 'periodic-tasks':
       return <ClipboardList className={className} />;
+    case 'admin':
+      return <Shield className={className} />;
     default:
       return null;
   }

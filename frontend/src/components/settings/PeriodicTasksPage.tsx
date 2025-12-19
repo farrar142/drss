@@ -170,8 +170,8 @@ export default function PeriodicTasksPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto p-2 sm:p-4 max-w-6xl">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
           <h1 className="text-2xl font-bold">Periodic Tasks</h1>
           <p className="text-muted-foreground">피드 자동 업데이트 스케줄 관리</p>
@@ -189,7 +189,7 @@ export default function PeriodicTasksPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">

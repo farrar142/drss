@@ -19,6 +19,7 @@ import {
   Palette,
   Ship,
   X,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
@@ -128,7 +129,7 @@ interface AppLayoutProps {
 export default function AppLayout({ authChildren }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { t } = useTranslation();
 
   // Zustand stores
@@ -326,6 +327,12 @@ export default function AppLayout({ authChildren }: AppLayoutProps) {
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}
               </DropdownMenuItem>
+              {user && (user.is_staff || user.is_superuser) && (
+                <DropdownMenuItem onClick={() => openTab({ type: 'admin', title: '관리자 설정', path: '/admin' })}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  관리자 설정
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

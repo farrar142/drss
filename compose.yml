@@ -71,7 +71,7 @@ services:
       - BACKEND_HOST=django
     env_file:
       - .env
-    command: npx next dev --hostname 0.0.0.0
+    command: bash -c "npm install && npx next dev --hostname 0.0.0.0"
   real-browser:
     profiles:
       - crawler
