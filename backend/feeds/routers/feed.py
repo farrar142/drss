@@ -33,19 +33,22 @@ def validate_feed(request, data: FeedValidationRequest):
 @router.get("", response=list[FeedSchema], auth=JWTAuth(), operation_id="listFeeds")
 def list_feeds(request):
     """피드 목록 조회"""
-    return FeedService.get_user_feeds(request.auth)
+    feeds = FeedService.get_user_feeds(request.auth)
+    return [FeedSchema.from_orm(feed) for feed in feeds]
 
 
 @router.post("", response=FeedSchema, auth=JWTAuth(), operation_id="createFeed")
 def create_feed(request, data: FeedCreateSchema):
     """피드 생성"""
-    return FeedService.create_feed(request.auth, data)
+    feed = FeedService.create_feed(request.auth, data)
+    return FeedSchema.from_orm(feed)
 
 
 @router.put("/{feed_id}", response=FeedSchema, auth=JWTAuth(), operation_id="updateFeed")
 def update_feed(request, feed_id: int, data: FeedUpdateSchema):
     """피드 수정"""
-    return FeedService.update_feed(request.auth, feed_id, data)
+    feed = FeedService.update_feed(request.auth, feed_id, data)
+    return FeedSchema.from_orm(feed)
 
 
 @router.delete("/{feed_id}", auth=JWTAuth(), operation_id="deleteFeed")

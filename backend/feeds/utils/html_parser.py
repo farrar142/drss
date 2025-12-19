@@ -2,10 +2,20 @@
 HTML Parser Utilities - 웹 페이지 파싱 및 크롤링 관련 유틸리티 함수
 """
 
-from typing import Optional
+from typing import Optional, TypedDict
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re
+
+# 타입 정의
+class ExtractedElement(TypedDict):
+    """추출된 요소 정보"""
+    tag: str
+    text: str
+    html: str
+    href: Optional[str]
+    src: Optional[str]
+    selector: str
 
 def generate_selector(soup: BeautifulSoup, element) -> str:
     """요소에 대한 고유한 CSS 셀렉터 생성"""

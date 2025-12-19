@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import re
+from ninja import Schema
 
 from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult
 from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
@@ -19,12 +20,51 @@ from feeds.utils.html_parser import (
     extract_html_with_css,
     extract_html,
     extract_href,
-    extract_src
+    extract_src,
 )
-from feeds.utils.web_scraper import crawl_detail_page_items
+from feeds.utils.web_scraper import crawl_detail_page_items, CrawledItem, ListCrawledItem
 from feeds.schemas import SourceCreateSchema, SourceUpdateSchema
 
 logger = logging.getLogger(__name__)
+
+# API 응답 스키마 정의
+class ExtractedElementSchema(Schema):
+    """추출된 요소 정보"""
+    tag: str
+    text: str
+    html: str
+    href: Optional[str] = None
+    src: Optional[str] = None
+    selector: str
+
+class ExtractElementsResponse(Schema):
+    """extract_elements 함수 응답 타입"""
+    success: bool
+    elements: list[ExtractedElementSchema]
+    count: int
+    error: Optional[str] = None
+
+class PreviewItemSchema(Schema):
+    """미리보기 아이템 정보"""
+    title: str
+    link: str
+    description: str
+    date: str
+    image: str
+
+class PreviewItemsResponse(Schema):
+    """preview_items 함수 응답 타입"""
+    success: bool
+    items: list[PreviewItemSchema]
+    count: int
+    error: Optional[str] = None
+
+class FetchHtmlResponse(Schema):
+    """fetch_html 함수 응답 타입"""
+    success: bool
+    html: Optional[str] = None
+    url: str
+    error: Optional[str] = None
 
 class SourceService:
     """RSS Everything 소스 관련 비즈니스 로직"""
@@ -43,7 +83,7 @@ class SourceService:
         wait_selector: str = "body",
         timeout: int = 30000,
         custom_headers: Optional[dict] = None,
-    ) -> dict:
+    ) -> FetchHtmlResponse:
         """URL에서 HTML을 가져옴"""
         try:
             if use_browser:
@@ -62,27 +102,27 @@ class SourceService:
                 )
 
             if result.success:
-                return {
-                    "success": True,
-                    "html": result.html,
-                    "url": result.url or url,
-                }
+                return FetchHtmlResponse(
+                    success=True,
+                    html=result.html,
+                    url=result.url or url,
+                )
             else:
-                return {
-                    "success": False,
-                    "url": url,
-                    "error": result.error,
-                }
+                return FetchHtmlResponse(
+                    success=False,
+                    url=url,
+                    error=result.error,
+                )
         except Exception as e:
             logger.exception(f"Failed to fetch HTML from {url}")
-            return {
-                "success": False,
-                "url": url,
-                "error": str(e),
-            }
+            return FetchHtmlResponse(
+                success=False,
+                url=url,
+                error=str(e),
+            )
 
     @staticmethod
-    def extract_elements(html: str, selector: str, base_url: str) -> dict:
+    def extract_elements(html: str, selector: str, base_url: str) -> ExtractElementsResponse:
         """HTML에서 CSS 셀렉터로 요소들을 추출"""
         try:
             soup = BeautifulSoup(html, "html.parser")
@@ -94,27 +134,29 @@ class SourceService:
                 src = extract_src(el, base_url)
 
                 result_elements.append(
-                    {
-                        "tag": el.name,
-                        "text": extract_text(el)[:500],
-                        "html": str(el)[:2000],
-                        "href": href if href else None,
-                        "src": src if src else None,
-                        "selector": generate_selector(soup, el),
-                    }
+                    ExtractedElementSchema(
+                        tag=el.name,
+                        text=extract_text(el)[:500],
+                        html=str(el)[:2000],
+                        href=href if href else None,
+                        src=src if src else None,
+                        selector=generate_selector(soup, el),
+                    )
                 )
 
-            return {
-                "success": True,
-                "elements": result_elements,
-                "count": len(elements),
-            }
+            return ExtractElementsResponse(
+                success=True,
+                elements=result_elements,
+                count=len(elements),
+            )
         except Exception as e:
             logger.exception(f"Failed to extract elements with selector: {selector}")
-            return {
-                "success": False,
-                "error": str(e),
-            }
+            return ExtractElementsResponse(
+                success=False,
+                elements=[],
+                count=0,
+                error=str(e),
+            )
 
     @staticmethod
     def crawl_detail_page_items(
@@ -139,7 +181,7 @@ class SourceService:
         existing_guids: Optional[set] = None,
         max_items: int = 20,
         use_html_with_css: bool = True,
-    ) -> list:
+    ) -> list[CrawledItem]:
         """
         상세 페이지 크롤링 공통 로직
         web_scraper.crawl_detail_page_items를 사용하도록 리팩토링
@@ -189,7 +231,7 @@ class SourceService:
         detail_content_selector: str = "",
         detail_date_selector: str = "",
         detail_image_selector: str = "",
-    ) -> dict:
+    ) -> PreviewItemsResponse:
         """설정된 셀렉터로 아이템들을 미리보기"""
         try:
             # HTML 가져오기
@@ -201,13 +243,15 @@ class SourceService:
                 custom_headers=custom_headers,
             )
 
-            if not fetch_result["success"] or not fetch_result.get("html"):
-                return {
-                    "success": False,
-                    "error": fetch_result.get("error") or "Failed to fetch HTML",
-                }
+            if not fetch_result.success or not fetch_result.html:
+                return PreviewItemsResponse(
+                    success=False,
+                    items=[],
+                    count=0,
+                    error=fetch_result.error or "Failed to fetch HTML",
+                )
 
-            soup = BeautifulSoup(fetch_result["html"], "html.parser")
+            soup = BeautifulSoup(fetch_result.html, "html.parser")
 
             # exclude_selectors 적용
             if exclude_selectors:
@@ -247,13 +291,15 @@ class SourceService:
                 # 결과 변환
                 for item in crawled_items:
                     if item["title"]:
-                        preview_items.append({
-                            "title": item["title"],
-                            "link": item["link"],
-                            "description": item["description"],
-                            "date": item["date"],
-                            "image": item["image"],
-                        })
+                        preview_items.append(
+                            PreviewItemSchema(
+                                title=item["title"],
+                                link=item["link"],
+                                description=item["description"],
+                                date=item["date"],
+                                image=item["image"],
+                            )
+                        )
             else:
                 # 목록 페이지 직접 파싱 모드
                 for item in items[:20]:
@@ -285,29 +331,31 @@ class SourceService:
 
                     if title:
                         preview_items.append(
-                            {
-                                "title": title,
-                                "link": link,
-                                "description": description,
-                                "date": date,
-                                "image": image,
-                            }
+                            PreviewItemSchema(
+                                title=title,
+                                link=link,
+                                description=description,
+                                date=date,
+                                image=image,
+                            )
                         )
 
-            return {
-                "success": True,
-                "items": preview_items,
-                "count": len(items),
-            }
+            return PreviewItemsResponse(
+                success=True,
+                items=preview_items,
+                count=len(items),
+            )
         except Exception as e:
             logger.exception(f"Failed to preview items from {url}")
-            return {
-                "success": False,
-                "error": str(e),
-            }
+            return PreviewItemsResponse(
+                success=False,
+                items=[],
+                count=0,
+                error=str(e),
+            )
 
     @staticmethod
-    def get_user_sources(user) -> list:
+    def get_user_sources(user) -> list[RSSEverythingSource]:
         """사용자의 소스 목록 조회"""
         return list(RSSEverythingSource.objects.filter(feed__user=user))
 

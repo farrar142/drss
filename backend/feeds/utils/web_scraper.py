@@ -2,7 +2,7 @@
 Web Scraper Utilities - 웹 페이지 크롤링 관련 유틸리티 함수
 """
 
-from typing import Optional
+from typing import Optional, TypedDict
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import logging
@@ -14,6 +14,21 @@ from feeds.utils.html_parser import (
     extract_href,
     extract_src
 )
+
+# 타입 정의
+class CrawledItem(TypedDict):
+    """크롤링된 아이템 타입"""
+    title: str
+    link: str
+    description: str
+    date: str
+    image: str
+
+class ListCrawledItem(CrawledItem):
+    """목록 페이지에서 크롤링된 아이템 타입"""
+    guid: str
+    author: str
+    categories: list[str]
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +55,7 @@ def crawl_detail_page_items(
     max_items: int = 20,
     use_html_with_css: bool = True,
     fetch_html_func=None,
-) -> list:
+) -> list[CrawledItem]:
     """
     상세 페이지 크롤링 공통 로직
     _crawl_detail_pages와 preview_items에서 공통으로 사용하는 로직을 추출
@@ -70,7 +85,7 @@ def crawl_detail_page_items(
         fetch_html_func: HTML 가져오기 함수 (의존성 주입)
 
     Returns:
-        크롤링된 아이템 목록 (딕셔너리 형식)
+        크롤링된 아이템 목록 (TypedDict 형식)
     """
     from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
 
@@ -231,7 +246,7 @@ def crawl_list_page_items(
     categories_selector: str = "",
     existing_guids: Optional[set] = None,
     max_items: int = 20,
-) -> list:
+) -> list[ListCrawledItem]:
     """
     목록 페이지에서 직접 아이템을 크롤링
 
@@ -249,7 +264,7 @@ def crawl_list_page_items(
         max_items: 최대 아이템 수
 
     Returns:
-        크롤링된 아이템 목록 (딕셔너리 형식)
+        크롤링된 아이템 목록 (TypedDict 형식)
     """
     if existing_guids is None:
         existing_guids = set()

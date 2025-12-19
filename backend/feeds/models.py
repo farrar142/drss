@@ -35,7 +35,7 @@ class RSSFeed(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
     title = models.CharField(max_length=500, blank=True)
-    favicon_url = models.URLField(blank=True,null=True)
+    favicon_url = models.URLField(blank=True, null=True, default="")
     description = models.TextField(blank=True)
     visible = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")
@@ -65,11 +65,38 @@ class RSSFeed(BaseModel):
         first_source = self.sources.first()
         return first_source.url if first_source else ""
 
+    @url.setter
+    def url(self, value: str):
+        """url setter (호환성)"""
+        pass
+
     @property
     def custom_headers(self) -> dict:
         """첫 번째 소스의 custom_headers 반환 (호환성)"""
         first_source = self.sources.first()
         return first_source.custom_headers if first_source else {}
+
+    @custom_headers.setter
+    def custom_headers(self, value: dict):
+        """custom_headers setter (호환성)"""
+        pass
+
+class RSSFeedWithCountManager(models.Manager):
+    """item_count가 annotated된 쿼리셋을 반환하는 커스텀 매니저"""
+    def get_queryset(self):
+        from django.db.models import Count
+        return super().get_queryset().annotate(
+            item_count=Count("rssitem", filter=models.Q(rssitem__is_read=False))
+        )
+
+class RSSFeedWithCount(RSSFeed):
+    """item_count 필드를 포함한 프록시 모델"""
+    objects = RSSFeedWithCountManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "RSS Feed with Count"
+        verbose_name_plural = "RSS Feeds with Count"
 
 
 class RSSItem(BaseModel):

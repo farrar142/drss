@@ -34,20 +34,20 @@ def fetch_html(request, data: FetchHTMLRequest):
         timeout=data.timeout,
         custom_headers=data.custom_headers if data.custom_headers else None,
     )
-    return FetchHTMLResponse(**result)
+    return result
 
 
 @router.post("/extract-elements", response=ExtractElementsResponse, auth=JWTAuth(), operation_id="extractElements")
 def extract_elements(request, data: ExtractElementsRequest):
     """HTML에서 CSS 셀렉터로 요소들을 추출"""
     result = SourceService.extract_elements(data.html, data.selector, data.base_url)
-    if result["success"]:
+    if result.success:
         return ExtractElementsResponse(
             success=True,
-            elements=[ElementInfo(**el) for el in result["elements"]],
-            count=result["count"],
+            elements=[ElementInfo(**el.dict()) for el in result.elements],
+            count=result.count,
         )
-    return ExtractElementsResponse(success=False, error=result.get("error"))
+    return ExtractElementsResponse(success=False, error=result.error)
 
 
 @router.post("/preview-items", response=PreviewItemResponse, auth=JWTAuth(), operation_id="previewItems")
@@ -72,13 +72,13 @@ def preview_items(request, data: PreviewItemRequest):
         detail_date_selector=data.detail_date_selector,
         detail_image_selector=data.detail_image_selector,
     )
-    if result["success"]:
+    if result.success:
         return PreviewItemResponse(
             success=True,
-            items=[PreviewItem(**item) for item in result["items"]],
-            count=result["count"],
+            items=[PreviewItem(**item.dict()) for item in result.items],
+            count=result.count,
         )
-    return PreviewItemResponse(success=False, error=result.get("error"))
+    return PreviewItemResponse(success=False, error=result.error)
 
 
 @router.get("", response=list[RSSEverythingSchema], auth=JWTAuth(), operation_id="listRssEverythingSources")

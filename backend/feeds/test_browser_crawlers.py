@@ -7,7 +7,7 @@ to ensure they work correctly with the new abstraction.
 
 import os
 import hashlib
-from backend.feeds.browser_crawler import (
+from feeds.browser_crawler import (
     get_crawler,
     fetch_html_with_browser,
     fetch_html_smart,
@@ -16,7 +16,7 @@ from backend.feeds.browser_crawler import (
     RealBrowserCrawler,
     BrowserlessCrawler,
 )
-from backend.feeds.crawlers import AbstractBrowserCrawler, CrawlResult, WaitUntil
+from feeds.crawlers import AbstractBrowserCrawler, CrawlResult, WaitUntil
 
 # Cache utilities for testing
 CACHE_PREFIX = "browser_crawler:"
@@ -59,7 +59,7 @@ def test_backward_compatibility():
     assert isinstance(crawler, RealBrowserCrawler)
 
     # Test that the old functions still work
-    from browser_crawler import get_crawler as old_get_crawler
+    from feeds.browser_crawler import get_crawler as old_get_crawler
 
     old_crawler = old_get_crawler()
     assert isinstance(old_crawler, RealBrowserCrawler)
