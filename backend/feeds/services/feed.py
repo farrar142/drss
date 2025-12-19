@@ -13,7 +13,6 @@ from django.db.models import Count, QuerySet
 from feeds.models import (
     RSSCategory,
     RSSFeed,
-    RSSFeedWithCount,
     RSSItem,
     RSSEverythingSource,
     FeedTaskResult,
@@ -65,10 +64,10 @@ class FeedService:
         }
 
     @staticmethod
-    def get_user_feeds(user) -> QuerySet[RSSFeedWithCount]:
+    def get_user_feeds(user) -> QuerySet[RSSFeed]:
         """사용자의 피드 목록 조회"""
         return (
-            RSSFeedWithCount.objects.filter(user=user)
+            RSSFeed.objects.with_item_counts().filter(user=user)
             .prefetch_related("sources")
         )
 
@@ -95,7 +94,7 @@ class FeedService:
 
         # item_count 추가하여 반환
         feed_with_count = (
-            RSSFeedWithCount.objects.filter(id=feed.pk)
+            RSSFeed.objects.with_item_counts().filter(id=feed.pk)
             .prefetch_related("sources")
             .first()
         )
@@ -124,7 +123,7 @@ class FeedService:
         feed.save()
 
         feed_with_count = (
-            RSSFeedWithCount.objects.filter(id=feed.pk)
+            RSSFeed.objects.with_item_counts().filter(id=feed.pk)
             .prefetch_related("sources")
             .first()
         )

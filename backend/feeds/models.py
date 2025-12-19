@@ -2,6 +2,9 @@ from typing import Callable, Optional
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+
+from feeds.managers import RSSFeedWithCountManager, RSSItemManager
 
 User = get_user_model()
 
@@ -32,6 +35,7 @@ class RSSCategory(BaseModel):
 
 
 class RSSFeed(BaseModel):
+    objects:RSSFeedWithCountManager = RSSFeedWithCountManager()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
     title = models.CharField(max_length=500, blank=True)
@@ -81,26 +85,9 @@ class RSSFeed(BaseModel):
         """custom_headers setter (호환성)"""
         pass
 
-class RSSFeedWithCountManager(models.Manager):
-    """item_count가 annotated된 쿼리셋을 반환하는 커스텀 매니저"""
-    def get_queryset(self):
-        from django.db.models import Count
-        return super().get_queryset().annotate(
-            item_count=Count("rssitem", filter=models.Q(rssitem__is_read=False))
-        )
-
-class RSSFeedWithCount(RSSFeed):
-    """item_count 필드를 포함한 프록시 모델"""
-    objects = RSSFeedWithCountManager()
-    item_count: int
-
-    class Meta:
-        proxy = True
-        verbose_name = "RSS Feed with Count"
-        verbose_name_plural = "RSS Feeds with Count"
-
 
 class RSSItem(BaseModel):
+    objects:RSSItemManager = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
     title = models.CharField(max_length=500)
     link = models.URLField()
