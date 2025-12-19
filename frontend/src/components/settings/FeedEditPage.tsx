@@ -54,7 +54,7 @@ const SOURCE_TYPE_INFO: Record<string, { icon: React.ReactNode; label: string }>
 export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const { t } = useTranslation();
   const { openTab, updateTab, panels, activePanelId } = useTabStore();
-  const { categories, addFeed, updateFeed: updateFeedInStore } = useRSSStore();
+  const { categories, feeds: storeFeeds, addFeed, updateFeed: updateFeedInStore } = useRSSStore();
   const toast = useToast();
   const confirm = useConfirm();
 
@@ -72,15 +72,21 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
 
-  // 피드 데이터 로드
+  // 피드 데이터 로드 (스토어에서 먼저 찾고, 없으면 API 호출)
   const loadFeed = useCallback(async () => {
     if (context?.mode === 'edit' && context.feedId) {
       setLoading(true);
       setError(null);
       try {
-        // listFeeds를 통해 피드 목록에서 해당 피드를 찾음
-        const feeds = await listFeeds();
-        const foundFeed = feeds.find(f => f.id === context.feedId);
+        // 먼저 스토어에서 피드를 찾음
+        let foundFeed = storeFeeds.find(f => f.id === context.feedId);
+
+        // 스토어에 없으면 API 호출
+        if (!foundFeed) {
+          const feeds = await listFeeds();
+          foundFeed = feeds.find(f => f.id === context.feedId);
+        }
+
         if (foundFeed) {
           setFeed(foundFeed);
           setTitle(foundFeed.title);
@@ -99,7 +105,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         setLoading(false);
       }
     }
-  }, [context]);
+  }, [context, storeFeeds]);
 
   useEffect(() => {
     loadFeed();

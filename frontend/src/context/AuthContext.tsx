@@ -1,11 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode } from 'react';
 import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '@/services/api';
 import { AxiosError } from 'axios';
 import { useTabStore } from '@/stores/tabStore';
 
-interface User {
+export interface User {
   id: number;
   username: string;
   email: string;
@@ -33,24 +33,32 @@ export const useAuth = () => {
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialUser?: User | null;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUser }) => {
+  // 서버에서 초기 사용자 정보가 전달되면 바로 설정 (플래시 방지)
+  const [user, setUser] = useState<User | null>(initialUser ?? null);
+  // initialUser가 있으면 로딩 상태 false로 시작
+  const [loading, setLoading] = useState(!initialUser);
   const { initializeForUser, clearForLogout } = useTabStore();
 
   useEffect(() => {
+    // 서버에서 이미 사용자 정보를 받았으면 추가 fetch 불필요
+    if (initialUser) {
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
       fetchUser();
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [initialUser]);
 
-  // 유저가 변경되면 탭스토어 초기화
-  useEffect(() => {
+  // 유저가 변경되면 탭스토어 초기화 (useLayoutEffect로 플래시 방지)
+  useLayoutEffect(() => {
     if (user) {
       initializeForUser(user.id);
     }

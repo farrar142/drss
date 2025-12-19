@@ -19,177 +19,147 @@ export const usePagination = <T extends { id: number }>(
     direction?: 'after' | 'before';
   } & PaginationFilters) => Promise<PaginatedResponse<T>>,
   getCursorField: (item: T) => string,
-  key?: string | number,  // key to reset pagination when changed
+  key?: string | number,
   filters?: PaginationFilters,
-  enabled: boolean = true  // 활성화 여부 - false이면 데이터 로딩하지 않음
+  enabled: boolean = true
 ) => {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasNext, setHasNext] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [newestCursor, setNewestCursor] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
 
-  // Combine key and filters into a single dependency string
   const cacheKey = `${key ?? '__default__'}-${JSON.stringify(filters ?? {})}`;
-  const prevKeyRef = useRef<string | null>(null);
-  const isFirstRender = useRef(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Reset state when key or filters change
-  useEffect(() => {
-    // 첫 렌더 시에는 prevKeyRef를 설정만 하고 리셋하지 않음
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      prevKeyRef.current = cacheKey;
+  // refs for stable callbacks
+  const apiRef = useRef(paginationApi);
+  const getCursorRef = useRef(getCursorField);
+  const filtersRef = useRef(filters);
+  const loadingRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
+  const prevCacheKeyRef = useRef(cacheKey);
+
+  // 매 렌더마다 최신 값으로 업데이트
+  apiRef.current = paginationApi;
+  getCursorRef.current = getCursorField;
+  filtersRef.current = filters;
+
+  // cacheKey 변경 감지 및 리셋
+  if (prevCacheKeyRef.current !== cacheKey) {
+    console.log(`[usePagination:${key}] cacheKey changed, resetting`);
+    prevCacheKeyRef.current = cacheKey;
+    initialLoadDoneRef.current = false;
+    loadingRef.current = false;
+  }
+
+  const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
+    console.log(`[usePagination:${key}] loadItems called`, { cursor, direction, loading: loadingRef.current });
+
+    if (loadingRef.current) {
+      console.log(`[usePagination:${key}] loadItems skipped - already loading`);
       return;
     }
 
-    if (prevKeyRef.current !== cacheKey) {
-      // 진행 중인 요청 취소
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-
-      setItems([]);
-      setHasNext(false);
-      setNextCursor(null);
-      setNewestCursor(null);
-      setInitialized(false);
-      setLoading(false);
-      prevKeyRef.current = cacheKey;
-    }
-  }, [cacheKey]);
-
-  // 컴포넌트 언마운트 시 요청 취소
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const removeDuplicates = useCallback((items: T[]) => {
-    const seen = new Set<number>();
-    return items.filter(item => {
-      if (seen.has(item.id)) return false;
-      seen.add(item.id);
-      return true;
-    });
-  }, []);
-
-  const compareCursors = useCallback((a: string, b: string) => {
-    // Try to compare as numbers first
-    const numA = Number(a);
-    const numB = Number(b);
-    if (!isNaN(numA) && !isNaN(numB)) {
-      return numA - numB;
-    }
-
-    // Try to compare as dates
-    const dateA = new Date(a);
-    const dateB = new Date(b);
-    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
-      return dateA.getTime() - dateB.getTime();
-    }
-
-    // Fallback to string comparison
-    return a.localeCompare(b);
-  }, []);
-
-  const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
-    // 비활성 탭에서는 API 요청 차단
-    if (!enabled) return;
-
-    if (loading) return;
-
-    // 이전 요청 취소 마킹
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // 새 AbortController 생성 (signal.aborted로 취소 여부 체크)
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
+    loadingRef.current = true;
     setLoading(true);
+
     try {
-      const response = await paginationApi({
+      console.log(`[usePagination:${key}] calling API...`);
+      const response = await apiRef.current({
         limit: 10,
         cursor: cursor || undefined,
         direction,
-        ...filters
+        ...filtersRef.current
       });
 
-      // 응답이 왔을 때 취소되었으면 무시
-      if (abortController.signal.aborted) return;
+      console.log(`[usePagination:${key}] API response`, { itemCount: response.items.length, hasNext: response.has_next });
 
       const newItems = response.items;
 
       setItems(prev => {
         const merged = direction === 'before'
-          ? [...prev, ...newItems]  // older items at the end
-          : [...newItems, ...prev]; // newer items at the beginning
-        return removeDuplicates(merged);
+          ? [...prev, ...newItems]
+          : [...newItems, ...prev];
+        const seen = new Set<number>();
+        return merged.filter(item => {
+          if (seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
       });
 
       if (direction === 'before') {
-        // Update cursor for loading older items
         setHasNext(response.has_next ?? false);
         setNextCursor(response.next_cursor || null);
       }
 
-      // Update newest cursor if we got new items
       if (newItems.length > 0) {
-        // For 'before' direction, first item is newest; for 'after', last item is newest
         const newestItem = direction === 'before' ? newItems[0] : newItems[newItems.length - 1];
-        const newestItemCursor = getCursorField(newestItem);
+        const newestItemCursor = getCursorRef.current(newestItem);
         setNewestCursor(prev => {
           if (!prev) return newestItemCursor;
-          // Keep the most recent cursor
-          return compareCursors(newestItemCursor, prev) > 0 ? newestItemCursor : prev;
+          const dateA = new Date(newestItemCursor);
+          const dateB = new Date(prev);
+          if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+            return dateA > dateB ? newestItemCursor : prev;
+          }
+          return newestItemCursor > prev ? newestItemCursor : prev;
         });
       }
+
+      initialLoadDoneRef.current = true;
     } catch (error) {
-      // 취소된 요청은 무시
-      if (abortController.signal.aborted) return;
-      console.error('Failed to load items:', error);
+      console.error(`[usePagination:${key}] error:`, error);
     } finally {
-      // 취소되지 않은 요청만 상태 업데이트
-      if (!abortController.signal.aborted) {
-        setLoading(false);
-        setInitialized(true);
-      }
+      console.log(`[usePagination:${key}] loadItems finished`);
+      loadingRef.current = false;
+      setLoading(false);
     }
-  }, [enabled, key, loading, paginationApi, removeDuplicates, getCursorField, compareCursors, filters]);
+  }, [key]);
 
+  // 초기 로드
   useEffect(() => {
-    // enabled가 false이면 로딩하지 않음
-    if (!enabled) return;
+    console.log(`[usePagination:${key}] useEffect`, { enabled, initialLoadDone: initialLoadDoneRef.current, loading: loadingRef.current });
 
-    if (!initialized && !loading) {
-      loadItems(undefined, 'before');  // Initial load - get newest items first
+    if (!enabled) {
+      console.log(`[usePagination:${key}] skipped - not enabled`);
+      return;
     }
-  }, [enabled, initialized, loading, loadItems, cacheKey]);  // enabled, cacheKey 추가하여 필터 변경 시 재fetch
+
+    if (initialLoadDoneRef.current) {
+      console.log(`[usePagination:${key}] skipped - already loaded`);
+      return;
+    }
+
+    if (loadingRef.current) {
+      console.log(`[usePagination:${key}] skipped - already loading`);
+      return;
+    }
+
+    console.log(`[usePagination:${key}] triggering initial load`);
+    loadItems(undefined, 'before');
+  }, [enabled, cacheKey, loadItems, key]);
+
+  // cacheKey 변경 시 상태 리셋
+  useEffect(() => {
+    return () => {
+      // cleanup: 다음 마운트를 위해 리셋하지 않음 (Strict Mode 대응)
+    };
+  }, [cacheKey]);
 
   const handleLoadMore = useCallback(() => {
-    // 이전 글 불러오기 (older items)
     if (hasNext && nextCursor) {
       loadItems(nextCursor, 'before');
     }
   }, [hasNext, nextCursor, loadItems]);
 
   const handleLoadNew = useCallback(() => {
-    // 새로 생긴 글 불러오기 (newer items)
     if (newestCursor) {
       loadItems(newestCursor, 'after');
     } else {
-      // 빈 화면에서는 초기 로드 수행
       loadItems(undefined, 'before');
     }
   }, [newestCursor, loadItems]);
 
-  return { items, handleLoadMore, handleLoadNew, hasNext, loading }
+  return { items, handleLoadMore, handleLoadNew, hasNext, loading };
 }

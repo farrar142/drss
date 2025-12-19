@@ -2,8 +2,11 @@
 Category Schemas - 카테고리 관련 스키마
 """
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from ninja import Schema
+
+if TYPE_CHECKING:
+    from .feed import FeedSchema
 
 
 class CategorySchema(Schema):
@@ -14,6 +17,17 @@ class CategorySchema(Schema):
     description: str
     visible: bool
     order: int
+
+
+class CategoryWithFeedsSchema(Schema):
+    """카테고리 + 피드 목록 스키마 (초기 로딩용)"""
+
+    id: int
+    name: str
+    description: str
+    visible: bool
+    order: int
+    feeds: list["FeedSchema"] = []
 
 
 class CategoryCreateSchema(Schema):
@@ -37,3 +51,9 @@ class CategoryReorderSchema(Schema):
     """카테고리 순서 변경 스키마"""
 
     category_ids: list[int]  # 순서대로 정렬된 카테고리 ID 리스트
+
+
+# Forward reference 해결
+from .feed import FeedSchema
+
+CategoryWithFeedsSchema.model_rebuild()

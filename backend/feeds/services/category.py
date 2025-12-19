@@ -3,7 +3,7 @@ Category Service - 카테고리 관련 비즈니스 로직
 """
 
 from django.shortcuts import get_object_or_404
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Prefetch
 
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from feeds.schemas import (
@@ -20,6 +20,22 @@ class CategoryService:
     def get_user_categories(user) -> QuerySet[RSSCategory]:
         """사용자의 카테고리 목록 조회"""
         return RSSCategory.objects.filter(user=user)
+
+    @staticmethod
+    def get_user_categories_with_feeds(user) -> QuerySet[RSSCategory]:
+        """사용자의 카테고리 목록 + 피드 목록 조회 (초기 로딩 최적화)"""
+        return (
+            RSSCategory.objects.filter(user=user)
+            .prefetch_related(
+                Prefetch(
+                    "feeds",
+                    queryset=RSSFeed.objects.with_item_counts().prefetch_related(
+                        "sources"
+                    ),
+                )
+            )
+            .order_by("order")
+        )
 
     @staticmethod
     def create_category(user, data: CategoryCreateSchema) -> RSSCategory:
@@ -85,9 +101,7 @@ class CategoryService:
         category = get_object_or_404(RSSCategory, id=category_id, user=user)
 
         # 단일 쿼리로 모든 통계 집계
-        stats = RSSItem.objects.filter(
-            feed__category=category
-        ).aggregate(
+        stats = RSSItem.objects.filter(feed__category=category).aggregate(
             total_items=Count("id"),
             unread_items=Count("id", filter=Q(is_read=False)),
             favorite_items=Count("id", filter=Q(is_favorite=True)),

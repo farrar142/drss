@@ -7,6 +7,9 @@ interface RSSStore {
   feeds: FeedSchema[];
   categories: RSSCategory[];
 
+  // 서버에서 초기 데이터를 받았는지 여부
+  _initialized: boolean;
+
   // UI State
   searchQuery: string;
 
@@ -21,12 +24,16 @@ interface RSSStore {
   removeCategory: (id: number) => void;
 
   setSearchQuery: (query: string) => void;
+
+  // 서버 초기 데이터로 초기화 (SSR에서 사용)
+  initializeFromServer: (categories: RSSCategory[], feeds: FeedSchema[]) => void;
 }
 
 export const useRSSStore = create<RSSStore>((set) => ({
   // Initial state
   feeds: [],
   categories: [],
+  _initialized: false,
   searchQuery: '',
 
   // Data actions
@@ -49,4 +56,11 @@ export const useRSSStore = create<RSSStore>((set) => ({
 
   // UI actions
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+  // 서버 초기 데이터로 초기화
+  initializeFromServer: (categories, feeds) => set({
+    categories,
+    feeds,
+    _initialized: true
+  }),
 }));

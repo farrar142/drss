@@ -252,6 +252,18 @@ export interface SourceUpdateSchema {
 }
 
 /**
+ * 카테고리 + 피드 목록 스키마 (초기 로딩용)
+ */
+export interface CategoryWithFeedsSchema {
+  id: number;
+  name: string;
+  description: string;
+  visible: boolean;
+  order: number;
+  feeds?: FeedSchema[];
+}
+
+/**
  * 카테고리 스키마
  */
 export interface CategorySchema {
@@ -1038,6 +1050,19 @@ export const deleteFeedSource = (
     }
   
 /**
+ * 카테고리 목록 + 피드 목록 조회 (초기 로딩 최적화)
+ * @summary List Categories With Feeds
+ */
+export const listCategoriesWithFeeds = (
+    
+ ) => {
+      return axiosInstance<CategoryWithFeedsSchema[]>(
+      {url: `/api/categories/with-feeds`, method: 'GET'
+    },
+      );
+    }
+  
+/**
  * 카테고리 목록 조회
  * @summary List Categories
  */
@@ -1632,6 +1657,7 @@ export type DeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof del
 export type AddFeedSourceResult = NonNullable<Awaited<ReturnType<typeof addFeedSource>>>
 export type UpdateFeedSourceResult = NonNullable<Awaited<ReturnType<typeof updateFeedSource>>>
 export type DeleteFeedSourceResult = NonNullable<Awaited<ReturnType<typeof deleteFeedSource>>>
+export type ListCategoriesWithFeedsResult = NonNullable<Awaited<ReturnType<typeof listCategoriesWithFeeds>>>
 export type ListCategoriesResult = NonNullable<Awaited<ReturnType<typeof listCategories>>>
 export type CreateCategoryResult = NonNullable<Awaited<ReturnType<typeof createCategory>>>
 export type UpdateCategoryResult = NonNullable<Awaited<ReturnType<typeof updateCategory>>>

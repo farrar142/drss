@@ -4,6 +4,7 @@ Feeds Schemas - 스키마 모듈
 
 from .category import (
     CategorySchema,
+    CategoryWithFeedsSchema,
     CategoryCreateSchema,
     CategoryUpdateSchema,
     CategoryReorderSchema,
@@ -54,6 +55,7 @@ from .periodic_task import (
 __all__ = [
     # Category
     "CategorySchema",
+    "CategoryWithFeedsSchema",
     "CategoryCreateSchema",
     "CategoryUpdateSchema",
     "CategoryReorderSchema",

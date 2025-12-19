@@ -258,11 +258,19 @@ export const CategoryDrawer: FC<{
     }
   }, [openTab, saveCurrentScroll, variant, onClose]);
 
-  useEffect(() => {
-    listFeeds().then(setFeeds);
-  }, [setFeeds]);
+  // 서버에서 초기화된 상태 확인
+  const _initialized = useRSSStore((state) => state._initialized);
 
   useEffect(() => {
+    // 서버에서 이미 초기화된 경우 스킵
+    if (_initialized) return;
+    listFeeds().then(setFeeds);
+  }, [setFeeds, _initialized]);
+
+  useEffect(() => {
+    // 서버에서 이미 초기화된 경우 스킵
+    if (_initialized) return;
+
     // The backend OpenAPI/types may not always include the `visible` field
     // (older specs). Ensure we normalize the response to `RSSCategory` by
     // defaulting `visible` to `true` when absent.
@@ -276,7 +284,7 @@ export const CategoryDrawer: FC<{
       normalized.sort((a, b) => a.order - b.order);
       setCategories(normalized);
     });
-  }, [setCategories]);
+  }, [setCategories, _initialized]);
 
   const handleAddCategory = async () => {
     try {

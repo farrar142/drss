@@ -8,10 +8,13 @@ from feeds.managers import RSSFeedWithCountManager, RSSItemManager
 
 User = get_user_model()
 
+
 class BaseModel(models.Model):
-    id:int
+    id: int
+
     class Meta:
         abstract = True
+
 
 class RSSCategory(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -35,9 +38,11 @@ class RSSCategory(BaseModel):
 
 
 class RSSFeed(BaseModel):
-    objects:RSSFeedWithCountManager = RSSFeedWithCountManager()
+    objects: RSSFeedWithCountManager = RSSFeedWithCountManager()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(RSSCategory, on_delete=models.CASCADE)
+    category = models.ForeignKey(
+        RSSCategory, on_delete=models.CASCADE, related_name="feeds"
+    )
     title = models.CharField(max_length=500, blank=True)
     favicon_url = models.URLField(blank=True, null=True, default="")
     description = models.TextField(blank=True)
@@ -50,7 +55,7 @@ class RSSFeed(BaseModel):
     created_at = models.DateTimeField(auto_now_add=True)
     sources: models.QuerySet["RSSEverythingSource"]
 
-    category_id:int
+    category_id: int
 
     class Meta:
         indexes = [
@@ -87,7 +92,7 @@ class RSSFeed(BaseModel):
 
 
 class RSSItem(BaseModel):
-    objects:RSSItemManager = RSSItemManager()
+    objects: RSSItemManager = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
     title = models.CharField(max_length=500)
     link = models.URLField()
@@ -255,8 +260,8 @@ class RSSEverythingSource(BaseModel):
     def __str__(self):
         return f"{self.get_source_type_display()}: {self.feed.title} ({self.url})"
 
-    feed_id:int
-    get_source_type_display:Callable[[], str]
+    feed_id: int
+    get_source_type_display: Callable[[], str]
 
     @property
     def is_rss(self) -> bool:
