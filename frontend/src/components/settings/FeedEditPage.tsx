@@ -67,6 +67,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 폼 필드
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [faviconUrl, setFaviconUrl] = useState('');
   const [visible, setVisible] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
@@ -84,6 +85,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           setFeed(foundFeed);
           setTitle(foundFeed.title);
           setDescription(foundFeed.description || '');
+          setFaviconUrl(foundFeed.favicon_url || '');
           setVisible(foundFeed.visible);
           setRefreshInterval(foundFeed.refresh_interval || 60);
           setCategoryId(foundFeed.category_id);
@@ -119,6 +121,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         const updatedFeed = await updateFeed(context.feedId, {
           title,
           description,
+          favicon_url: faviconUrl || undefined,
           visible,
           refresh_interval: refreshInterval,
           category_id: categoryId,
@@ -369,6 +372,27 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t.rssEverything.descriptionPlaceholder}
             />
+          </div>
+
+          {/* Favicon URL */}
+          <div className="space-y-2">
+            <Label>Favicon URL</Label>
+            <div className="flex items-center gap-2">
+              {faviconUrl && (
+                <img 
+                  src={faviconUrl} 
+                  alt="favicon" 
+                  className="w-6 h-6 rounded-sm object-cover"
+                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                />
+              )}
+              <Input
+                value={faviconUrl}
+                onChange={(e) => setFaviconUrl(e.target.value)}
+                placeholder="https://example.com/favicon.ico"
+                className="flex-1"
+              />
+            </div>
           </div>
 
           {/* 새로고침 간격 */}

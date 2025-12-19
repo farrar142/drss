@@ -226,8 +226,8 @@ export default function TaskResultsPage() {
       )}
 
       {/* 필터 및 액션 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-col gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-1">
           {(['all', 'success', 'failure', 'pending', 'running'] as const).map((status) => (
             <Button
               key={status}
@@ -245,7 +245,7 @@ export default function TaskResultsPage() {
             </Button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {stats && stats.failure > 0 && (
             <Button
               variant="outline"
@@ -295,14 +295,14 @@ export default function TaskResultsPage() {
                 return (
                   <div
                     key={result.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${statusConfig.color} text-white`}>
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className={`p-2 rounded-full ${statusConfig.color} text-white flex-shrink-0`}>
                         {statusConfig.icon}
                       </div>
-                      <div>
-                        <div className="font-medium">{result.feed.title}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium truncate">{result.feed.title}</div>
                         <div className="text-xs text-muted-foreground">
                           {formatDate(result.created_at)}
                           {result.duration_seconds !== null && (
@@ -313,7 +313,7 @@ export default function TaskResultsPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                       {result.status === 'success' && (
                         <div className="text-sm">
                           <span className="text-green-600 font-medium">
@@ -325,19 +325,19 @@ export default function TaskResultsPage() {
                         </div>
                       )}
                       {result.status === 'failure' && result.error_message && (
-                        <div className="max-w-xs">
-                          <Badge variant="destructive" className="text-xs truncate max-w-full">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
+                        <Badge variant="destructive" className="text-xs truncate max-w-[150px] sm:max-w-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1 flex-shrink-0" />
+                          <span className="truncate">
                             {result.error_message.slice(0, 50)}
                             {result.error_message.length > 50 && '...'}
-                          </Badge>
-                        </div>
+                          </span>
+                        </Badge>
                       )}
-                      <Badge variant="outline">{statusConfig.label}</Badge>
+                      <Badge variant="outline" className="flex-shrink-0">{statusConfig.label}</Badge>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 flex-shrink-0"
                         onClick={() => handleDeleteResult(result.id)}
                       >
                         <Trash2 className="h-4 w-4 text-muted-foreground" />
