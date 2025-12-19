@@ -478,7 +478,7 @@ export const useTabStore = create<TabStore>()(
       set((state) => ({
         panels: state.panels.map(p => {
           if (p.id !== targetPanelId) return p;
-          
+
           // atIndex가 지정되면 해당 위치에 삽입, 아니면 마지막에 추가
           const newTabs = [...p.tabs];
           if (atIndex !== undefined && atIndex >= 0 && atIndex <= newTabs.length) {
@@ -486,7 +486,7 @@ export const useTabStore = create<TabStore>()(
           } else {
             newTabs.push(newTab);
           }
-          
+
           return {
             ...p,
             tabs: newTabs,

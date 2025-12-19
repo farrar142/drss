@@ -347,7 +347,7 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
   const handleDragOver = useCallback((e: React.DragEvent, panelId: PanelId) => {
     // 탭 드래그만 처리 (패널 분할/이동용)
     const isTabDrag = e.dataTransfer.types.includes('application/tab-id') || e.dataTransfer.types.includes('text/plain');
-    
+
     if (!isTabDrag) return;
 
     e.preventDefault();

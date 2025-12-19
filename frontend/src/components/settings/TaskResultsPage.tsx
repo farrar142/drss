@@ -161,7 +161,7 @@ export default function TaskResultsPage() {
     const statusLabel = status ? STATUS_CONFIG[status].label : '';
     const confirmed = await confirm({
       title: t.tasks.deleteResults,
-      description: status 
+      description: status
         ? interpolate(t.tasks.deleteConfirmWithStatus, { status: statusLabel })
         : t.tasks.deleteConfirm,
       variant: 'destructive',

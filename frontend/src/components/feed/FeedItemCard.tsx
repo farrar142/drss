@@ -410,7 +410,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             // 단, 이미 목표 위치 근처에 있으면 접기 동작 수행
             const isSticky = cardRect.top < stickyAreaTop - 5; // 스티키 상태: 카드 상단이 탭바 위에 있을 때
             const isNearTargetPosition = Math.abs(cardRect.top - stickyAreaTop - 8) < 20; // 목표 위치 근처
-            
+
             if (isSticky && !isNearTargetPosition) {
               e.stopPropagation();
               // 카드 상단을 탭바 바로 아래로 이동

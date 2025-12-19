@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 import { ClientLayout } from '@/ClientLayout';
 import { THEME_COOKIE_NAME, getThemeFromCookie, getInitialThemeStyles } from '@/stores/themeStore';
+import { SignupStatusSchema } from '@/services/api';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,22 @@ const defaultColors = {
   secondary: '#8b5cf6',
 };
 
+// 서버 사이드에서 사이트 설정 불러오기
+async function fetchSiteSettings(): Promise<SignupStatusSchema | null> {
+  try {
+    // 서버 사이드에서는 내부 네트워크 URL 사용
+    const apiUrl = process.env.INTERNAL_API_URL || 'http://django:8000';
+    const res = await fetch(`${apiUrl}/api/auth/signup-status`, {
+      next: { revalidate: 60 }, // 60초마다 재검증
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    console.error('Failed to fetch site settings:', e);
+    return null;
+  }
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -45,6 +62,9 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get(THEME_COOKIE_NAME);
   const themeData = themeCookie ? getThemeFromCookie(themeCookie.value ? `${THEME_COOKIE_NAME}=${themeCookie.value}` : undefined) : null;
+
+  // 서버에서 사이트 설정 미리 불러오기
+  const siteSettings = await fetchSiteSettings();
 
   // 초기 다크모드 클래스 결정 (system인 경우 기본 dark)
   const initialDark = themeData?.mode === 'dark' || themeData?.mode === 'system' || !themeData;
@@ -61,7 +81,7 @@ export default async function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: `:root { ${initialStyles} }` }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ClientLayout initialTheme={themeData}>
+        <ClientLayout initialTheme={themeData} initialSiteSettings={siteSettings}>
           {children}
         </ClientLayout>
       </body>

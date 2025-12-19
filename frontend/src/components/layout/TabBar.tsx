@@ -190,7 +190,7 @@ export const TabBar: React.FC<TabBarProps> = ({
     e.dataTransfer.effectAllowed = 'move';
     setDraggedTabId(tab.id);
     draggedTabIdRef.current = tab.id;
-    
+
     // 기존 외부 핸들러도 호출 (패널 분할용)
     onTabDragStart?.(e, tab);
   };
@@ -214,14 +214,14 @@ export const TabBar: React.FC<TabBarProps> = ({
   const handleTabDragOver = (e: React.DragEvent, index: number) => {
     const sourceType = detectDragSourceType(e);
     if (!sourceType) return;
-    
+
     e.preventDefault();
     e.stopPropagation(); // 패널로 이벤트 전파 방지
     e.dataTransfer.dropEffect = 'move';
-    
+
     setDragSourceType(sourceType);
     setDragOverIndex(index);
-    
+
     if (sourceType === 'tab') {
       const sourcePanelId = e.dataTransfer.getData('application/tab-panel-id');
       const isFromOtherPanel = sourcePanelId && sourcePanelId !== panelId;
@@ -246,9 +246,9 @@ export const TabBar: React.FC<TabBarProps> = ({
   const handleTabDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const sourceType = detectDragSourceType(e);
-    
+
     // 1. 탭 드롭 처리
     if (sourceType === 'tab') {
       const draggedId = e.dataTransfer.getData('application/tab-id');
@@ -270,7 +270,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         }
       }
     }
-    
+
     // 2. 피드 드롭 처리 (새 탭 생성)
     else if (sourceType === 'feed') {
       const jsonData = e.dataTransfer.getData('application/json');
@@ -285,7 +285,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         }
       }
     }
-    
+
     // 3. 카테고리 드롭 처리 (새 탭 생성)
     else if (sourceType === 'category') {
       const categoryData = e.dataTransfer.getData('application/category-reorder');
@@ -312,17 +312,17 @@ export const TabBar: React.FC<TabBarProps> = ({
   const handleContainerDragOver = (e: React.DragEvent) => {
     const sourceType = detectDragSourceType(e);
     if (!sourceType) return;
-    
+
     e.preventDefault();
     e.stopPropagation(); // 패널로 이벤트 전파 방지
     e.dataTransfer.dropEffect = 'move';
-    
+
     setDragSourceType(sourceType);
-    
+
     // 탭 위에 있지 않을 때만 끝에 표시
     if (dragOverIndex === null) {
       setDragOverIndex(tabs.length);
-      
+
       if (sourceType === 'tab') {
         const sourcePanelId = e.dataTransfer.getData('application/tab-panel-id');
         const isFromOtherPanel = sourcePanelId && sourcePanelId !== panelId;
@@ -392,11 +392,11 @@ export const TabBar: React.FC<TabBarProps> = ({
           <React.Fragment key={tab.id}>
             {/* 드롭 인디케이터 (탭 앞) */}
             {dragOverIndex === index && (
-              <div 
+              <div
                 className={cn(
                   "w-0.5 h-6 rounded-full shrink-0 transition-all",
                   isDragFromOtherPanel ? "bg-green-500" : "bg-primary"
-                )} 
+                )}
               />
             )}
             <div
@@ -440,11 +440,11 @@ export const TabBar: React.FC<TabBarProps> = ({
         ))}
         {/* 마지막 위치 드롭 인디케이터 */}
         {dragOverIndex === tabs.length && (
-          <div 
+          <div
             className={cn(
               "w-0.5 h-6 rounded-full shrink-0 transition-all ml-1",
               isDragFromOtherPanel ? "bg-green-500" : "bg-primary"
-            )} 
+            )}
           />
         )}
       </div>
