@@ -84,30 +84,30 @@ interface SettingSection {
   fields: FieldConfig[];
 }
 
-// ===== 관리자 설정 정의 =====
-// 새로운 설정을 추가하려면 이 배열에 필드 정의만 추가하면 됩니다.
+// ===== 관리자 설정 정의 (번역 적용을 위해 함수로 변환) =====
+// 새로운 설정을 추가하려면 이 함수 내의 배열에 필드 정의만 추가하면 됩니다.
 
-const ADMIN_SETTINGS: SettingSection[] = [
+const getAdminSettings = (t: ReturnType<typeof useTranslation>['t']): SettingSection[] => [
   {
-    title: '사용자 관리',
-    description: '사용자 가입 및 권한 관련 설정',
+    title: t.settings.userManagement,
+    description: t.settings.userManagementDescription,
     fields: [
       {
         key: 'allow_signup',
-        label: '회원가입 허용',
-        description: '새로운 사용자의 회원가입을 허용합니다. 비활성화하면 기존 사용자만 로그인할 수 있습니다.',
+        label: t.settings.allowSignup,
+        description: t.settings.allowSignupDescription,
         type: 'boolean',
       },
     ],
   },
   {
-    title: '사이트 설정',
-    description: '사이트 기본 정보 설정',
+    title: t.settings.siteSettings,
+    description: t.settings.siteSettingsDescription,
     fields: [
       {
         key: 'site_name',
-        label: '사이트 이름',
-        description: '브라우저 탭과 헤더에 표시될 사이트 이름',
+        label: t.settings.siteName,
+        description: t.settings.siteNameDescription,
         type: 'text',
         placeholder: 'DRSS',
         maxLength: 100,
@@ -115,23 +115,23 @@ const ADMIN_SETTINGS: SettingSection[] = [
     ],
   },
   {
-    title: '피드 설정',
-    description: '피드 관련 기본값 설정',
+    title: t.settings.feedSettings,
+    description: t.settings.feedSettingsDescription,
     fields: [
       {
         key: 'max_feeds_per_user',
-        label: '사용자당 최대 피드 수',
-        description: '각 사용자가 생성할 수 있는 최대 피드 개수',
+        label: t.settings.maxFeedsPerUser,
+        description: t.settings.maxFeedsPerUserDescription,
         type: 'range',
         min: 10,
         max: 500,
         step: 10,
-        unit: '개',
+        unit: t.feed.itemCount.includes('개') ? '개' : '',
       },
       {
         key: 'default_refresh_interval',
-        label: '기본 새로고침 간격',
-        description: '새 피드 생성 시 기본 새로고침 간격 (분)',
+        label: t.settings.defaultRefreshInterval,
+        description: t.settings.defaultRefreshIntervalDescription,
         type: 'number',
         min: 1,
         max: 1440,
@@ -290,7 +290,7 @@ function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
 export default function AdminPage() {
   const toast = useToast();
   const { t } = useTranslation();
-  
+
   const [settings, setSettings] = useState<GlobalSettingSchema | null>(null);
   const [localSettings, setLocalSettings] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -308,11 +308,11 @@ export default function AdminPage() {
       setHasChanges(false);
     } catch (err) {
       console.error('Failed to load settings:', err);
-      setError('설정을 불러오는데 실패했습니다.');
+      setError(t.errors.networkError);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadSettings();
@@ -328,7 +328,7 @@ export default function AdminPage() {
 
   const handleSave = async () => {
     if (!settings) return;
-    
+
     setSaving(true);
     try {
       // 변경된 필드만 전송
@@ -338,9 +338,9 @@ export default function AdminPage() {
           changedFields[key] = localSettings[key];
         }
       }
-      
+
       if (Object.keys(changedFields).length === 0) {
-        toast.info('변경된 내용이 없습니다.');
+        toast.info(t.common.none);
         return;
       }
 
@@ -348,10 +348,10 @@ export default function AdminPage() {
       setSettings(updated);
       setLocalSettings(updated as unknown as Record<string, unknown>);
       setHasChanges(false);
-      toast.success('설정이 저장되었습니다.');
+      toast.success(t.common.success);
     } catch (err) {
       console.error('Failed to save settings:', err);
-      toast.error('설정 저장에 실패했습니다.');
+      toast.error(t.common.error);
     } finally {
       setSaving(false);
     }
@@ -382,7 +382,7 @@ export default function AdminPage() {
               <p className="text-lg font-medium">{error}</p>
               <Button onClick={loadSettings}>
                 <RefreshCw className="w-4 h-4 mr-2" />
-                다시 시도
+                {t.common.refresh}
               </Button>
             </div>
           </CardContent>
@@ -398,14 +398,14 @@ export default function AdminPage() {
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">관리자 설정</h1>
-            <p className="text-muted-foreground">시스템 전역 설정을 관리합니다</p>
+            <h1 className="text-2xl font-bold">{t.settings.admin}</h1>
+            <p className="text-muted-foreground">{t.settings.adminDescription}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
             <Button variant="outline" onClick={handleReset} size="sm">
-              취소
+              {t.common.cancel}
             </Button>
           )}
           <Button onClick={handleSave} disabled={!hasChanges || saving} size="sm">
@@ -414,14 +414,14 @@ export default function AdminPage() {
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            저장
+            {t.common.save}
           </Button>
         </div>
       </div>
 
       {/* 설정 섹션들 */}
       <div className="space-y-4 sm:space-y-6">
-        {ADMIN_SETTINGS.map((section) => (
+        {getAdminSettings(t).map((section) => (
           <Card key={section.title}>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">{section.title}</CardTitle>
@@ -452,7 +452,7 @@ export default function AdminPage() {
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            변경사항 저장
+            {t.common.save}
           </Button>
         </div>
       )}

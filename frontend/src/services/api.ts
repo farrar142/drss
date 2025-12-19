@@ -400,6 +400,7 @@ export interface GlobalSettingUpdateSchema {
 
 export interface SignupStatusSchema {
   allow_signup: boolean;
+  site_name: string;
 }
 
 export type FetchHTMLResponseHtml = string | null;
@@ -1329,7 +1330,7 @@ export const usersRouterUpdateGlobalSettings = (
     }
   
 /**
- * 회원가입 허용 여부 확인 (공개 API)
+ * 회원가입 허용 여부 및 사이트 정보 확인 (공개 API)
  * @summary Get Signup Status
  */
 export const usersRouterGetSignupStatus = (

@@ -32,6 +32,10 @@ interface PanelViewProps {
   onColumnsChange: (tabId: string, columns: number) => void;
   onCloseAllTabs: (panelId: PanelId) => void;
   onScrollChange: (panelId: PanelId, tabId: string | null, scrollTop: number) => void;
+  onReorderTabs: (panelId: PanelId, fromIndex: number, toIndex: number) => void;
+  onMoveTabToPanelAtIndex: (tabId: string, targetPanelId: PanelId, targetIndex: number) => void;
+  onCreateFeedTab: (panelId: PanelId, feedId: number, feedTitle: string, faviconUrl?: string, targetIndex?: number) => void;
+  onCreateCategoryTab: (panelId: PanelId, categoryId: number, categoryName: string, targetIndex?: number) => void;
   savedScrollPosition: number;
 }
 
@@ -54,6 +58,10 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
   onColumnsChange,
   onCloseAllTabs,
   onScrollChange,
+  onReorderTabs,
+  onMoveTabToPanelAtIndex,
+  onCreateFeedTab,
+  onCreateCategoryTab,
   savedScrollPosition,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -130,6 +138,18 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
     onDrop(e, panel.id);
   }, [onDrop, panel.id]);
 
+  const handleReorderTabs = useCallback((fromIndex: number, toIndex: number) => {
+    onReorderTabs(panel.id, fromIndex, toIndex);
+  }, [onReorderTabs, panel.id]);
+
+  const handleCreateFeedTab = useCallback((feedId: number, feedTitle: string, faviconUrl?: string, targetIndex?: number) => {
+    onCreateFeedTab(panel.id, feedId, feedTitle, faviconUrl, targetIndex);
+  }, [onCreateFeedTab, panel.id]);
+
+  const handleCreateCategoryTab = useCallback((categoryId: number, categoryName: string, targetIndex?: number) => {
+    onCreateCategoryTab(panel.id, categoryId, categoryName, targetIndex);
+  }, [onCreateCategoryTab, panel.id]);
+
   // 스티키 헤더 오프셋 - 스크롤 컨테이너 내에서 탭바는 sticky로 별도 처리되므로 0px
   const effectiveHeaderOffset = '0px';
 
@@ -172,6 +192,10 @@ const PanelView: React.FC<PanelViewProps> = React.memo(({
           onTabDragStart={onDragStart}
           onColumnsChange={onColumnsChange}
           onCloseAllTabs={handleCloseAllTabs}
+          onReorderTabs={handleReorderTabs}
+          onMoveTabToPanelAtIndex={onMoveTabToPanelAtIndex}
+          onCreateFeedTab={handleCreateFeedTab}
+          onCreateCategoryTab={handleCreateCategoryTab}
           canClose={panelsCount > 1 ? true : panel.tabs.length > 1}
         />
       </div>
@@ -211,10 +235,12 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     saveScrollPosition,
     getScrollPosition,
     moveTabToPanel,
+    moveTabToPanelAtIndex,
     createSplitPanel,
     closeSplitPanel,
     setTabColumns,
     closeAllTabs,
+    reorderTabs,
   } = useTabStore();
 
   const [dragOverPanel, setDragOverPanel] = useState<PanelId | null>(null);
@@ -264,19 +290,52 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     }
   }, [activePanelId, setActivePanel]);
 
-  // 드래그 앤 드롭 핸들러
+  // 탭 순서 변경 핸들러
+  const handleReorderTabs = useCallback((panelId: PanelId, fromIndex: number, toIndex: number) => {
+    reorderTabs(panelId, fromIndex, toIndex);
+  }, [reorderTabs]);
+
+  // 탭을 다른 패널의 특정 위치로 이동
+  const handleMoveTabToPanelAtIndex = useCallback((tabId: string, targetPanelId: PanelId, targetIndex: number) => {
+    moveTabToPanelAtIndex(tabId, targetPanelId, targetIndex);
+  }, [moveTabToPanelAtIndex]);
+
+  // 피드 탭 생성 핸들러 (탭바에서 호출)
+  const handleCreateFeedTab = useCallback((panelId: PanelId, feedId: number, feedTitle: string, faviconUrl?: string, _targetIndex?: number) => {
+    const tabData = {
+      type: 'feed' as const,
+      title: feedTitle,
+      path: `/feed/${feedId}`,
+      resourceId: feedId,
+      favicon: faviconUrl,
+    };
+    setActivePanel(panelId);
+    openTab(tabData, panelId);
+  }, [setActivePanel, openTab]);
+
+  // 카테고리 탭 생성 핸들러 (탭바에서 호출)
+  const handleCreateCategoryTab = useCallback((panelId: PanelId, categoryId: number, categoryName: string, _targetIndex?: number) => {
+    const tabData = {
+      type: 'category' as const,
+      title: categoryName,
+      path: `/category/${categoryId}`,
+      resourceId: categoryId,
+    };
+    setActivePanel(panelId);
+    openTab(tabData, panelId);
+  }, [setActivePanel, openTab]);
+
+  // 드래그 앤 드롭 핸들러 (패널 영역 - 탭만 처리, 분할/이동용)
   const handleDragStart = useCallback((e: React.DragEvent, tab: Tab) => {
     e.dataTransfer.setData('text/plain', tab.id);
     e.dataTransfer.effectAllowed = 'move';
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent, panelId: PanelId) => {
-    // 탭, 카테고리, 피드 드래그 모두 허용
-    const isTabDrag = e.dataTransfer.types.includes('text/plain');
-    const isFeedDrag = e.dataTransfer.types.includes('application/json');
-    const isCategoryDrag = e.dataTransfer.types.includes('application/category-reorder');
-
-    if (!isTabDrag && !isFeedDrag && !isCategoryDrag) return;
+    // 탭 드래그만 처리 (패널 분할/이동용)
+    const isTabDrag = e.dataTransfer.types.includes('application/tab-id') || e.dataTransfer.types.includes('text/plain');
+    
+    if (!isTabDrag) return;
 
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -297,8 +356,9 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
   const handleDrop = useCallback((e: React.DragEvent, targetPanelId: PanelId) => {
     e.preventDefault();
 
-    // 1. 탭 드롭 처리
-    const tabId = e.dataTransfer.getData('text/plain');
+    // 탭 드롭만 처리 (패널 분할/이동)
+    // 피드/카테고리 드롭은 TabBar에서 처리됨
+    const tabId = e.dataTransfer.getData('application/tab-id') || e.dataTransfer.getData('text/plain');
     if (tabId && !tabId.startsWith('{')) {
       // 패널이 1개이고 드래그 오버 사이드가 있으면 분할 생성
       if (panels.length === 1 && dragOverSide) {
@@ -307,77 +367,11 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
         // 이미 2개의 패널이 있으면 탭을 해당 패널로 이동
         moveTabToPanel(tabId, targetPanelId);
       }
-      setDragOverPanel(null);
-      setDragOverSide(null);
-      return;
-    }
-
-    // 2. 피드 드롭 처리 (새 탭으로 열기)
-    const jsonData = e.dataTransfer.getData('application/json');
-    if (jsonData) {
-      try {
-        const data = JSON.parse(jsonData);
-        if (data.feedId) {
-          const tabData = {
-            type: 'feed' as const,
-            title: data.feedTitle || `피드 #${data.feedId}`,
-            path: `/feed/${data.feedId}`,
-            resourceId: data.feedId,
-            favicon: data.faviconUrl,
-          };
-
-          // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
-          if (panels.length === 1 && dragOverSide) {
-            // 먼저 현재 패널에 탭 추가
-            const newTabId = openTab(tabData, targetPanelId);
-            // 그 탭으로 새 패널 생성
-            if (newTabId) {
-              createSplitPanel(newTabId, dragOverSide);
-            }
-          } else {
-            // 기존 패널에 탭 추가
-            openTab(tabData, targetPanelId);
-          }
-        }
-      } catch {
-        // JSON 파싱 실패 무시
-      }
-      setDragOverPanel(null);
-      setDragOverSide(null);
-      return;
-    }
-
-    // 3. 카테고리 드롭 처리 (새 탭으로 열기)
-    const categoryData = e.dataTransfer.getData('application/category-reorder');
-    if (categoryData) {
-      try {
-        const data = JSON.parse(categoryData);
-        if (data.categoryId) {
-          const tabData = {
-            type: 'category' as const,
-            title: data.categoryName || `카테고리 #${data.categoryId}`,
-            path: `/category/${data.categoryId}`,
-            resourceId: data.categoryId,
-          };
-
-          // 패널이 1개이고 드래그 오버 사이드가 있으면 새 패널 생성
-          if (panels.length === 1 && dragOverSide) {
-            const newTabId = openTab(tabData, targetPanelId);
-            if (newTabId) {
-              createSplitPanel(newTabId, dragOverSide);
-            }
-          } else {
-            openTab(tabData, targetPanelId);
-          }
-        }
-      } catch {
-        // JSON 파싱 실패 무시
-      }
     }
 
     setDragOverPanel(null);
     setDragOverSide(null);
-  }, [panels.length, dragOverSide, createSplitPanel, moveTabToPanel, openTab]);
+  }, [panels.length, dragOverSide, createSplitPanel, moveTabToPanel]);
 
   // 컬럼 수 변경 핸들러
   const handleColumnsChange = useCallback((tabId: string, columns: number) => {
@@ -428,6 +422,10 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
             onColumnsChange={handleColumnsChange}
             onCloseAllTabs={handleCloseAllTabs}
             onScrollChange={handleScrollChange}
+            onReorderTabs={handleReorderTabs}
+            onMoveTabToPanelAtIndex={handleMoveTabToPanelAtIndex}
+            onCreateFeedTab={handleCreateFeedTab}
+            onCreateCategoryTab={handleCreateCategoryTab}
             savedScrollPosition={savedScrollPosition}
           />
         );

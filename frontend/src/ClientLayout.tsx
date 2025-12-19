@@ -6,6 +6,7 @@ import AppLayout from './components/layout/AppLayout';
 import { NotificationProvider } from './components/common/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useTabStore } from './stores/tabStore';
+import { useSiteStore } from './stores/siteStore';
 import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -74,6 +75,7 @@ export function ClientLayout({
     <AuthProvider>
       <AppBarProvider>
         <NotificationProvider>
+          <SiteSettingsLoader />
           <URLParamHandler />
           <TabHistoryManager />
           <AppLayout authChildren={children} />
@@ -81,6 +83,17 @@ export function ClientLayout({
       </AppBarProvider>
     </AuthProvider>
   );
+}
+
+// 사이트 설정을 로드하는 컴포넌트
+function SiteSettingsLoader() {
+  const { loadSiteSettings } = useSiteStore();
+
+  useEffect(() => {
+    loadSiteSettings();
+  }, [loadSiteSettings]);
+
+  return null;
 }
 
 // URL 파라미터를 읽어서 탭을 여는 컴포넌트

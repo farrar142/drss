@@ -379,9 +379,9 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
             <Label>Favicon URL</Label>
             <div className="flex items-center gap-2">
               {faviconUrl && (
-                <img 
-                  src={faviconUrl} 
-                  alt="favicon" 
+                <img
+                  src={faviconUrl}
+                  alt="favicon"
                   className="w-6 h-6 rounded-sm object-cover"
                   onError={(e) => (e.currentTarget.style.display = 'none')}
                 />

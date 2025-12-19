@@ -74,8 +74,12 @@ interface TabStore {
   // 패널 액션
   setActivePanel: (panelId: PanelId) => void;
   moveTabToPanel: (tabId: string, targetPanelId: PanelId) => void;
+  moveTabToPanelAtIndex: (tabId: string, targetPanelId: PanelId, targetIndex: number) => void;
   createSplitPanel: (tabId: string, side: 'left' | 'right') => void;
   closeSplitPanel: (panelId: PanelId) => void;
+
+  // 탭 순서 변경
+  reorderTabs: (panelId: PanelId, fromIndex: number, toIndex: number) => void;
 
   // 탭 액션들
   addTab: (tab: Omit<Tab, 'id'>, panelId?: PanelId) => string;
@@ -310,6 +314,88 @@ export const useTabStore = create<TabStore>()(
           return p;
         }),
         activePanelId: targetPanelId,
+      }));
+    },
+
+    moveTabToPanelAtIndex: (tabId, targetPanelId, targetIndex) => {
+      const { panels } = get();
+      const found = findTabInPanels(panels, tabId);
+      if (!found) return;
+
+      const { panel: sourcePanel, tab, index } = found;
+      const targetPanel = panels.find(p => p.id === targetPanelId);
+      if (!targetPanel) return;
+
+      // 같은 패널 내 이동은 reorderTabs 사용
+      if (sourcePanel.id === targetPanelId) {
+        get().reorderTabs(targetPanelId, index, targetIndex);
+        return;
+      }
+
+      // 소스 패널에서 탭이 1개뿐이면 이동 후 패널 닫기
+      if (sourcePanel.tabs.length <= 1) {
+        const newTabs = [...targetPanel.tabs];
+        newTabs.splice(targetIndex, 0, tab);
+        set({
+          panels: [{
+            ...targetPanel,
+            id: 'left',
+            tabs: newTabs,
+            activeTabId: tab.id,
+            tabHistory: [...targetPanel.tabHistory, tab.id],
+          }],
+          activePanelId: 'left',
+        });
+        return;
+      }
+
+      set((state) => ({
+        panels: state.panels.map(p => {
+          if (p.id === sourcePanel.id) {
+            const newTabs = p.tabs.filter(t => t.id !== tabId);
+            const newHistory = p.tabHistory.filter(tid => tid !== tabId);
+            const newActiveId = p.activeTabId === tabId
+              ? (newHistory[newHistory.length - 1] || newTabs[Math.min(index, newTabs.length - 1)]?.id || null)
+              : p.activeTabId;
+            return {
+              ...p,
+              tabs: newTabs,
+              activeTabId: newActiveId,
+              tabHistory: newHistory,
+            };
+          }
+          if (p.id === targetPanelId) {
+            const newTabs = [...p.tabs];
+            newTabs.splice(targetIndex, 0, tab);
+            return {
+              ...p,
+              tabs: newTabs,
+              activeTabId: tab.id,
+              tabHistory: [...p.tabHistory, tab.id],
+            };
+          }
+          return p;
+        }),
+        activePanelId: targetPanelId,
+      }));
+    },
+
+    reorderTabs: (panelId, fromIndex, toIndex) => {
+      if (fromIndex === toIndex) return;
+
+      set((state) => ({
+        panels: state.panels.map(p => {
+          if (p.id !== panelId) return p;
+
+          const newTabs = [...p.tabs];
+          const [movedTab] = newTabs.splice(fromIndex, 1);
+          newTabs.splice(toIndex, 0, movedTab);
+
+          return {
+            ...p,
+            tabs: newTabs,
+          };
+        }),
       }));
     },
 

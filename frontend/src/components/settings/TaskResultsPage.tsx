@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/
 import { Button } from '@/ui/button';
 import { Badge } from '@/ui/badge';
 import { useConfirm } from '@/stores/toastStore';
+import { useTranslation, interpolate } from '@/stores/languageStore';
 import {
   RefreshCw,
   Trash2,
@@ -28,12 +29,7 @@ import {
 // TaskResultStatus 타입을 직접 정의
 type TaskResultStatus = 'pending' | 'running' | 'success' | 'failure';
 
-const STATUS_CONFIG: Record<TaskResultStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: 'Pending', color: 'bg-yellow-500', icon: <Clock className="h-4 w-4" /> },
-  running: { label: 'Running', color: 'bg-blue-500', icon: <Loader2 className="h-4 w-4 animate-spin" /> },
-  success: { label: 'Success', color: 'bg-green-500', icon: <CheckCircle2 className="h-4 w-4" /> },
-  failure: { label: 'Failure', color: 'bg-red-500', icon: <XCircle className="h-4 w-4" /> },
-};
+// STATUS_CONFIG는 컴포넌트 내에서 t를 사용하여 동적으로 생성
 
 function formatDuration(seconds: number | null): string {
   if (seconds === null) return '-';
@@ -44,10 +40,10 @@ function formatDuration(seconds: number | null): string {
   return `${minutes}m ${remainingSeconds.toFixed(0)}s`;
 }
 
-function formatDate(dateStr: string | null): string {
+function formatDate(dateStr: string | null, locale: string = 'ko-KR'): string {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
-  return date.toLocaleString('ko-KR', {
+  return date.toLocaleString(locale, {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -57,6 +53,7 @@ function formatDate(dateStr: string | null): string {
 }
 
 export default function TaskResultsPage() {
+  const { t, language } = useTranslation();
   const confirm = useConfirm();
   const [results, setResults] = useState<TaskResultSchema[]>([]);
   const [stats, setStats] = useState<TaskStatsSchema | null>(null);
@@ -68,6 +65,14 @@ export default function TaskResultsPage() {
   const [hasPrev, setHasPrev] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const limit = 20;
+
+  // STATUS_CONFIG를 t를 사용하여 동적으로 생성
+  const STATUS_CONFIG: Record<TaskResultStatus, { label: string; color: string; icon: React.ReactNode }> = {
+    pending: { label: t.tasks.statusPending, color: 'bg-yellow-500', icon: <Clock className="h-4 w-4" /> },
+    running: { label: t.tasks.statusRunning, color: 'bg-blue-500', icon: <Loader2 className="h-4 w-4 animate-spin" /> },
+    success: { label: t.tasks.statusSuccess, color: 'bg-green-500', icon: <CheckCircle2 className="h-4 w-4" /> },
+    failure: { label: t.tasks.statusFailure, color: 'bg-red-500', icon: <XCircle className="h-4 w-4" /> },
+  };
 
   const fetchResults = useCallback(async (cursorValue: string | null = null) => {
     try {
@@ -153,9 +158,12 @@ export default function TaskResultsPage() {
   };
 
   const handleClearResults = async (status?: TaskResultStatus) => {
+    const statusLabel = status ? STATUS_CONFIG[status].label : '';
     const confirmed = await confirm({
-      title: '결과 삭제',
-      description: status ? `모든 ${status} 상태의 결과를 삭제하시겠습니까?` : '모든 결과를 삭제하시겠습니까?',
+      title: t.tasks.deleteResults,
+      description: status 
+        ? interpolate(t.tasks.deleteConfirmWithStatus, { status: statusLabel })
+        : t.tasks.deleteConfirm,
       variant: 'destructive',
     });
     if (!confirmed) {
@@ -175,8 +183,8 @@ export default function TaskResultsPage() {
     <div className="container mx-auto p-2 sm:p-4 max-w-6xl">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Task Results</h1>
-          <p className="text-muted-foreground">피드 수집 작업의 실행 내역</p>
+          <h1 className="text-2xl font-bold">{t.tasks.resultsTitle}</h1>
+          <p className="text-muted-foreground">{t.tasks.resultsDescription}</p>
         </div>
         <Button
           variant="outline"
@@ -185,7 +193,7 @@ export default function TaskResultsPage() {
           disabled={refreshing}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          새로고침
+          {t.common.refresh}
         </Button>
       </div>
 
@@ -195,31 +203,31 @@ export default function TaskResultsPage() {
           <Card>
             <CardContent className="pt-4">
               <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xs text-muted-foreground">{t.tasks.total}</p>
             </CardContent>
           </Card>
           <Card className="border-green-500/50">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-green-600">{stats.success}</div>
-              <p className="text-xs text-muted-foreground">Success</p>
+              <p className="text-xs text-muted-foreground">{t.tasks.statusSuccess}</p>
             </CardContent>
           </Card>
           <Card className="border-red-500/50">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-red-600">{stats.failure}</div>
-              <p className="text-xs text-muted-foreground">Failure</p>
+              <p className="text-xs text-muted-foreground">{t.tasks.statusFailure}</p>
             </CardContent>
           </Card>
           <Card className="border-yellow-500/50">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-              <p className="text-xs text-muted-foreground">Pending</p>
+              <p className="text-xs text-muted-foreground">{t.tasks.statusPending}</p>
             </CardContent>
           </Card>
           <Card className="border-blue-500/50">
             <CardContent className="pt-4">
               <div className="text-2xl font-bold text-blue-600">{stats.running}</div>
-              <p className="text-xs text-muted-foreground">Running</p>
+              <p className="text-xs text-muted-foreground">{t.tasks.statusRunning}</p>
             </CardContent>
           </Card>
         </div>
@@ -237,11 +245,11 @@ export default function TaskResultsPage() {
                 setStatusFilter(status);
               }}
             >
-              {status === 'all' && 'All'}
-              {status === 'success' && <><CheckCircle2 className="h-3 w-3 mr-1" />Success</>}
-              {status === 'failure' && <><XCircle className="h-3 w-3 mr-1" />Failure</>}
-              {status === 'pending' && <><Clock className="h-3 w-3 mr-1" />Pending</>}
-              {status === 'running' && <><Loader2 className="h-3 w-3 mr-1" />Running</>}
+              {status === 'all' && t.tasks.statusAll}
+              {status === 'success' && <><CheckCircle2 className="h-3 w-3 mr-1" />{t.tasks.statusSuccess}</>}
+              {status === 'failure' && <><XCircle className="h-3 w-3 mr-1" />{t.tasks.statusFailure}</>}
+              {status === 'pending' && <><Clock className="h-3 w-3 mr-1" />{t.tasks.statusPending}</>}
+              {status === 'running' && <><Loader2 className="h-3 w-3 mr-1" />{t.tasks.statusRunning}</>}
             </Button>
           ))}
         </div>
@@ -254,7 +262,7 @@ export default function TaskResultsPage() {
               className="text-destructive"
             >
               <Trash2 className="h-4 w-4 mr-1" />
-              실패 기록 삭제
+              {t.tasks.deleteFailedResults}
             </Button>
           )}
           {stats && stats.total > 0 && (
@@ -265,7 +273,7 @@ export default function TaskResultsPage() {
               className="text-destructive"
             >
               <Trash2 className="h-4 w-4 mr-1" />
-              전체 삭제
+              {t.tasks.deleteAllResults}
             </Button>
           )}
         </div>
@@ -274,9 +282,9 @@ export default function TaskResultsPage() {
       {/* 결과 목록 */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">실행 내역</CardTitle>
+          <CardTitle className="text-lg">{t.tasks.executionHistory}</CardTitle>
           <CardDescription>
-            {stats?.total ? `총 ${stats.total}개의 기록` : '기록 목록'}
+            {stats?.total ? interpolate(t.tasks.totalRecords, { count: stats.total }) : t.tasks.executionHistory}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -286,7 +294,7 @@ export default function TaskResultsPage() {
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              기록이 없습니다
+              {t.tasks.noRecords}
             </div>
           ) : (
             <div className="space-y-2">
@@ -304,7 +312,7 @@ export default function TaskResultsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">{result.feed.title}</div>
                         <div className="text-xs text-muted-foreground">
-                          {formatDate(result.created_at)}
+                          {formatDate(result.created_at, language === 'ko' ? 'ko-KR' : 'en-US')}
                           {result.duration_seconds !== null && (
                             <span className="ml-2">
                               • {formatDuration(result.duration_seconds)}
@@ -361,7 +369,7 @@ export default function TaskResultsPage() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="text-sm text-muted-foreground">
-                페이지 {cursorHistory.length}
+                {t.tasks.page} {cursorHistory.length}
               </span>
               <Button
                 variant="outline"

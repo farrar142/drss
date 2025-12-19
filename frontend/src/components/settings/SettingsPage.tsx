@@ -104,11 +104,11 @@ export function SettingsPage() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleOpenPeriodicTasks}>
             <Timer className="w-4 h-4 mr-2" />
-            Periodic Tasks
+            {t.settings.periodicTasks}
           </Button>
           <Button variant="outline" size="sm" onClick={handleOpenTaskResults}>
             <ClipboardList className="w-4 h-4 mr-2" />
-            Task Results
+            {t.settings.taskResults}
           </Button>
         </div>
       </div>

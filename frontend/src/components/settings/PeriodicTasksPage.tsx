@@ -14,6 +14,7 @@ import { Button } from '@/ui/button';
 import { Badge } from '@/ui/badge';
 import { Input } from '@/ui/input';
 import { useToast, useConfirm } from '@/stores/toastStore';
+import { useTranslation, interpolate } from '@/stores/languageStore';
 import {
   RefreshCw,
   Trash2,
@@ -34,10 +35,10 @@ interface TaskStats {
   disabled: number;
 }
 
-function formatDate(dateStr: string | null): string {
+function formatDate(dateStr: string | null, locale: string = 'ko-KR'): string {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
-  return date.toLocaleString('ko-KR', {
+  return date.toLocaleString(locale, {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -46,21 +47,10 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function formatInterval(interval: { every: number; period: string } | null): string {
-  if (!interval) return '-';
-  const { every, period } = interval;
-  const periodLabels: Record<string, string> = {
-    minutes: '분',
-    hours: '시간',
-    days: '일',
-    seconds: '초',
-  };
-  return `${every}${periodLabels[period] || period}`;
-}
-
 export default function PeriodicTasksPage() {
   const toast = useToast();
   const confirm = useConfirm();
+  const { t, language } = useTranslation();
   const [tasks, setTasks] = useState<PeriodicTaskSchema[]>([]);
   const [stats, setStats] = useState<TaskStats | null>(null);
   const [total, setTotal] = useState(0);
@@ -71,6 +61,19 @@ export default function PeriodicTasksPage() {
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editingInterval, setEditingInterval] = useState<string>('');
   const limit = 20;
+
+  // formatInterval을 컴포넌트 내부에서 정의 (t 접근을 위해)
+  const formatInterval = (interval: { every: number; period: string } | null): string => {
+    if (!interval) return '-';
+    const { every, period } = interval;
+    const periodLabels: Record<string, string> = {
+      minutes: t.tasks.timeMinutes,
+      hours: t.tasks.timeHours,
+      days: t.tasks.timeDays,
+      seconds: t.tasks.timeSeconds,
+    };
+    return `${every}${periodLabels[period] || period}`;
+  };
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -126,8 +129,8 @@ export default function PeriodicTasksPage() {
 
   const handleDeleteTask = async (id: number) => {
     const confirmed = await confirm({
-      title: '태스크 삭제',
-      description: '이 주기적 태스크를 삭제하시겠습니까?',
+      title: t.tasks.deleteTask,
+      description: t.tasks.deleteTaskConfirm,
       variant: 'destructive',
     });
     if (!confirmed) {
@@ -154,7 +157,7 @@ export default function PeriodicTasksPage() {
   const handleSaveInterval = async (taskId: number) => {
     const intervalMinutes = parseInt(editingInterval, 10);
     if (isNaN(intervalMinutes) || intervalMinutes <= 0) {
-      toast.warning('올바른 분 단위 값을 입력하세요.');
+      toast.warning(t.tasks.enterValidInterval);
       return;
     }
     try {
@@ -173,8 +176,8 @@ export default function PeriodicTasksPage() {
     <div className="container mx-auto p-2 sm:p-4 max-w-6xl">
       <div className="flex items-center justify-between mb-4 sm:mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Periodic Tasks</h1>
-          <p className="text-muted-foreground">피드 자동 업데이트 스케줄 관리</p>
+          <h1 className="text-2xl font-bold">{t.tasks.periodicTitle}</h1>
+          <p className="text-muted-foreground">{t.tasks.periodicDescription}</p>
         </div>
         <Button
           variant="outline"
@@ -183,7 +186,7 @@ export default function PeriodicTasksPage() {
           disabled={refreshing}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          새로고침
+          {t.common.refresh}
         </Button>
       </div>
 
@@ -195,7 +198,7 @@ export default function PeriodicTasksPage() {
               <div className="flex items-center gap-2">
                 <Timer className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="text-sm text-muted-foreground">전체</p>
+                  <p className="text-sm text-muted-foreground">{t.tasks.total}</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
               </div>
@@ -206,7 +209,7 @@ export default function PeriodicTasksPage() {
               <div className="flex items-center gap-2">
                 <Play className="h-5 w-5 text-green-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">활성</p>
+                  <p className="text-sm text-muted-foreground">{t.tasks.enabled}</p>
                   <p className="text-2xl font-bold text-green-600">{stats.enabled}</p>
                 </div>
               </div>
@@ -217,7 +220,7 @@ export default function PeriodicTasksPage() {
               <div className="flex items-center gap-2">
                 <Pause className="h-5 w-5 text-gray-500" />
                 <div>
-                  <p className="text-sm text-muted-foreground">비활성</p>
+                  <p className="text-sm text-muted-foreground">{t.tasks.disabled}</p>
                   <p className="text-2xl font-bold text-gray-600">{stats.disabled}</p>
                 </div>
               </div>
@@ -233,7 +236,7 @@ export default function PeriodicTasksPage() {
           size="sm"
           onClick={() => { setEnabledFilter('all'); setPage(0); }}
         >
-          전체
+          {t.tasks.statusAll}
         </Button>
         <Button
           variant={enabledFilter === true ? 'default' : 'outline'}
@@ -241,7 +244,7 @@ export default function PeriodicTasksPage() {
           onClick={() => { setEnabledFilter(true); setPage(0); }}
         >
           <Play className="h-4 w-4 mr-1" />
-          활성
+          {t.tasks.enabled}
         </Button>
         <Button
           variant={enabledFilter === false ? 'default' : 'outline'}
@@ -249,16 +252,16 @@ export default function PeriodicTasksPage() {
           onClick={() => { setEnabledFilter(false); setPage(0); }}
         >
           <Pause className="h-4 w-4 mr-1" />
-          비활성
+          {t.tasks.disabled}
         </Button>
       </div>
 
       {/* Task List */}
       <Card>
         <CardHeader>
-          <CardTitle>스케줄 목록</CardTitle>
+          <CardTitle>{t.tasks.scheduleList}</CardTitle>
           <CardDescription>
-            총 {total}개의 주기적 태스크
+            {interpolate(t.tasks.totalTasks, { count: total })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,7 +271,7 @@ export default function PeriodicTasksPage() {
             </div>
           ) : tasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              등록된 주기적 태스크가 없습니다.
+              {t.tasks.noTasks}
             </div>
           ) : (
             <div className="space-y-3">
@@ -281,9 +284,9 @@ export default function PeriodicTasksPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant={task.enabled ? 'default' : 'secondary'}>
                         {task.enabled ? (
-                          <><Play className="h-3 w-3 mr-1" />활성</>
+                          <><Play className="h-3 w-3 mr-1" />{t.tasks.enabled}</>
                         ) : (
-                          <><Pause className="h-3 w-3 mr-1" />비활성</>
+                          <><Pause className="h-3 w-3 mr-1" />{t.tasks.disabled}</>
                         )}
                       </Badge>
                       <span className="font-medium truncate">{task.feed_title || 'Unknown Feed'}</span>
@@ -300,7 +303,7 @@ export default function PeriodicTasksPage() {
                               className="w-20 h-6 text-xs"
                               min={1}
                             />
-                            <span className="text-xs">분</span>
+                            <span className="text-xs">{t.tasks.minutes}</span>
                             <Button
                               variant="ghost"
                               size="icon"
@@ -332,8 +335,8 @@ export default function PeriodicTasksPage() {
                           </>
                         )}
                       </span>
-                      <span>실행 횟수: {task.total_run_count}</span>
-                      <span>마지막 실행: {formatDate(task.last_run_at)}</span>
+                      <span>{t.tasks.runCount}: {task.total_run_count}</span>
+                      <span>{t.tasks.lastRun}: {formatDate(task.last_run_at, language === 'ko' ? 'ko-KR' : 'en-US')}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-4">
@@ -341,7 +344,7 @@ export default function PeriodicTasksPage() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleToggleTask(task.id)}
-                      title={task.enabled ? '비활성화' : '활성화'}
+                      title={task.enabled ? t.tasks.disable : t.tasks.enable}
                     >
                       {task.enabled ? (
                         <Pause className="h-4 w-4" />
@@ -353,7 +356,7 @@ export default function PeriodicTasksPage() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleDeleteTask(task.id)}
-                      title="삭제"
+                      title={t.common.delete}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -373,7 +376,7 @@ export default function PeriodicTasksPage() {
                 disabled={page === 0}
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                이전
+                {t.common.back}
               </Button>
               <span className="text-sm text-muted-foreground">
                 {page + 1} / {totalPages}
@@ -384,7 +387,7 @@ export default function PeriodicTasksPage() {
                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
               >
-                다음
+                {t.common.next}
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>

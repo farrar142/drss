@@ -130,6 +130,74 @@ export interface Translations {
     previewDescription: string;
     language: string;
     languageDescription: string;
+    // Task related
+    taskResults: string;
+    taskResultsDescription: string;
+    periodicTasks: string;
+    periodicTasksDescription: string;
+    // Admin
+    admin: string;
+    adminDescription: string;
+    userManagement: string;
+    userManagementDescription: string;
+    allowSignup: string;
+    allowSignupDescription: string;
+    siteSettings: string;
+    siteSettingsDescription: string;
+    siteName: string;
+    siteNameDescription: string;
+    feedSettings: string;
+    feedSettingsDescription: string;
+    maxFeedsPerUser: string;
+    maxFeedsPerUserDescription: string;
+    defaultRefreshInterval: string;
+    defaultRefreshIntervalDescription: string;
+  };
+
+  // Tasks
+  tasks: {
+    // Status
+    statusAll: string;
+    statusPending: string;
+    statusRunning: string;
+    statusSuccess: string;
+    statusFailure: string;
+    // Task Results
+    resultsTitle: string;
+    resultsDescription: string;
+    executionHistory: string;
+    totalRecords: string;
+    noRecords: string;
+    deleteResults: string;
+    deleteFailedResults: string;
+    deleteAllResults: string;
+    deleteConfirm: string;
+    deleteConfirmWithStatus: string;
+    page: string;
+    itemsCreated: string;
+    // Periodic Tasks
+    periodicTitle: string;
+    periodicDescription: string;
+    scheduleList: string;
+    totalTasks: string;
+    noTasks: string;
+    deleteTask: string;
+    deleteTaskConfirm: string;
+    enabled: string;
+    disabled: string;
+    total: string;
+    runCount: string;
+    lastRun: string;
+    interval: string;
+    enterValidInterval: string;
+    enable: string;
+    disable: string;
+    minutes: string;
+    // Time units
+    timeSeconds: string;
+    timeMinutes: string;
+    timeHours: string;
+    timeDays: string;
   };
 
   // Auth
