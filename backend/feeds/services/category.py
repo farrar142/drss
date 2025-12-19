@@ -79,18 +79,22 @@ class CategoryService:
 
     @staticmethod
     def get_category_stats(user, category_id: int) -> dict:
-        """카테고리 통계 조회"""
-        category = get_object_or_404(RSSCategory, id=category_id, user=user)
-        feeds = RSSFeed.objects.filter(category=category)
+        """카테고리 통계 조회 (최적화: 단일 쿼리로 집계)"""
+        from django.db.models import Count, Q
 
-        total_items = RSSItem.objects.filter(feed__in=feeds).count()
-        unread_items = RSSItem.objects.filter(feed__in=feeds, is_read=False).count()
-        favorite_items = RSSItem.objects.filter(
-            feed__in=feeds, is_favorite=True
-        ).count()
+        category = get_object_or_404(RSSCategory, id=category_id, user=user)
+
+        # 단일 쿼리로 모든 통계 집계
+        stats = RSSItem.objects.filter(
+            feed__category=category
+        ).aggregate(
+            total_items=Count("id"),
+            unread_items=Count("id", filter=Q(is_read=False)),
+            favorite_items=Count("id", filter=Q(is_favorite=True)),
+        )
 
         return {
-            "total_items": total_items,
-            "unread_items": unread_items,
-            "favorite_items": favorite_items,
+            "total_items": stats["total_items"] or 0,
+            "unread_items": stats["unread_items"] or 0,
+            "favorite_items": stats["favorite_items"] or 0,
         }

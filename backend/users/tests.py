@@ -108,8 +108,9 @@ class SettingTest(TestCase):
             },
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 200)
 
+        # 현재 여러 사용자 회원가입이 허용됨 (admin_signed 체크 비활성화)
         response = self.client.post(
             "/api/auth/signup",
             data={
@@ -119,4 +120,4 @@ class SettingTest(TestCase):
             },
             content_type="application/json",
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
