@@ -5,7 +5,10 @@ from base.celery_helper import shared_task
 from django.utils import timezone as django_timezone
 from feeds.utils.feed_fetcher import fetch_feed_data
 from feeds.utils.date_parser import parse_date
+from feeds.utils.html_parser import extract_html, extract_src
+from feeds.utils.web_scraper import crawl_list_page_items
 from urllib.parse import urljoin
+from feeds.services.source import SourceService
 
 # Image caching has been removed. The previous cache_image_task is intentionally
 # removed so images are fetched directly by clients and rely on browser caching.
@@ -13,38 +16,6 @@ from urllib.parse import urljoin
 logger = getLogger(__name__)
 
 
-def extract_html_block(element, base_url: str = "") -> str:
-    """
-    요소의 HTML 블록 전체를 추출 (이미지 등의 상대 URL을 절대 URL로 변환)
-    """
-    if element is None:
-        return ""
-
-    from copy import copy
-    from bs4 import BeautifulSoup
-
-    # 복사본을 만들어서 URL 변환
-    element_copy = copy(element)
-
-    # 상대 URL을 절대 URL로 변환
-    if base_url:
-        # img src 변환
-        for img in element_copy.find_all("img"):
-            for attr in ["src", "data-src", "data-lazy-src"]:
-                if img.get(attr):
-                    img[attr] = urljoin(base_url, img[attr])
-
-        # a href 변환
-        for a in element_copy.find_all("a"):
-            if a.get("href"):
-                a["href"] = urljoin(base_url, a["href"])
-
-        # video/source src 변환
-        for media in element_copy.find_all(["video", "source", "audio"]):
-            if media.get("src"):
-                media["src"] = urljoin(base_url, media["src"])
-
-    return str(element_copy)
 
 
 @shared_task(bind=True)
@@ -332,103 +303,44 @@ def _update_from_scraping_source(feed, source):
 def _crawl_list_page(source, items, existing_guids):
     """목록 페이지에서 직접 아이템 추출"""
     from .models import RSSItem
-    from urllib.parse import urljoin
+    from feeds.utils.date_parser import parse_date
 
+    # web_scraper 모듈 사용
+    crawled_items = crawl_list_page_items(
+        items=items,
+        base_url=source.url,
+        title_selector=source.title_selector,
+        link_selector=source.link_selector,
+        description_selector=source.description_selector,
+        date_selector=source.date_selector,
+        image_selector=source.image_selector,
+        author_selector=source.author_selector if hasattr(source, 'author_selector') else "",
+        categories_selector=source.categories_selector if hasattr(source, 'categories_selector') else "",
+        existing_guids=existing_guids,
+        max_items=50,  # 기본값 사용
+    )
+
+    # 결과 변환: 딕셔너리 → RSSItem 객체
     new_items = []
-
-    for item in items:
-        # 제목 추출
-        title = ""
-        title_el = (
-            item.select_one(source.title_selector) if source.title_selector else None
-        )
-        if title_el:
-            title = title_el.get_text(strip=True)
-
-        # title_selector가 없으면 link_selector에서 제목 추출
-        if not title and source.link_selector:
-            link_el = item.select_one(source.link_selector)
-            if link_el:
-                title = link_el.get_text(strip=True)
-
-        if not title:
-            continue
-
-        # 링크 추출
-        link = ""
-        if source.link_selector:
-            link_el = item.select_one(source.link_selector)
-        else:
-            link_el = title_el
-
-        if link_el:
-            href = link_el.get("href")
-            if not href:
-                a_tag = link_el.find("a")
-                if a_tag:
-                    href = a_tag.get("href")
-            if href:
-                link = urljoin(source.url, href)
-
-        # GUID 생성
-        guid = link if link else f"{source.url}#{title[:100]}"
-        if guid in existing_guids:
-            continue
-
-        # 설명 추출 (HTML 블록으로)
-        description = ""
-        if source.description_selector:
-            desc_el = item.select_one(source.description_selector)
-            if desc_el:
-                description = extract_html_block(desc_el, source.url)
-
-        # 날짜 추출
+    for item in crawled_items:
+        # 날짜 파싱
         published_at = django_timezone.now()
-        if source.date_selector:
-            date_el = item.select_one(source.date_selector)
-            if date_el:
-                date_text = date_el.get_text(strip=True)
-                if date_el.get("datetime"):
-                    date_text = date_el.get("datetime")
-                parsed_date = parse_date(
-                    date_text, source.date_formats if source.date_formats else None
-                )
-                if parsed_date:
-                    published_at = parsed_date
+        if item["date"] and source.date_formats:
+            parsed_date = parse_date(item["date"], source.date_formats)
+            if parsed_date:
+                published_at = parsed_date
 
-        # 작성자 추출
-        author = ""
-        if source.author_selector:
-            author_el = item.select_one(source.author_selector)
-            if author_el:
-                author = author_el.get_text(strip=True)[:255]
-
-        # 카테고리 추출
-        categories = []
-        if source.categories_selector:
-            cat_els = item.select(source.categories_selector)
-            categories = [
-                el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
-            ][:10]
-
-        # 이미지 추출
-        image = ""
-        if source.image_selector:
-            img_el = item.select_one(source.image_selector)
-            if img_el:
-                from feeds.services.source import SourceService
-                image = SourceService.extract_src(img_el, source.url)
-
+        # RSSItem 객체 생성
         new_items.append(
             RSSItem(
-                title=title[:199],
-                link=link,
-                description=description,
+                title=item["title"][:199],
+                link=item["link"],
+                description=item["description"],
                 published_at=published_at,
-                guid=guid[:499],
-                author=author,
-                categories=categories,
-                image=image,
+                guid=item["guid"][:499],
+                author=item["author"],
+                categories=item["categories"],
+                image=item["image"],
             )
         )
 
@@ -438,159 +350,61 @@ def _crawl_list_page(source, items, existing_guids):
 def _crawl_detail_pages(source, items, existing_guids, list_soup):
     """각 아이템의 상세 페이지를 크롤링하여 아이템 추출"""
     from .models import RSSItem
-    from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
     from feeds.services.source import SourceService
-    from bs4 import BeautifulSoup
-    from urllib.parse import urljoin
+    from feeds.utils.date_parser import parse_date
 
-    extract_html_with_css = SourceService.extract_html_with_css
+    # 공통 함수 사용
+    crawled_items = SourceService.crawl_detail_page_items(
+        items=items,
+        base_url=source.url,
+        item_selector=source.item_selector,
+        title_selector=source.title_selector,
+        link_selector=source.link_selector,
+        description_selector=source.description_selector,
+        date_selector=source.date_selector,
+        image_selector=source.image_selector,
+        detail_title_selector=source.detail_title_selector,
+        detail_description_selector=source.detail_description_selector,
+        detail_content_selector=source.detail_content_selector,
+        detail_date_selector=source.detail_date_selector,
+        detail_image_selector=source.detail_image_selector,
+        use_browser=source.use_browser,
+        wait_selector=source.wait_selector,
+        custom_headers=source.custom_headers,
+        exclude_selectors=source.exclude_selectors,
+        follow_links=True,
+        existing_guids=existing_guids,
+        max_items=20,
+        use_html_with_css=True,
+    )
 
+    # 결과 변환: 딕셔너리 → RSSItem 객체
     new_items = []
-    links_to_fetch = []
+    for item in crawled_items:
+        # 날짜 파싱
+        published_at = django_timezone.now()
+        if item["date"] and source.date_formats:
+            parsed_date = parse_date(item["date"], source.date_formats)
+            if parsed_date:
+                published_at = parsed_date
 
-    # custom_headers는 source에서 가져옴
-    custom_headers = source.custom_headers or {}
+        # 작성자 및 카테고리 추출 (공통 함수에서는 지원하지 않음)
+        author = ""
+        categories = []
 
-    # 먼저 목록에서 링크들을 수집
-    for item in items[:20]:  # 최대 20개
-        if source.link_selector:
-            link_el = item.select_one(source.link_selector)
-        else:
-            link_el = item.select_one("a[href]")
-
-        if link_el:
-            href = link_el.get("href")
-            if not href:
-                a_tag = link_el.find("a")
-                if a_tag:
-                    href = a_tag.get("href")
-
-            if href:
-                link = urljoin(source.url, href)
-                # GUID 체크
-                if link in existing_guids:
-                    continue
-
-                # 목록에서 기본 정보도 가져옴
-                title = ""
-                if source.title_selector:
-                    title_el = item.select_one(source.title_selector)
-                    if title_el:
-                        title = title_el.get_text(strip=True)
-                if not title:
-                    title = link_el.get_text(strip=True)
-
-                links_to_fetch.append({"link": link, "list_title": title})
-
-    # 각 상세 페이지 가져오기
-    for item_info in links_to_fetch:
-        try:
-            if source.use_browser:
-                detail_result = fetch_html_with_browser(
-                    url=item_info["link"],
-                    selector=source.wait_selector,
-                    timeout=source.timeout,
-                    custom_headers=custom_headers,
-                )
-            else:
-                detail_result = fetch_html_smart(
-                    url=item_info["link"],
-                    use_browser_on_fail=True,
-                    custom_headers=custom_headers,
-                )
-
-            if not detail_result.success or not detail_result.html:
-                continue
-
-            detail_soup = BeautifulSoup(detail_result.html, "html.parser")
-
-            # exclude_selectors 적용 - 지정된 요소들 제거
-            if source.exclude_selectors:
-                for exclude_selector in source.exclude_selectors:
-                    for el in detail_soup.select(exclude_selector):
-                        el.decompose()
-
-            # 상세 페이지에서 정보 추출
-            title = ""
-            if source.detail_title_selector:
-                title_el = detail_soup.select_one(source.detail_title_selector)
-                title = title_el.get_text(strip=True) if title_el else ""
-            if not title:
-                title = item_info["list_title"]
-            if not title:
-                # 최후의 fallback: 페이지의 <title> 태그 사용
-                title_tag = detail_soup.find("title")
-                title = title_tag.get_text(strip=True) if title_tag else ""
-
-            if not title:
-                continue
-
-            # description은 HTML 블록 + CSS로 저장
-            description = ""
-            if source.detail_description_selector:
-                desc_el = detail_soup.select_one(source.detail_description_selector)
-                if desc_el:
-                    description = extract_html_with_css(
-                        desc_el, detail_soup, item_info["link"]
-                    )
-            elif source.detail_content_selector:
-                content_el = detail_soup.select_one(source.detail_content_selector)
-                if content_el:
-                    description = extract_html_with_css(
-                        content_el, detail_soup, item_info["link"]
-                    )
-
-            # 날짜 추출
-            published_at = django_timezone.now()
-            if source.detail_date_selector:
-                date_el = detail_soup.select_one(source.detail_date_selector)
-                if date_el:
-                    date_text = date_el.get_text(strip=True)
-                    if date_el.get("datetime"):
-                        date_text = date_el.get("datetime")
-                    parsed_date = parse_date(
-                        date_text, source.date_formats if source.date_formats else None
-                    )
-                    if parsed_date:
-                        published_at = parsed_date
-
-            # 작성자 추출
-            author = ""
-            if source.detail_author_selector:
-                author_el = detail_soup.select_one(source.detail_author_selector)
-                if author_el:
-                    author = author_el.get_text(strip=True)[:255]
-
-            # 카테고리 추출
-            categories = []
-            if source.detail_categories_selector:
-                cat_els = detail_soup.select(source.detail_categories_selector)
-                categories = [
-                    el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
-                ][:10]
-
-            # 이미지 추출
-            image = ""
-            if source.detail_image_selector:
-                img_el = detail_soup.select_one(source.detail_image_selector)
-                if img_el:
-                    image = SourceService.extract_src(img_el, item_info["link"])
-
-            new_items.append(
-                RSSItem(
-                    title=title[:199],
-                    link=item_info["link"],
-                    description=description,
-                    published_at=published_at,
-                    guid=item_info["link"][:499],
-                    author=author,
-                    categories=categories,
-                    image=image,
-                )
+        # RSSItem 객체 생성
+        new_items.append(
+            RSSItem(
+                title=item["title"][:199],
+                link=item["link"],
+                description=item["description"],
+                published_at=published_at,
+                guid=item["link"][:499],
+                author=author,
+                categories=categories,
+                image=item["image"],
             )
-        except Exception as e:
-            logger.warning(f"Failed to fetch detail page {item_info['link']}: {e}")
-            continue
+        )
 
     return new_items
 

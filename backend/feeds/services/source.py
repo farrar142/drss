@@ -12,172 +12,27 @@ import re
 
 from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult
 from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
+from feeds.utils.html_parser import (
+    generate_selector,
+    extract_text,
+    extract_css_from_html,
+    extract_html_with_css,
+    extract_html,
+    extract_href,
+    extract_src
+)
+from feeds.utils.web_scraper import crawl_detail_page_items
 from feeds.schemas import SourceCreateSchema, SourceUpdateSchema
 
 logger = logging.getLogger(__name__)
-
 
 class SourceService:
     """RSS Everything 소스 관련 비즈니스 로직"""
 
     # ============== Helper Functions ==============
 
-    @staticmethod
-    def generate_selector(soup: BeautifulSoup, element) -> str:
-        """요소에 대한 고유한 CSS 셀렉터 생성"""
-        parts = []
-        current = element
-
-        while current and current.name:
-            if current.name == "[document]":
-                break
-
-            selector = current.name
-
-            if current.get("id"):
-                selector = f"#{current.get('id')}"
-                parts.insert(0, selector)
-                break
-
-            classes = current.get("class", [])
-            if classes:
-                stable_classes = [
-                    c for c in classes if not re.match(r"^[a-z]+-[a-f0-9]+$", c, re.I)
-                ]
-                if stable_classes:
-                    selector += "." + ".".join(stable_classes[:2])
-
-            if current.parent:
-                siblings = [
-                    s for s in current.parent.children if s.name == current.name
-                ]
-                if len(siblings) > 1:
-                    index = siblings.index(current) + 1
-                    selector += f":nth-of-type({index})"
-
-            parts.insert(0, selector)
-            current = current.parent
-
-        return " > ".join(parts)
-
-    @staticmethod
-    def extract_text(element) -> str:
-        """요소에서 텍스트 추출"""
-        if element is None:
-            return ""
-        return element.get_text(strip=True)
-
-    @staticmethod
-    def extract_css_from_html(soup: BeautifulSoup, base_url: str = "") -> str:
-        """HTML 문서에서 모든 CSS를 추출"""
-        import requests
-
-        css_parts = []
-
-        for style_tag in soup.find_all("style"):
-            css_text = style_tag.get_text()
-            if css_text.strip():
-                css_parts.append(css_text)
-
-        link_tags = soup.find_all("link", rel="stylesheet")
-        for link_tag in link_tags[:5]:
-            href = link_tag.get("href")
-            if not href:
-                continue
-            if not isinstance(href, str):
-                continue
-
-            css_url = urljoin(base_url, href)
-
-            try:
-                response = requests.get(css_url, timeout=3)
-                if response.status_code == 200:
-                    css_parts.append(f"/* From: {css_url} */\n{response.text}")
-            except Exception as e:
-                logger.debug(f"Failed to fetch CSS from {css_url}: {e}")
-                continue
-
-        return "\n".join(css_parts)
-
-    @staticmethod
-    def extract_html_with_css(element, soup: BeautifulSoup, base_url: str = "") -> str:
-        """요소의 HTML 블록과 함께 CSS를 추출"""
-        if element is None:
-            return ""
-
-        css = SourceService.extract_css_from_html(soup, base_url)
-        html = SourceService.extract_html(element, base_url)
-
-        if css.strip():
-            return f"<style>{css}</style>\n{html}"
-
-        return html
-
-    @staticmethod
-    def extract_html(element, base_url: str = "") -> str:
-        """요소의 HTML 블록 전체를 추출 (상대 URL을 절대 URL로 변환)"""
-        if element is None:
-            return ""
-
-        from copy import copy
-
-        element_copy = copy(element)
-
-        if base_url:
-            for img in element_copy.find_all("img"):
-                for attr in ["src", "data-src", "data-lazy-src"]:
-                    if img.get(attr):
-                        img[attr] = urljoin(base_url, img[attr])
-
-            for a in element_copy.find_all("a"):
-                if a.get("href"):
-                    a["href"] = urljoin(base_url, a["href"])
-
-            for media in element_copy.find_all(["video", "source", "audio"]):
-                if media.get("src"):
-                    media["src"] = urljoin(base_url, media["src"])
-
-        return str(element_copy)
-
-    @staticmethod
-    def extract_href(element, base_url: str) -> str:
-        """요소에서 href 추출"""
-        if element is None:
-            return ""
-
-        href = element.get("href")
-        if not href:
-            a_tag = element.find("a")
-            if a_tag:
-                href = a_tag.get("href")
-
-        if href:
-            return urljoin(base_url, href)
-        return ""
-
-    @staticmethod
-    def extract_src(element, base_url: str) -> str:
-        """요소에서 이미지 src 추출"""
-        if element is None:
-            return ""
-
-        src = (
-            element.get("src")
-            or element.get("data-src")
-            or element.get("data-lazy-src")
-        )
-        if not src:
-            img_tag = element.find("img")
-            if img_tag:
-                src = (
-                    img_tag.get("src")
-                    or img_tag.get("data-src")
-                    or img_tag.get("data-lazy-src")
-                )
-
-        if src:
-            return urljoin(base_url, src)
-        return ""
+    # HTML 파싱 관련 함수들은 feeds.utils.html_parser로 이동됨
+    # 아래 메서드들은 호환성을 위해 유지되지만, 새로운 코드에서는 직접 html_parser를 사용하세요
 
     # ============== Service Methods ==============
 
@@ -235,17 +90,17 @@ class SourceService:
 
             result_elements = []
             for el in elements[:50]:
-                href = SourceService.extract_href(el, base_url)
-                src = SourceService.extract_src(el, base_url)
+                href = extract_href(el, base_url)
+                src = extract_src(el, base_url)
 
                 result_elements.append(
                     {
                         "tag": el.name,
-                        "text": SourceService.extract_text(el)[:500],
+                        "text": extract_text(el)[:500],
                         "html": str(el)[:2000],
                         "href": href if href else None,
                         "src": src if src else None,
-                        "selector": SourceService.generate_selector(soup, el),
+                        "selector": generate_selector(soup, el),
                     }
                 )
 
@@ -260,6 +115,60 @@ class SourceService:
                 "success": False,
                 "error": str(e),
             }
+
+    @staticmethod
+    def crawl_detail_page_items(
+        items: list,
+        base_url: str,
+        item_selector: str = "",
+        title_selector: str = "",
+        link_selector: str = "",
+        description_selector: str = "",
+        date_selector: str = "",
+        image_selector: str = "",
+        detail_title_selector: str = "",
+        detail_description_selector: str = "",
+        detail_content_selector: str = "",
+        detail_date_selector: str = "",
+        detail_image_selector: str = "",
+        use_browser: bool = True,
+        wait_selector: str = "body",
+        custom_headers: Optional[dict] = None,
+        exclude_selectors: Optional[list] = None,
+        follow_links: bool = True,
+        existing_guids: Optional[set] = None,
+        max_items: int = 20,
+        use_html_with_css: bool = True,
+    ) -> list:
+        """
+        상세 페이지 크롤링 공통 로직
+        web_scraper.crawl_detail_page_items를 사용하도록 리팩토링
+        """
+        # web_scraper 모듈 사용
+        return crawl_detail_page_items(
+            items=items,
+            base_url=base_url,
+            item_selector=item_selector,
+            title_selector=title_selector,
+            link_selector=link_selector,
+            description_selector=description_selector,
+            date_selector=date_selector,
+            image_selector=image_selector,
+            detail_title_selector=detail_title_selector,
+            detail_description_selector=detail_description_selector,
+            detail_content_selector=detail_content_selector,
+            detail_date_selector=detail_date_selector,
+            detail_image_selector=detail_image_selector,
+            use_browser=use_browser,
+            wait_selector=wait_selector,
+            custom_headers=custom_headers,
+            exclude_selectors=exclude_selectors,
+            follow_links=follow_links,
+            existing_guids=existing_guids,
+            max_items=max_items,
+            use_html_with_css=use_html_with_css,
+            fetch_html_func=SourceService.fetch_html,
+        )
 
     @staticmethod
     def preview_items(
@@ -310,132 +219,54 @@ class SourceService:
             preview_items = []
 
             if follow_links:
-                # 상세 페이지 파싱 모드
-                links_to_fetch = []
-                for item in items[:10]:
-                    if link_selector:
-                        link_el = item.select_one(link_selector)
-                    else:
-                        link_el = item.select_one("a[href]")
+                # 상세 페이지 파싱 모드 - 공통 함수 사용
+                crawled_items = SourceService.crawl_detail_page_items(
+                    items=items,
+                    base_url=url,
+                    item_selector=item_selector,
+                    title_selector=title_selector,
+                    link_selector=link_selector,
+                    description_selector=description_selector,
+                    date_selector=date_selector,
+                    image_selector=image_selector,
+                    detail_title_selector=detail_title_selector,
+                    detail_description_selector=detail_description_selector,
+                    detail_content_selector=detail_content_selector,
+                    detail_date_selector=detail_date_selector,
+                    detail_image_selector=detail_image_selector,
+                    use_browser=use_browser,
+                    wait_selector=wait_selector,
+                    custom_headers=custom_headers,
+                    exclude_selectors=exclude_selectors,
+                    follow_links=True,
+                    existing_guids=None,
+                    max_items=10,
+                    use_html_with_css=True,
+                )
 
-                    if link_el:
-                        link = SourceService.extract_href(link_el, url)
-                        if link:
-                            title_el = (
-                                item.select_one(title_selector)
-                                if title_selector
-                                else None
-                            )
-                            title = (
-                                SourceService.extract_text(title_el) if title_el else ""
-                            )
-                            if not title and link_el:
-                                title = SourceService.extract_text(link_el)
-                            links_to_fetch.append({"link": link, "list_title": title})
-
-                # 각 상세 페이지 가져오기
-                for item_info in links_to_fetch:
-                    try:
-                        detail_result = SourceService.fetch_html(
-                            url=item_info["link"],
-                            use_browser=use_browser,
-                            wait_selector=wait_selector,
-                            timeout=30000,
-                            custom_headers=custom_headers,
-                        )
-
-                        if not detail_result["success"] or not detail_result.get(
-                            "html"
-                        ):
-                            continue
-
-                        detail_soup = BeautifulSoup(
-                            detail_result["html"], "html.parser"
-                        )
-
-                        # 상세 페이지에서 정보 추출
-                        title = ""
-                        if detail_title_selector:
-                            title_el = detail_soup.select_one(detail_title_selector)
-                            title = (
-                                SourceService.extract_text(title_el) if title_el else ""
-                            )
-                        if not title:
-                            title = item_info["list_title"]
-                        if not title:
-                            title_tag = detail_soup.find("title")
-                            title = (
-                                SourceService.extract_text(title_tag)
-                                if title_tag
-                                else ""
-                            )
-
-                        description = ""
-                        if detail_description_selector:
-                            desc_el = detail_soup.select_one(
-                                detail_description_selector
-                            )
-                            description = (
-                                SourceService.extract_html_with_css(
-                                    desc_el, detail_soup, item_info["link"]
-                                )
-                                if desc_el
-                                else ""
-                            )
-                        elif detail_content_selector:
-                            content_el = detail_soup.select_one(detail_content_selector)
-                            description = (
-                                SourceService.extract_html_with_css(
-                                    content_el, detail_soup, item_info["link"]
-                                )
-                                if content_el
-                                else ""
-                            )
-
-                        date = ""
-                        if detail_date_selector:
-                            date_el = detail_soup.select_one(detail_date_selector)
-                            date = (
-                                SourceService.extract_text(date_el) if date_el else ""
-                            )
-
-                        image = ""
-                        if detail_image_selector:
-                            img_el = detail_soup.select_one(detail_image_selector)
-                            image = (
-                                SourceService.extract_src(img_el, item_info["link"])
-                                if img_el
-                                else ""
-                            )
-
-                        if title:
-                            preview_items.append(
-                                {
-                                    "title": title,
-                                    "link": item_info["link"],
-                                    "description": description,
-                                    "date": date,
-                                    "image": image,
-                                }
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            f"Failed to fetch detail page {item_info['link']}: {e}"
-                        )
-                        continue
+                # 결과 변환
+                for item in crawled_items:
+                    if item["title"]:
+                        preview_items.append({
+                            "title": item["title"],
+                            "link": item["link"],
+                            "description": item["description"],
+                            "date": item["date"],
+                            "image": item["image"],
+                        })
             else:
                 # 목록 페이지 직접 파싱 모드
                 for item in items[:20]:
                     title_el = (
                         item.select_one(title_selector) if title_selector else None
                     )
-                    title = SourceService.extract_text(title_el) if title_el else ""
+                    title = extract_text(title_el) if title_el else ""
 
                     if link_selector:
                         link_el = item.select_one(link_selector)
                     else:
                         link_el = title_el
-                    link = SourceService.extract_href(link_el, url) if link_el else ""
+                    link = extract_href(link_el, url) if link_el else ""
 
                     desc_el = (
                         item.select_one(description_selector)
@@ -443,14 +274,14 @@ class SourceService:
                         else None
                     )
                     description = (
-                        SourceService.extract_html(desc_el, url) if desc_el else ""
+                        extract_html(desc_el, url) if desc_el else ""
                     )
 
                     date_el = item.select_one(date_selector) if date_selector else None
-                    date = SourceService.extract_text(date_el) if date_el else ""
+                    date = extract_text(date_el) if date_el else ""
 
                     img_el = item.select_one(image_selector) if image_selector else None
-                    image = SourceService.extract_src(img_el, url) if img_el else ""
+                    image = extract_src(img_el, url) if img_el else ""
 
                     if title:
                         preview_items.append(

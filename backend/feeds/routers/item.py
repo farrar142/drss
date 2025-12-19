@@ -61,7 +61,6 @@ def list_items_by_category(
         search,
     )
 
-
 @router.get("/feed/{feed_id}", response=list[ItemSchema], operation_id="listItemsByFeed")
 @paginate(CursorPagination[RSSItem], ordering_field="published_at")
 def list_items_by_feed(
