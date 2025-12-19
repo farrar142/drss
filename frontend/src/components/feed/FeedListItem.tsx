@@ -20,16 +20,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import { useRSSStore } from '../stores/rssStore';
-import { useTabStore } from '../stores/tabStore';
-import { useToast, useConfirm } from '../stores/toastStore';
+import { useRSSStore } from '../../stores/rssStore';
+import { useTabStore } from '../../stores/tabStore';
+import { useToast, useConfirm } from '../../stores/toastStore';
 import {
   FeedSchema,
   deleteFeed,
   markAllFeedItemsRead,
   refreshFeed,
   updateFeed as updateFeedApi,
-} from '../services/api';
+} from '../../services/api';
 
 interface FeedListItemProps {
   feed: FeedSchema;

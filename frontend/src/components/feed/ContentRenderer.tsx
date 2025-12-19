@@ -2,21 +2,21 @@
 
 import React, { useMemo, memo, RefObject } from 'react';
 import { FeedViewer } from './FeedViewer';
-import { SettingsPage } from './SettingsPage';
-import RSSEverythingPage from './RSSEverythingPage';
-import TaskResultsPage from './TaskResultsPage';
-import PeriodicTasksPage from './PeriodicTasksPage';
-import FeedEditPage from './FeedEditPage';
-import { useSettingsStore } from '../stores/settingsStore';
-import { useRSSStore } from '../stores/rssStore';
-import { useTabStore, Tab, PanelId } from '../stores/tabStore';
-import { RSSItem } from '../types/rss';
+import { SettingsPage } from '../settings/SettingsPage';
+import RSSEverythingPage from '../rss-everything/RSSEverythingPage';
+import TaskResultsPage from '../settings/TaskResultsPage';
+import PeriodicTasksPage from '../settings/PeriodicTasksPage';
+import FeedEditPage from '../settings/FeedEditPage';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { useRSSStore } from '../../stores/rssStore';
+import { useTabStore, Tab, PanelId } from '../../stores/tabStore';
+import { RSSItem } from '../../types/rss';
 import {
   listAllItems,
   listItemsByCategory,
   listItemsByFeed,
-} from '../services/api';
-import { usePagination, PaginationFilters } from '../hooks/usePagination';
+} from '../../services/api';
+import { usePagination, PaginationFilters } from '../../hooks/feed/usePagination';
 
 // 홈 피드 컴포넌트
 const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive: boolean; maxColumns?: number; scrollContainerRef?: RefObject<HTMLDivElement | null> }) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, RefObject, useMemo } from 'react';
-import { useSettingsStore } from '../stores/settingsStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 export interface UseCruisingOptions {
   /** Minimum speed in pixels per second */

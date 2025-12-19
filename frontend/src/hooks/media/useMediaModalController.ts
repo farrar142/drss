@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { UseMediaModalReturn, MediaItem } from './useMediaModal';
-import { useSettingsStore } from '../stores/settingsStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 

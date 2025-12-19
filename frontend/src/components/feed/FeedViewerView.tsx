@@ -2,12 +2,12 @@
 
 import { FC, memo, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { RSSItem } from "../types/rss";
-import { MediaModal } from "./MediaModal";
-import { CruisingControls } from "./CruisingControls";
-import { PullToRefresh } from "./PullToRefresh";
-import { UseFeedViewerReturn } from "../hooks/useFeedViewer";
-import { useSettingsStore } from "../stores/settingsStore";
+import { RSSItem } from "../../types/rss";
+import { MediaModal } from "../media/MediaModal";
+import { CruisingControls } from "../common/CruisingControls";
+import { PullToRefresh } from "../common/PullToRefresh";
+import { UseFeedViewerReturn } from "../../hooks/feed/useFeedViewer";
+import { useSettingsStore } from "../../stores/settingsStore";
 import dynamic from 'next/dynamic';
 
 // Dynamically import FeedItemCard to reduce initial bundle size

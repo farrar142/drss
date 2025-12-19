@@ -32,17 +32,17 @@ import {
 } from '@/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/ui/toggle-group';
 import { Tooltip } from '@/ui/tooltip';
-import { useAuth } from '../context/AuthContext';
-import { useAppBar } from '../context/AppBarContext';
-import { useRSSStore } from '../stores/rssStore';
-import { useThemeStore } from '../stores/themeStore';
-import { useSettingsStore } from '../stores/settingsStore';
-import { useTranslation } from '../stores/languageStore';
-import { useMediaModalStore } from '../stores/mediaModalStore';
+import { useAuth } from '../../context/AuthContext';
+import { useAppBar } from '../../context/AppBarContext';
+import { useRSSStore } from '../../stores/rssStore';
+import { useThemeStore } from '../../stores/themeStore';
+import { useSettingsStore } from '../../stores/settingsStore';
+import { useTranslation } from '../../stores/languageStore';
+import { useMediaModalStore } from '../../stores/mediaModalStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { SplitPanelView } from './SplitPanelView';
 import { FloatingAppBarToggle } from './FloatingAppBarToggle';
-import { useTabStore } from '../stores/tabStore';
+import { useTabStore } from '../../stores/tabStore';
 import { cn } from '@/lib/utils';
 
 // 검색 입력 컴포넌트 - 디바운스 적용으로 불필요한 리렌더링 방지

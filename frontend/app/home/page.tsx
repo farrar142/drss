@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { FeedViewer } from '@/components/FeedViewer';
+import { FeedViewer } from '@/components/feed/FeedViewer';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useRSSStore } from '@/stores/rssStore';
 import { RSSItem } from '@/types/rss';
 import { listAllItems } from '@/services/api';
-import { usePagination, PaginationFilters } from '@/hooks/usePagination';
+import { usePagination, PaginationFilters } from '@/hooks/feed/usePagination';
 
 export default function HomePage() {
   const { filter } = useSettingsStore();

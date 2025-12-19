@@ -2,7 +2,7 @@
 
 import React, { useMemo, useCallback } from 'react';
 import { PreviewItem } from '@/services/api';
-import { FeedItemCard } from './FeedItemCard';
+import { FeedItemCard } from '@/components/feed/FeedItemCard';
 import { RSSItem } from '@/types/rss';
 
 interface PreviewPanelProps {

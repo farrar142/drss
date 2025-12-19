@@ -7,10 +7,10 @@ import { Label } from '@/ui/label';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
-import { validateFeed, FeedValidationResponse } from '../services/api';
-import { useTranslation } from '../stores/languageStore';
-import { useToast } from '../stores/toastStore';
-import { SourceType, RSSSource, RSSSourceCreate } from '../types/rss';
+import { validateFeed, FeedValidationResponse } from '@/services/api';
+import { useTranslation } from '@/stores/languageStore';
+import { useToast } from '@/stores/toastStore';
+import { SourceType, RSSSource, RSSSourceCreate } from '@/types/rss';
 
 interface HeaderEntry {
   key: string;

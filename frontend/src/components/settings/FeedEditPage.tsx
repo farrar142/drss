@@ -18,10 +18,10 @@ import { Label } from '@/ui/label';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
-import { useTranslation } from '../stores/languageStore';
-import { useTabStore, FeedEditContext } from '../stores/tabStore';
-import { useRSSStore } from '../stores/rssStore';
-import { useToast, useConfirm } from '../stores/toastStore';
+import { useTranslation } from '@/stores/languageStore';
+import { useTabStore, FeedEditContext } from '@/stores/tabStore';
+import { useRSSStore } from '@/stores/rssStore';
+import { useToast, useConfirm } from '@/stores/toastStore';
 import {
   FeedSchema,
   SourceSchema,
@@ -30,7 +30,7 @@ import {
   listFeeds,
   deleteFeedSource,
   refreshRssEverythingSource,
-} from '../services/api';
+} from '@/services/api';
 
 interface FeedEditPageProps {
   context?: FeedEditContext;

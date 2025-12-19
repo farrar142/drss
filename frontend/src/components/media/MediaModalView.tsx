@@ -3,9 +3,9 @@
 import { FC, memo } from 'react';
 import { X, SkipBack, SkipForward, ChevronLeft, ChevronRight, Download, Archive, Loader2, Square, Columns2, ArrowLeftRight, AlignCenterHorizontal, Columns } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FeedImage } from './FeedImage';
-import { FeedVideo } from './FeedVideo';
-import { UseMediaModalControllerReturn } from '../hooks/useMediaModalController';
+import { FeedImage } from '@/components/feed/FeedImage';
+import { FeedVideo } from '@/components/feed/FeedVideo';
+import { UseMediaModalControllerReturn } from '@/hooks/media/useMediaModalController';
 
 export interface MediaModalViewProps extends UseMediaModalControllerReturn { }
 

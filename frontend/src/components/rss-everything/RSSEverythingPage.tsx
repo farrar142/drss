@@ -1,6 +1,6 @@
 'use client';
 
-import { useRSSEverything } from '@/hooks/useRSSEverything';
+import { useRSSEverything } from '@/hooks/rss-everything/useRSSEverything';
 import { RSSEverythingContext } from '@/stores/tabStore';
 import {
   StepHeader,
@@ -11,7 +11,7 @@ import {
   SaveStep,
   SourceTypeStep,
   RssSaveStep,
-} from './rss-everything';
+} from '.';
 
 interface RSSEverythingPageProps {
   context?: RSSEverythingContext;

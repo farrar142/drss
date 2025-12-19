@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTabStore, Tab, TabType, PanelId } from '../stores/tabStore';
+import { useTabStore, Tab, TabType, PanelId } from '@/stores/tabStore';
 import { cn } from '@/lib/utils';
 
 // 탭 타입별 아이콘

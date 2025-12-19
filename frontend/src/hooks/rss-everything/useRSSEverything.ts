@@ -16,7 +16,7 @@ import {
   RSSEverythingUpdateRequest,
   PreviewItem,
 } from '@/services/api';
-import { ListSelectors, DetailSelectors } from '@/components/SelectorBuilder';
+import { ListSelectors, DetailSelectors } from '@/components/common/SelectorBuilder';
 import { SourceConfig } from '@/components/rss-everything/SourceTypeStep';
 
 // 파싱 모드

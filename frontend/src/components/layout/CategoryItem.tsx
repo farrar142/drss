@@ -22,18 +22,18 @@ import {
 import { Input } from '@/ui/input';
 import { Label } from '@/ui/label';
 import { Switch } from '@/ui/switch';
-import { RSSCategory, RSSFeed } from '../types/rss';
-import { FeedListItem } from './FeedListItem';
-import { useRSSStore } from '../stores/rssStore';
-import { useTabStore } from '../stores/tabStore';
-import { useTranslation, interpolate } from '../stores/languageStore';
-import { useToast, useConfirm } from '../stores/toastStore';
+import { RSSCategory, RSSFeed } from '@/types/rss';
+import { FeedListItem } from '../feed/FeedListItem';
+import { useRSSStore } from '@/stores/rssStore';
+import { useTabStore } from '@/stores/tabStore';
+import { useTranslation, interpolate } from '@/stores/languageStore';
+import { useToast, useConfirm } from '@/stores/toastStore';
 import {
   updateCategory as updateCategoryApi,
   refreshCategoryFeeds,
   updateFeed as updateFeedApi,
   FeedSchema,
-} from '../services/api';
+} from '@/services/api';
 
 export const CategoryItem: FC<{
   category: RSSCategory;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { RSSItem } from '../types/rss';
-import { useMediaModalStore } from '../stores/mediaModalStore';
+import { RSSItem } from '@/types/rss';
+import { useMediaModalStore } from '@/stores/mediaModalStore';
 
 export interface MediaItem {
   src: string;

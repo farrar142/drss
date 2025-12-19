@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { FeedViewer } from "@/components/FeedViewer";
+import { FeedViewer } from "@/components/feed/FeedViewer";
 
 type TestItem = {
   id: number;

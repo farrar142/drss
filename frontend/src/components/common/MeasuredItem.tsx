@@ -1,5 +1,5 @@
 import React, { ComponentType, FC, JSX, useEffect, useRef, useState } from "react";
-import FeedItemCard from "./FeedItemCard";
+import FeedItemCard from "@/components/feed/FeedItemCard";
 
 type MeasuredItemRenderer<T extends { id: number }> = ComponentType<{
   item: T;

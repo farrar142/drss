@@ -92,6 +92,7 @@ class RSSFeedWithCountManager(models.Manager):
 class RSSFeedWithCount(RSSFeed):
     """item_count 필드를 포함한 프록시 모델"""
     objects = RSSFeedWithCountManager()
+    item_count: int
 
     class Meta:
         proxy = True

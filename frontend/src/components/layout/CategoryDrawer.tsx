@@ -16,10 +16,10 @@ import {
   DialogFooter,
 } from '@/ui/dialog';
 import { cn } from '@/lib/utils';
-import { RSSCategory, RSSFeed } from '../types/rss';
-import { useRSSStore } from '../stores/rssStore';
-import { useTranslation } from '../stores/languageStore';
-import { useTabStore } from '../stores/tabStore';
+import { RSSCategory, RSSFeed } from '@/types/rss';
+import { useRSSStore } from '@/stores/rssStore';
+import { useTranslation } from '@/stores/languageStore';
+import { useTabStore } from '@/stores/tabStore';
 import { CategoryItem } from './CategoryItem';
 import {
   createCategory,
@@ -28,7 +28,7 @@ import {
   reorderCategories,
   listFeeds,
   FeedSchema,
-} from '../services/api';
+} from '@/services/api';
 
 export const DRAWER_WIDTH = 240;
 

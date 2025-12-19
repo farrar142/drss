@@ -2,10 +2,10 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTabStore, Panel, Tab, PanelId } from '../stores/tabStore';
-import { useAppBar } from '../context/AppBarContext';
+import { useTabStore, Panel, Tab, PanelId } from '@/stores/tabStore';
+import { useAppBar } from '@/context/AppBarContext';
 import { TabBar } from './TabBar';
-import { ContentRenderer } from './ContentRenderer';
+import { ContentRenderer } from '../feed/ContentRenderer';
 import { cn } from '@/lib/utils';
 
 interface SplitPanelViewProps {

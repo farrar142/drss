@@ -1,8 +1,8 @@
 'use client';
 
 import { FC } from 'react';
-import { UseMediaModalReturn } from '../hooks/useMediaModal';
-import { useMediaModalController } from '../hooks/useMediaModalController';
+import { UseMediaModalReturn } from '@/hooks/media/useMediaModal';
+import { useMediaModalController } from '@/hooks/media/useMediaModalController';
 import { MediaModalView } from './MediaModalView';
 
 export interface MediaModalProps {

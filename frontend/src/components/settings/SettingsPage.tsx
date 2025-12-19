@@ -12,7 +12,7 @@ import { useThemeStore, applyThemeColors } from '@/stores/themeStore';
 import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '@/stores/settingsStore';
 import { useTranslation, languageNames, availableLanguages } from '@/stores/languageStore';
 import { useTabStore } from '@/stores/tabStore';
-import { FeedItemCard } from '@/components/FeedItemCard';
+import { FeedItemCard } from '@/components/feed/FeedItemCard';
 import { RSSItem } from '@/types/rss';
 
 // 더미 피드 아이템

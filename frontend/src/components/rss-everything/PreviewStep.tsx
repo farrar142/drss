@@ -3,7 +3,7 @@
 import { Save } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
-import { PreviewPanel } from '@/components/PreviewPanel';
+import { PreviewPanel } from '@/components/common/PreviewPanel';
 import { PreviewItem } from '@/services/api';
 import { useTranslation } from '@/stores/languageStore';
 

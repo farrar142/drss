@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useCallback, useMemo, useRef, useEffect, RefObject } from "react";
-import { RSSItem } from "../types/rss";
-import { useSettingsStore } from "../stores/settingsStore";
-import { useMediaQuery } from "./useMediaQuery";
+import { RSSItem } from "@/types/rss";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { useMediaQuery } from "../common/useMediaQuery";
 import { useColumnDistributor } from "./useColumnDistributor";
-import { useMediaModal } from "./useMediaModal";
+import { useMediaModal } from "../media/useMediaModal";
 import { useCruising } from "./useCruising";
 
 export interface UseFeedViewerOptions {

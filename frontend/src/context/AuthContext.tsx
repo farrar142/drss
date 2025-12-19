@@ -1,9 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '../services/api';
+import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '@/services/api';
 import { AxiosError } from 'axios';
-import { useTabStore } from '../stores/tabStore';
+import { useTabStore } from '@/stores/tabStore';
 
 interface User {
   id: number;

@@ -2,8 +2,8 @@
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppBarProvider } from './context/AppBarContext';
-import AppLayout from './components/AppLayout';
-import { NotificationProvider } from './components/NotificationProvider';
+import AppLayout from './components/layout/AppLayout';
+import { NotificationProvider } from './components/common/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useTabStore } from './stores/tabStore';
 import { useEffect, useMemo, useRef } from 'react';

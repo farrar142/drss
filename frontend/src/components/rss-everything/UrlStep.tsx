@@ -7,7 +7,7 @@ import { Label } from '@/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
 import { Switch } from '@/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/ui/radio-group';
-import { ParseMode } from '@/hooks/useRSSEverything';
+import { ParseMode } from '@/hooks/rss-everything/useRSSEverything';
 import { useTranslation } from '@/stores/languageStore';
 import { useState } from 'react';
 

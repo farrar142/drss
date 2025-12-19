@@ -1,8 +1,8 @@
 'use client';
 
 import { FC, RefObject, memo } from "react";
-import { RSSItem } from "../types/rss";
-import { useFeedViewer } from "../hooks/useFeedViewer";
+import { RSSItem } from "../../types/rss";
+import { useFeedViewer } from "../../hooks/feed/useFeedViewer";
 import { FeedViewerView } from "./FeedViewerView";
 
 export interface FeedViewerProps {

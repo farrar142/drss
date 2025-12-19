@@ -3,10 +3,10 @@
 import { CheckCircle, Heart, User, Tag } from "lucide-react";
 import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
-import { toggleItemFavorite, toggleItemRead } from "../services/api";
+import { toggleItemFavorite, toggleItemRead } from "../../services/api";
 import { cn } from "@/lib/utils";
-import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../stores/settingsStore";
-import { RSSItem } from "../types/rss";
+import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../../stores/settingsStore";
+import { RSSItem } from "../../types/rss";
 import { FeedImage } from "./FeedImage";
 import { FeedVideo } from "./FeedVideo";
 
