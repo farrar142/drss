@@ -40,7 +40,6 @@ import { useThemeStore } from '../../stores/themeStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useTranslation } from '../../stores/languageStore';
 import { useMediaModalStore } from '../../stores/mediaModalStore';
-import { useSiteStore } from '../../stores/siteStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
 import { SplitPanelView } from './SplitPanelView';
 import { FloatingAppBarToggle } from './FloatingAppBarToggle';
@@ -125,14 +124,14 @@ SearchInput.displayName = 'SearchInput';
 
 interface AppLayoutProps {
   authChildren?: React.ReactNode;
+  siteName: string;
 }
 
-export default function AppLayout({ authChildren }: AppLayoutProps) {
+export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout, user } = useAuth();
   const { t } = useTranslation();
-  const siteName = useSiteStore((state) => state.siteName);
 
   // Zustand stores
   const {

@@ -25,7 +25,7 @@ export function ClientLayout({
 }: {
   children: React.ReactNode;
   initialTheme?: InitialTheme | null;
-  initialSiteSettings?: SignupStatusSchema | null;
+  initialSiteSettings: SignupStatusSchema;
 }) {
   const { mode, colors } = useThemeStore();
 
@@ -81,26 +81,21 @@ export function ClientLayout({
           <SiteSettingsLoader initialSiteSettings={initialSiteSettings} />
           <URLParamHandler />
           <TabHistoryManager />
-          <AppLayout authChildren={children} />
+          <AppLayout authChildren={children} siteName={initialSiteSettings.site_name} />
         </NotificationProvider>
       </AppBarProvider>
     </AuthProvider>
   );
 }
 
-// 사이트 설정을 로드하는 컴포넌트
-function SiteSettingsLoader({ initialSiteSettings }: { initialSiteSettings?: SignupStatusSchema | null }) {
-  const { loadSiteSettings, initializeSiteSettings } = useSiteStore();
+// 사이트 설정을 스토어에 동기화하는 컴포넌트
+function SiteSettingsLoader({ initialSiteSettings }: { initialSiteSettings: SignupStatusSchema }) {
+  const { initializeSiteSettings } = useSiteStore();
 
   useEffect(() => {
-    // 서버에서 받은 초기 설정이 있으면 즉시 적용
-    if (initialSiteSettings) {
-      initializeSiteSettings(initialSiteSettings);
-    } else {
-      // 초기 설정이 없으면 클라이언트에서 불러오기
-      loadSiteSettings();
-    }
-  }, [initialSiteSettings, initializeSiteSettings, loadSiteSettings]);
+    // 서버에서 받은 초기 설정을 스토어에 동기화 (설정 페이지 등에서 사용)
+    initializeSiteSettings(initialSiteSettings);
+  }, [initialSiteSettings, initializeSiteSettings]);
 
   return null;
 }

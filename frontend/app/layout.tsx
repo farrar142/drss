@@ -16,11 +16,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "DRSS",
-  description: "Django RSS Reader",
-};
-
 // viewport-fit=cover를 설정하여 safe-area-inset을 사용할 수 있게 함
 // 모바일에서 핀치 줌 비활성화
 export const viewport: Viewport = {
@@ -53,6 +48,17 @@ async function fetchSiteSettings(): Promise<SignupStatusSchema | null> {
   }
 }
 
+// 동적 메타데이터 생성
+export async function generateMetadata(): Promise<Metadata> {
+  const siteSettings = await fetchSiteSettings();
+  const siteName = siteSettings?.site_name || 'DRSS';
+  
+  return {
+    title: siteName,
+    description: 'Django RSS Reader',
+  };
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -63,8 +69,8 @@ export default async function RootLayout({
   const themeCookie = cookieStore.get(THEME_COOKIE_NAME);
   const themeData = themeCookie ? getThemeFromCookie(themeCookie.value ? `${THEME_COOKIE_NAME}=${themeCookie.value}` : undefined) : null;
 
-  // 서버에서 사이트 설정 미리 불러오기
-  const siteSettings = await fetchSiteSettings();
+  // 서버에서 사이트 설정 미리 불러오기 (실패 시 기본값 사용)
+  const siteSettings = await fetchSiteSettings() ?? { site_name: 'DRSS', allow_signup: true };
 
   // 초기 다크모드 클래스 결정 (system인 경우 기본 dark)
   const initialDark = themeData?.mode === 'dark' || themeData?.mode === 'system' || !themeData;
