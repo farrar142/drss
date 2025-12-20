@@ -413,7 +413,7 @@ export function useColumnDistributor<T extends { id: number }>({
   const updateItem = useCallback((itemId: number, updatedData: Partial<T>) => {
     setColumnItems(prev => {
       let found = false;
-      const next = prev.map(column => 
+      const next = prev.map(column =>
         column.map(item => {
           if (item.id === itemId) {
             found = true;

@@ -19,8 +19,6 @@ import requests
 logger = getLogger(__name__)
 
 
-
-
 @shared_task(bind=True)
 def update_feed_items(self, feed_id, task_result_id=None):
     from .models import RSSFeed, RSSItem, FeedTaskResult, RSSEverythingSource
@@ -192,13 +190,18 @@ def _update_from_rss_source(feed, source):
         image = ""
         if hasattr(entry, "enclosures") and entry.enclosures:
             for enclosure in entry.enclosures:
-                if hasattr(enclosure, "type") and enclosure.type and "image" in enclosure.type:
+                if (
+                    hasattr(enclosure, "type")
+                    and enclosure.type
+                    and "image" in enclosure.type
+                ):
                     image = getattr(enclosure, "href", "")
                     break
 
         # RSS 피드에 이미지가 없으면 description에서 첫 번째 img 태그 찾기
         if not image and description and isinstance(description, str):
             from bs4 import BeautifulSoup
+
             desc_soup = BeautifulSoup(description, "html.parser")
             img_tag = desc_soup.find("img")
             if img_tag and img_tag.get("src"):
@@ -331,8 +334,12 @@ def _crawl_list_page(source, items, existing_guids):
         description_selector=source.description_selector,
         date_selector=source.date_selector,
         image_selector=source.image_selector,
-        author_selector=source.author_selector if hasattr(source, 'author_selector') else "",
-        categories_selector=source.categories_selector if hasattr(source, 'categories_selector') else "",
+        author_selector=(
+            source.author_selector if hasattr(source, "author_selector") else ""
+        ),
+        categories_selector=(
+            source.categories_selector if hasattr(source, "categories_selector") else ""
+        ),
         existing_guids=existing_guids,
         max_items=50,  # 기본값 사용
     )
@@ -514,7 +521,7 @@ def precache_images_for_item(item_id: int):
     nextjs_base_url = f"http://{nextjs_host}:{nextjs_port}"
 
     # 캐시할 이미지 사이즈들 (Next.js deviceSizes 기본값 기준)
-    widths = [640, 750, 828, 1080]
+    widths = [640, 750, 828, 1080, 1200]
     quality = 75
 
     cached_count = 0
@@ -536,11 +543,13 @@ def precache_images_for_item(item_id: int):
         for width in widths:
             try:
                 # Next.js 이미지 최적화 URL 생성
-                params = urlencode({
-                    "url": src,
-                    "w": width,
-                    "q": quality,
-                })
+                params = urlencode(
+                    {
+                        "url": src,
+                        "w": width,
+                        "q": quality,
+                    }
+                )
                 cache_url = f"{nextjs_base_url}/_next/image?{params}"
 
                 # 요청 (타임아웃 30초)
@@ -550,14 +559,16 @@ def precache_images_for_item(item_id: int):
                     headers={
                         "User-Agent": "DRSS-ImagePrecacher/1.0",
                         "Accept": "image/webp,image/avif,image/*,*/*;q=0.8",
-                    }
+                    },
                 )
 
                 if response.status_code == 200:
                     cached_count += 1
                     logger.debug(f"Cached: {src} (w={width})")
                 else:
-                    logger.warning(f"Failed to cache {src} (w={width}): {response.status_code}")
+                    logger.warning(
+                        f"Failed to cache {src} (w={width}): {response.status_code}"
+                    )
 
             except requests.RequestException as e:
                 error_msg = f"Failed to cache {src}: {str(e)}"
@@ -577,9 +588,9 @@ def precache_images_for_item(item_id: int):
 def precache_images_for_items(item_ids: list[int]):
     """
     여러 RSSItem의 이미지를 일괄 프리캐시
+    개별 아이템은 image_worker 큐에 분배
     """
-    results = []
     for item_id in item_ids:
-        result = precache_images_for_item(item_id)
-        results.append(result)
-    return results
+        # 개별 이미지 캐시 작업을 worker 큐에 분배
+        precache_images_for_item.delay(item_id)
+    return f"Dispatched {len(item_ids)} image precache tasks to worker queue"

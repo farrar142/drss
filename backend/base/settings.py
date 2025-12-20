@@ -219,6 +219,23 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+# Celery Task Routes - 큐별로 작업 분리
+CELERY_TASK_ROUTES = {
+    # Crawl aggregate: 피드 업데이트 스케줄링 (여러 피드를 순회하며 worker에 분배)
+    "feeds.tasks.update_all_feeds": {"queue": "crawl_aggregate"},
+    "feeds.tasks.update_feeds_by_category": {"queue": "crawl_aggregate"},
+    # Crawl worker: 실제 크롤링 작업 (개별 피드 크롤링)
+    "feeds.tasks.update_feed_items": {"queue": "crawl_worker"},
+    "feeds.tasks.crawl_rss_everything_source": {"queue": "crawl_worker"},
+    # Image aggregate: 이미지 캐시 배치 작업 (여러 이미지를 worker에 분배)
+    "feeds.tasks.precache_images_for_items": {"queue": "image_aggregate"},
+    # Image worker: 개별 이미지 캐시 작업
+    "feeds.tasks.precache_images_for_item": {"queue": "image_worker"},
+}
+
+# Default queue for tasks without explicit routing
+CELERY_TASK_DEFAULT_QUEUE = "celery"
+
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
