@@ -619,31 +619,60 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     try {
       const sourceTypeValue = parseMode === 'detail' ? 'detail_page_scraping' : 'page_scraping';
 
-      const request: RSSEverythingCreateRequest = {
-        feed_id: context.feedId,
-        url,
-        source_type: sourceTypeValue,
-        item_selector: listSelectors.itemSelector,
-        title_selector: listSelectors.titleSelector,
-        link_selector: listSelectors.linkSelector,
-        description_selector: listSelectors.descriptionSelector,
-        date_selector: listSelectors.dateSelector,
-        image_selector: listSelectors.imageSelector,
-        follow_links: parseMode === 'detail',
-        detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
-        detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-        detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
-        detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
-        detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
-        use_browser: useBrowser,
-        browser_service: browserService,
-        wait_selector: waitSelector,
-        date_formats: dateFormats,
-        exclude_selectors: excludeSelectors,
-        custom_headers: customHeaders,
-      };
+      if (context?.mode === 'edit' && editingSourceId) {
+        // 수정 모드: 기존 소스 업데이트
+        const updateData: RSSEverythingUpdateRequest = {
+          url,
+          source_type: sourceTypeValue,
+          item_selector: listSelectors.itemSelector,
+          title_selector: listSelectors.titleSelector,
+          link_selector: listSelectors.linkSelector,
+          description_selector: listSelectors.descriptionSelector,
+          date_selector: listSelectors.dateSelector,
+          image_selector: listSelectors.imageSelector,
+          follow_links: parseMode === 'detail',
+          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
+          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
+          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
+          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
+          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
+          use_browser: useBrowser,
+          browser_service: browserService,
+          wait_selector: waitSelector,
+          date_formats: dateFormats,
+          exclude_selectors: excludeSelectors,
+          custom_headers: customHeaders,
+        };
 
-      await createRssEverythingSource(request);
+        await updateRssEverythingSource(editingSourceId, updateData);
+      } else {
+        // 생성 모드: 새 소스 생성
+        const request: RSSEverythingCreateRequest = {
+          feed_id: context.feedId,
+          url,
+          source_type: sourceTypeValue,
+          item_selector: listSelectors.itemSelector,
+          title_selector: listSelectors.titleSelector,
+          link_selector: listSelectors.linkSelector,
+          description_selector: listSelectors.descriptionSelector,
+          date_selector: listSelectors.dateSelector,
+          image_selector: listSelectors.imageSelector,
+          follow_links: parseMode === 'detail',
+          detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
+          detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
+          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
+          detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
+          detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
+          use_browser: useBrowser,
+          browser_service: browserService,
+          wait_selector: waitSelector,
+          date_formats: dateFormats,
+          exclude_selectors: excludeSelectors,
+          custom_headers: customHeaders,
+        };
+
+        await createRssEverythingSource(request);
+      }
 
       // 카테고리 & 피드 새로고침
       const updatedCategories = await listCategories();
@@ -661,7 +690,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId, context?.mode, editingSourceId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {

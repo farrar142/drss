@@ -8,8 +8,10 @@ from feeds.utils.date_parser import parse_date
 from feeds.utils.html_parser import extract_html, extract_src
 from feeds.utils.html_utils import strip_html_tags
 from feeds.utils.web_scraper import crawl_list_page_items
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode, quote
 from feeds.services.source import SourceService
+import re
+import requests
 
 # Image caching has been removed. The previous cache_image_task is intentionally
 # removed so images are fetched directly by clients and rely on browser caching.
@@ -223,9 +225,14 @@ def _update_from_rss_source(feed, source):
     items_created = len(new_items)
 
     if new_items:
-        RSSItem.objects.bulk_create(new_items)
+        created_items = RSSItem.objects.bulk_create(new_items)
         feed.last_updated = django_timezone.now()
         feed.save()
+
+        # 새로 생성된 아이템들의 이미지 프리캐시 트리거
+        item_ids = [item.id for item in created_items if item.id]
+        if item_ids:
+            precache_images_for_items.delay(item_ids)
 
     # 소스 업데이트
     source.last_crawled_at = django_timezone.now()
@@ -294,9 +301,14 @@ def _update_from_scraping_source(feed, source):
         # feed 설정
         for item in new_items:
             item.feed = feed
-        RSSItem.objects.bulk_create(new_items)
+        created_items = RSSItem.objects.bulk_create(new_items)
         feed.last_updated = django_timezone.now()
         feed.save()
+
+        # 새로 생성된 아이템들의 이미지 프리캐시 트리거
+        item_ids = [item.id for item in created_items if item.id]
+        if item_ids:
+            precache_images_for_items.delay(item_ids)
 
     source.last_crawled_at = django_timezone.now()
     source.last_error = ""
@@ -468,3 +480,106 @@ def crawl_rss_everything_source(source_id):
 
     # 연결된 피드를 통해 업데이트 실행
     return update_feed_items.delay(source.feed.id)
+
+
+@shared_task
+def precache_images_for_item(item_id: int):
+    """
+    RSSItem의 description에서 이미지 URL을 추출하여
+    Next.js 이미지 최적화 엔드포인트로 요청해서 캐시 워밍
+    """
+    from .models import RSSItem
+    from bs4 import BeautifulSoup
+    import os
+
+    try:
+        item = RSSItem.objects.get(id=item_id)
+    except RSSItem.DoesNotExist:
+        return f"RSSItem {item_id} does not exist"
+
+    description = item.description
+    if not description:
+        return f"RSSItem {item_id} has no description"
+
+    # HTML에서 이미지 URL 추출
+    soup = BeautifulSoup(description, "html.parser")
+    img_tags = soup.find_all("img")
+
+    if not img_tags:
+        return f"No images found in RSSItem {item_id}"
+
+    # Next.js 서버 URL (Docker 내부 네트워크)
+    nextjs_host = os.environ.get("NEXTJS_HOST", "node")
+    nextjs_port = os.environ.get("NEXTJS_PORT", "3000")
+    nextjs_base_url = f"http://{nextjs_host}:{nextjs_port}"
+
+    # 캐시할 이미지 사이즈들 (Next.js deviceSizes 기본값 기준)
+    widths = [640, 750, 828, 1080]
+    quality = 75
+
+    cached_count = 0
+    errors = []
+
+    for img in img_tags:
+        src = img.get("src")
+        if not src:
+            continue
+
+        # 상대 URL이면 스킵 (외부 이미지만 캐시)
+        if not src.startswith(("http://", "https://")):
+            continue
+
+        # data: URL 스킵
+        if src.startswith("data:"):
+            continue
+
+        for width in widths:
+            try:
+                # Next.js 이미지 최적화 URL 생성
+                params = urlencode({
+                    "url": src,
+                    "w": width,
+                    "q": quality,
+                })
+                cache_url = f"{nextjs_base_url}/_next/image?{params}"
+
+                # 요청 (타임아웃 30초)
+                response = requests.get(
+                    cache_url,
+                    timeout=30,
+                    headers={
+                        "User-Agent": "DRSS-ImagePrecacher/1.0",
+                        "Accept": "image/webp,image/avif,image/*,*/*;q=0.8",
+                    }
+                )
+
+                if response.status_code == 200:
+                    cached_count += 1
+                    logger.debug(f"Cached: {src} (w={width})")
+                else:
+                    logger.warning(f"Failed to cache {src} (w={width}): {response.status_code}")
+
+            except requests.RequestException as e:
+                error_msg = f"Failed to cache {src}: {str(e)}"
+                logger.warning(error_msg)
+                errors.append(error_msg)
+                # 하나의 이미지가 실패하면 다른 사이즈도 스킵
+                break
+
+    result = f"Cached {cached_count} images for RSSItem {item_id}"
+    if errors:
+        result += f" (errors: {len(errors)})"
+
+    return result
+
+
+@shared_task
+def precache_images_for_items(item_ids: list[int]):
+    """
+    여러 RSSItem의 이미지를 일괄 프리캐시
+    """
+    results = []
+    for item_id in item_ids:
+        result = precache_images_for_item(item_id)
+        results.append(result)
+    return results
