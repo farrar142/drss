@@ -38,11 +38,13 @@ export const usePagination = <T extends { id: number }>(
   const loadingRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   const prevCacheKeyRef = useRef(cacheKey);
+  const enabledRef = useRef(enabled);
 
   // 매 렌더마다 최신 값으로 업데이트
   apiRef.current = paginationApi;
   getCursorRef.current = getCursorField;
   filtersRef.current = filters;
+  enabledRef.current = enabled;
 
   // cacheKey 변경 감지 및 리셋
   if (prevCacheKeyRef.current !== cacheKey) {
@@ -53,6 +55,12 @@ export const usePagination = <T extends { id: number }>(
   }
 
   const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
+    // enabled가 false면 로딩하지 않음
+    if (!enabledRef.current) {
+      console.log(`[usePagination:${key}] loadItems skipped - not enabled`);
+      return;
+    }
+
     console.log(`[usePagination:${key}] loadItems called`, { cursor, direction, loading: loadingRef.current });
 
     if (loadingRef.current) {

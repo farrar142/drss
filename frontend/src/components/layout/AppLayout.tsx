@@ -189,8 +189,8 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
   };
 
   const handleLogout = () => {
-    logout();
     router.push('/auth/signin');
+    logout();
   };
 
   const getThemeIcon = () => {

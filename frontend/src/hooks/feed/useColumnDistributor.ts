@@ -94,11 +94,13 @@ export function useColumnDistributor<T extends { id: number }>({
   const onLoadMoreRef = useRef(onLoadMore);
   onLoadMoreRef.current = onLoadMore;
 
-  // hasNext, loading refs
+  // hasNext, loading, enabled refs
   const hasNextRef = useRef(hasNext);
   hasNextRef.current = hasNext;
   const loadingRef = useRef(loading);
   loadingRef.current = loading;
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
 
   // 컴럼에 아이템 추가
   const addItemToColumn = useCallback((columnIndex: number): boolean => {
@@ -131,8 +133,8 @@ export function useColumnDistributor<T extends { id: number }>({
     });
     setQueueLength(queueRef.current.length);
 
-    // 대기열이 임계값 이하면 다음 페이지 로드
-    if (queueRef.current.length <= queueThreshold && hasNextRef.current && !loadingRef.current) {
+    // 대기열이 임계값 이하면 다음 페이지 로드 (enabled일 때만)
+    if (enabledRef.current && queueRef.current.length <= queueThreshold && hasNextRef.current && !loadingRef.current) {
       onLoadMoreRef.current?.();
     }
 
@@ -141,6 +143,9 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 뷰포트에 보이는 sentinel들에 아이템 추가 (반복 호출용)
   const fillVisibleSentinels = useCallback(() => {
+    // 비활성 탭이면 처리하지 않음
+    if (!enabledRef.current) return;
+
     // 리사이즈 중에는 처리 건너뛰기 (레이아웃 스래싱 방지)
     if (isResizing) {
       // 이미 대기 중이면 추가 등록 안함
@@ -187,6 +192,8 @@ export function useColumnDistributor<T extends { id: number }>({
 
   // 초기 배분: 각 컬럼에 하나씩 순차적으로 (애니메이션 효과)
   const distributeInitial = useCallback(() => {
+    // 비활성 탭이면 배분하지 않음
+    if (!enabledRef.current) return;
     if (isInitialDistributingRef.current) return;
     if (queueRef.current.length === 0) return;
 
@@ -195,6 +202,11 @@ export function useColumnDistributor<T extends { id: number }>({
     let currentColumn = 0;
 
     const distributeOne = () => {
+      // 배분 중 비활성화되면 중단
+      if (!enabledRef.current) {
+        isInitialDistributingRef.current = false;
+        return;
+      }
       if (queueRef.current.length === 0 || currentColumn >= columns) {
         isInitialDistributingRef.current = false;
         // 초기 배분 완료 후 보이는 sentinel 채우기
@@ -260,6 +272,9 @@ export function useColumnDistributor<T extends { id: number }>({
       // 대기열에 추가
       queueRef.current.push(...newItems);
       setQueueLength(queueRef.current.length);
+
+      // 비활성 탭이면 배분하지 않음 (아이템은 대기열에 저장됨)
+      if (!enabledRef.current) return;
 
       // 컬럼이 비어있으면 초기 배분 시작 (ref로 체크)
       if (distributedIdsRef.current.size === newItems.length) {
