@@ -40,7 +40,7 @@ services:
       - celery
     container_name: drss-celery-worker
     # 개발환경: 모든 큐를 하나의 worker에서 처리
-    entrypoint: celery -A base worker --loglevel=info --concurrency 2 -Q celery,crawl_aggregate,crawl_worker,image_aggregate,image_worker
+    entrypoint: celery -A base worker --loglevel=info --concurrency 2 -Q celery,feed_main,detail_worker,image_aggregate,image_worker
     depends_on:
       django:
         condition: service_healthy

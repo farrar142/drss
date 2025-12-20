@@ -49,32 +49,38 @@ services:
       real-browser:
         condition: service_healthy
 
-  # ===================
-  # Celery Workers (Queue-based separation)
-  # ===================
+  # ===========================================
+  # Celery Workers (4-Queue Pipeline)
+  # ===========================================
+  # 큐 1: feed_main - 메인 URL 크롤링 (chord로 큐2 기다림)
+  # 큐 2: detail_worker - 디테일 페이지 크롤링 → 이미지 캐시 요청 (기다리지 않음)
+  # 큐 3: image_aggregate - 이미지 URL 추출 → 사이즈별 분배
+  # 큐 4: image_worker - Next.js 이미지 캐시 수행
 
-  # Crawl Aggregate Worker: 피드 업데이트 스케줄링 (낮은 동시성)
-  celery-crawl-aggregate:
+  # 큐 1: feed_main - 메인 URL 크롤링 및 디테일 분배
+  celery-feed-main:
     <<: *backend
     image: drss-backend:production
-    container_name: drss-celery-crawl-aggregate
+    container_name: drss-celery-feed-main
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=1", "-Q", "crawl_aggregate"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "feed_main"]
     depends_on:
       - django
+      - browserless
+      - real-browser
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 256M
+          cpus: '1'
+          memory: 512M
 
-  # Crawl Worker: 실제 크롤링 작업 (높은 동시성)
-  celery-crawl-worker:
+  # 큐 2: detail_worker - 개별 디테일 페이지 크롤링 (높은 동시성)
+  celery-detail-worker:
     <<: *backend
     image: drss-backend:production
-    container_name: drss-celery-crawl-worker
+    container_name: drss-celery-detail-worker
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=4", "-Q", "crawl_worker"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=4", "-Q", "detail_worker"]
     depends_on:
       - django
       - browserless
@@ -85,13 +91,13 @@ services:
           cpus: '2'
           memory: 1G
 
-  # Image Aggregate Worker: 이미지 캐시 배치 (낮은 동시성)
+  # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
   celery-image-aggregate:
     <<: *backend
     image: drss-backend:production
     container_name: drss-celery-image-aggregate
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=1", "-Q", "image_aggregate"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "image_aggregate"]
     depends_on:
       - django
     deploy:
@@ -100,7 +106,7 @@ services:
           cpus: '0.5'
           memory: 256M
 
-  # Image Worker: 개별 이미지 캐시 (높은 동시성, I/O bound)
+  # 큐 4: image_worker - Next.js 이미지 캐시 (높은 동시성, I/O bound)
   celery-image-worker:
     <<: *backend
     image: drss-backend:production

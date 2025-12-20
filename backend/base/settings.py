@@ -221,16 +221,18 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Celery Task Routes - 큐별로 작업 분리
 CELERY_TASK_ROUTES = {
-    # Crawl aggregate: 피드 업데이트 스케줄링 (여러 피드를 순회하며 worker에 분배)
-    "feeds.tasks.update_all_feeds": {"queue": "crawl_aggregate"},
-    "feeds.tasks.update_feeds_by_category": {"queue": "crawl_aggregate"},
-    # Crawl worker: 실제 크롤링 작업 (개별 피드 크롤링)
-    "feeds.tasks.update_feed_items": {"queue": "crawl_worker"},
-    "feeds.tasks.crawl_rss_everything_source": {"queue": "crawl_worker"},
-    # Image aggregate: 이미지 캐시 배치 작업 (여러 이미지를 worker에 분배)
-    "feeds.tasks.precache_images_for_items": {"queue": "image_aggregate"},
-    # Image worker: 개별 이미지 캐시 작업
-    "feeds.tasks.precache_images_for_item": {"queue": "image_worker"},
+    # 큐 1: feed_main - 메인 URL 크롤링 및 디테일 분배 (chord로 큐2 기다림)
+    "feeds.tasks.update_feed_items": {"queue": "feed_main"},
+    "feeds.tasks.update_all_feeds": {"queue": "feed_main"},
+    "feeds.tasks.update_feeds_by_category": {"queue": "feed_main"},
+    "feeds.tasks.crawl_rss_everything_source": {"queue": "feed_main"},
+    # 큐 2: detail_worker - 개별 디테일 페이지 크롤링 후 이미지 캐시 요청 (기다리지 않음)
+    "feeds.tasks.crawl_detail_page": {"queue": "detail_worker"},
+    "feeds.tasks.collect_detail_results": {"queue": "detail_worker"},
+    # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
+    "feeds.tasks.precache_images_for_item": {"queue": "image_aggregate"},
+    # 큐 4: image_worker - 실제 Next.js 이미지 캐시
+    "feeds.tasks.cache_single_image": {"queue": "image_worker"},
 }
 
 # Default queue for tasks without explicit routing
