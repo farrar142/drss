@@ -233,6 +233,9 @@ CELERY_TASK_ROUTES = {
     "feeds.tasks.precache_images_for_item": {"queue": "image_aggregate"},
     # 큐 4: image_worker - 실제 Next.js 이미지 캐시
     "feeds.tasks.cache_single_image": {"queue": "image_worker"},
+    # 큐 5: image_upload - MinIO 이미지 업로드
+    "feeds.tasks.upload_images_for_item": {"queue": "image_upload"},
+    "feeds.tasks.upload_single_image": {"queue": "image_upload"},
 }
 
 # Default queue for tasks without explicit routing

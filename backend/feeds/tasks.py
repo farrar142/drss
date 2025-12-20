@@ -13,8 +13,12 @@ from urllib.parse import urljoin, urlencode, quote
 from feeds.services.source import SourceService
 import re
 import requests
+import os
 
 logger = getLogger(__name__)
+
+# MinIO 이미지 업로드 활성화 여부 (환경변수로 제어)
+ENABLE_IMAGE_UPLOAD = os.getenv("ENABLE_IMAGE_UPLOAD", "True") == "True"
 
 
 # ===========================================
@@ -669,6 +673,8 @@ def precache_images_for_item(item_id: int):
     """
     RSSItem의 description에서 이미지 URL을 추출하여
     사이즈별 캐시 요청을 큐4로 분배 (큐 3: image_aggregate)
+
+    ENABLE_IMAGE_UPLOAD=True이면 이미지를 MinIO에 업로드하고 URL을 교체
     """
     from .models import RSSItem
     from bs4 import BeautifulSoup
@@ -682,7 +688,12 @@ def precache_images_for_item(item_id: int):
     if not description:
         return f"RSSItem {item_id} has no description"
 
-    # HTML에서 이미지 URL 추출
+    # MinIO 이미지 업로드가 활성화되어 있으면 먼저 업로드 후 URL 교체
+    if ENABLE_IMAGE_UPLOAD:
+        upload_images_for_item.delay(item_id)
+        return f"Scheduled image upload for RSSItem {item_id}"
+
+    # 기존 로직: Next.js 이미지 캐시만 수행
     soup = BeautifulSoup(description, "html.parser")
     img_tags = soup.find_all("img")
 
@@ -714,6 +725,103 @@ def precache_images_for_item(item_id: int):
             dispatched_count += 1
 
     return f"Dispatched {dispatched_count} image cache tasks for RSSItem {item_id}"
+
+
+# ===========================================
+# 큐 5: image_upload - MinIO 이미지 업로드
+# ===========================================
+
+
+@shared_task
+def upload_images_for_item(item_id: int):
+    """
+    RSSItem의 description HTML 내 이미지를 MinIO에 스트리밍 업로드하고
+    이미지 URL을 /images/xxx 형태로 교체 (큐 5: image_upload)
+
+    이 Task는 비동기로 실행되며, description을 직접 수정합니다.
+    """
+    from .models import RSSItem
+    from feeds.services.image_storage import get_image_storage_service
+
+    try:
+        item = RSSItem.objects.get(id=item_id)
+    except RSSItem.DoesNotExist:
+        return f"RSSItem {item_id} does not exist"
+
+    description = item.description
+    if not description:
+        return f"RSSItem {item_id} has no description"
+
+    # HTML인지 확인 (기본적인 태그 체크)
+    if "<" not in description or ">" not in description:
+        return f"RSSItem {item_id} description is not HTML"
+
+    try:
+        storage_service = get_image_storage_service()
+
+        # 이미지 업로드 및 HTML 내 URL 교체
+        new_description, replaced_count = storage_service.upload_images_and_replace_html(
+            description, base_url=item.link
+        )
+
+        if replaced_count > 0:
+            # description 업데이트
+            item.description = new_description
+            item.save(update_fields=["description"])
+
+            # 대표 이미지도 업로드 (별도 필드)
+            if item.image and item.image.startswith(("http://", "https://")):
+                new_image_path = storage_service.upload_image_from_url(
+                    item.image, base_url=item.link
+                )
+                if new_image_path:
+                    item.image = new_image_path
+                    item.save(update_fields=["image"])
+
+            logger.info(f"Uploaded {replaced_count} images for RSSItem {item_id}")
+            return f"Uploaded {replaced_count} images for RSSItem {item_id}"
+
+        return f"No images to upload for RSSItem {item_id}"
+
+    except Exception as e:
+        logger.exception(f"Failed to upload images for RSSItem {item_id}: {e}")
+        return f"Failed: {str(e)}"
+
+
+@shared_task
+def upload_single_image(image_url: str, item_id: int, field: str = "description"):
+    """
+    단일 이미지를 MinIO에 업로드하는 Task (큐 5: image_upload)
+
+    Args:
+        image_url: 원본 이미지 URL
+        item_id: RSSItem ID
+        field: 업데이트할 필드 (description 또는 image)
+    """
+    from .models import RSSItem
+    from feeds.services.image_storage import get_image_storage_service
+
+    try:
+        item = RSSItem.objects.get(id=item_id)
+    except RSSItem.DoesNotExist:
+        return {"success": False, "error": f"RSSItem {item_id} does not exist"}
+
+    try:
+        storage_service = get_image_storage_service()
+        new_path = storage_service.upload_image_from_url(image_url, base_url=item.link)
+
+        if new_path:
+            if field == "image":
+                item.image = new_path
+                item.save(update_fields=["image"])
+
+            return {"success": True, "original_url": image_url, "new_path": new_path}
+
+        return {"success": False, "error": "Failed to upload image"}
+
+    except Exception as e:
+        logger.exception(f"Failed to upload image {image_url}: {e}")
+        return {"success": False, "error": str(e)}
 
 
 # ===========================================
