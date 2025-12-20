@@ -73,21 +73,21 @@ const entriesToHeaders = (entries: HeaderEntry[]): Record<string, string> | unde
   }, {} as Record<string, string>);
 };
 
-const SOURCE_TYPE_INFO: Record<SourceType, { icon: React.ReactNode; label: string; description: string }> = {
+const SOURCE_TYPE_INFO: Record<SourceType, { icon: React.ReactNode; label: string; descKey: 'sourceTypeRssDesc' | 'sourceTypePageScrapingDesc' | 'sourceTypeDetailScrapingDesc' }> = {
   rss: {
     icon: <Rss className="w-4 h-4" />,
     label: 'RSS/Atom',
-    description: '표준 RSS/Atom 피드',
+    descKey: 'sourceTypeRssDesc',
   },
   page_scraping: {
     icon: <Globe className="w-4 h-4" />,
     label: 'Page Scraping',
-    description: '목록 페이지에서 아이템 추출',
+    descKey: 'sourceTypePageScrapingDesc',
   },
   detail_page_scraping: {
     icon: <FileText className="w-4 h-4" />,
     label: 'Detail Page Scraping',
-    description: '상세 페이지까지 크롤링',
+    descKey: 'sourceTypeDetailScrapingDesc',
   },
 };
 
@@ -290,7 +290,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                         {info.icon}
                         <span className="font-medium text-sm">{info.label}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">{info.description}</p>
+                      <p className="text-xs text-muted-foreground">{t.feed[info.descKey]}</p>
                     </button>
                   );
                 })}
@@ -301,7 +301,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
           {/* URL 입력 (생성 모드에서만) */}
           {mode === 'create' && (
             <div className="space-y-2">
-              <Label htmlFor="feed-url">{sourceType === 'rss' ? 'RSS/Atom URL' : '페이지 URL'}</Label>
+              <Label htmlFor="feed-url">{sourceType === 'rss' ? 'RSS/Atom URL' : t.feed.pageUrl}</Label>
               <div className="flex gap-2">
                 <Input
                   id="feed-url"

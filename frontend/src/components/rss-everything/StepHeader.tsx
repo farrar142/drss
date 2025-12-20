@@ -35,7 +35,7 @@ export function StepHeader({ currentStepIndex, sourceType, onReset }: StepHeader
         return [
           t.rssEverything.step1, // 소스 타입 선택
           t.rssEverything.step2, // URL 입력
-          '목록 셀렉터', // 목록 셀렉터
+          t.rssEverything.listSelectorStep, // 목록 셀렉터
           t.rssEverything.step4, // 미리보기
           t.rssEverything.step5, // 저장
         ];
@@ -44,7 +44,7 @@ export function StepHeader({ currentStepIndex, sourceType, onReset }: StepHeader
         return [
           t.rssEverything.step1, // 소스 타입 선택
           t.rssEverything.step2, // URL 입력
-          '목록 셀렉터', // 목록 셀렉터
+          t.rssEverything.listSelectorStep, // 목록 셀렉터
           t.rssEverything.step3, // 상세 셀렉터
           t.rssEverything.step4, // 미리보기
           t.rssEverything.step5, // 저장

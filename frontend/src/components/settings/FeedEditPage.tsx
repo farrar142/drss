@@ -96,11 +96,11 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           setRefreshInterval(foundFeed.refresh_interval || 60);
           setCategoryId(foundFeed.category_id);
         } else {
-          setError('피드를 찾을 수 없습니다.');
+          setError(t.feed.notFound);
         }
       } catch (err) {
         console.error('Failed to load feed:', err);
-        setError('피드 로드에 실패했습니다.');
+        setError(t.feed.loadFailed);
       } finally {
         setLoading(false);
       }
@@ -142,7 +142,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           updateTab(activeTab.id, { title: `${updatedFeed.title} - ${t.common.edit}` });
         }
 
-        toast.success('피드가 업데이트되었습니다.');
+        toast.success(t.feed.updated);
       } else if (context?.mode === 'create' && categoryId) {
         // 피드 생성 - 소스 없이 피드만 생성
         const newFeed = await createFeed({
@@ -174,7 +174,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       }
     } catch (err) {
       console.error('Failed to save feed:', err);
-      setError('피드 저장에 실패했습니다.');
+      setError(t.feed.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -183,7 +183,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 소스 추가 버튼
   const handleAddSource = () => {
     if (!feed) {
-      toast.warning('먼저 피드를 저장하세요.');
+      toast.warning(t.feed.saveFirst);
       return;
     }
 
@@ -220,8 +220,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const handleDeleteSource = async (source: SourceSchema) => {
     if (!feed) return;
     const confirmed = await confirm({
-      title: '소스 삭제',
-      description: `이 소스를 삭제하시겠습니까?\n${source.url}`,
+      title: t.feed.sourceDelete,
+      description: `${t.feed.sourceDeleteConfirm}\n${source.url}`,
       variant: 'destructive',
     });
     if (!confirmed) return;
@@ -232,7 +232,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       await loadFeed();
     } catch (err) {
       console.error('Failed to delete source:', err);
-      toast.error('소스 삭제에 실패했습니다.');
+      toast.error(t.feed.sourceDeleteFailed);
     }
   };
 
@@ -240,10 +240,10 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const handleRefreshSource = async (source: SourceSchema) => {
     try {
       await refreshRssEverythingSource(source.id);
-      toast.success('소스 새로고침이 예약되었습니다.');
+      toast.success(t.feed.sourceRefreshScheduled);
     } catch (err) {
       console.error('Failed to refresh source:', err);
-      toast.error('소스 새로고침에 실패했습니다.');
+      toast.error(t.feed.sourceRefreshFailed);
     }
   };
 
@@ -276,7 +276,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       // Clipboard API 사용 가능 여부 확인
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(JSON.stringify(sourceConfig, null, 2));
-        toast.success('소스 설정이 클립보드에 복사되었습니다.');
+        toast.success(t.sourceList.configCopied);
       } else {
         // Fallback: 텍스트 선택 방식
         const textArea = document.createElement('textarea');
@@ -290,17 +290,17 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
 
         try {
           document.execCommand('copy');
-          toast.success('소스 설정이 클립보드에 복사되었습니다.');
+          toast.success(t.sourceList.configCopied);
         } catch (fallbackErr) {
           console.error('Fallback copy failed:', fallbackErr);
-          toast.error('복사에 실패했습니다. 브라우저가 클립보드 접근을 지원하지 않습니다.');
+          toast.error(t.sourceList.copyFailedNoClipboard);
         } finally {
           document.body.removeChild(textArea);
         }
       }
     } catch (err) {
       console.error('Failed to copy:', err);
-      toast.error('복사에 실패했습니다.');
+      toast.error(t.common.copyFailed);
     }
   };
 
@@ -324,8 +324,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         </h1>
         <p className="text-muted-foreground">
           {isEditMode
-            ? '피드 정보를 수정하고 소스를 관리하세요.'
-            : '새 피드를 생성하세요. 저장 후 소스를 추가할 수 있습니다.'}
+            ? t.feed.editDescription
+            : t.feed.createDescription}
         </p>
       </div>
 
@@ -443,17 +443,17 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       {isEditMode && (
         <div className="space-y-4 p-6 border rounded-lg bg-card">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">소스 목록</h2>
+            <h2 className="text-lg font-semibold">{t.sourceList.title}</h2>
             <Button onClick={handleAddSource} size="sm">
               <Plus className="w-4 h-4 mr-2" />
-              소스 추가
+              {t.sourceList.addSource}
             </Button>
           </div>
 
           {sources.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>등록된 소스가 없습니다.</p>
-              <p className="text-sm mt-1">위의 &quot;소스 추가&quot; 버튼을 클릭하여 소스를 추가하세요.</p>
+              <p>{t.sourceList.noSources}</p>
+              <p className="text-sm mt-1">{t.sourceList.noSourcesHint}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -484,7 +484,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                     </p>
                     {source.last_crawled_at && (
                       <p className="text-xs text-muted-foreground">
-                        마지막 크롤링: {new Date(source.last_crawled_at).toLocaleString()}
+                        {t.sourceList.lastCrawled}: {new Date(source.last_crawled_at).toLocaleString()}
                       </p>
                     )}
                     {source.last_error && (
@@ -500,7 +500,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleCopySource(source)}
-                      title="설정 복사"
+                      title={t.sourceList.copyConfig}
                     >
                       <Copy className="w-4 h-4" />
                     </Button>
@@ -508,7 +508,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRefreshSource(source)}
-                      title="새로고침"
+                      title={t.common.refresh}
                     >
                       <RefreshCw className="w-4 h-4" />
                     </Button>
@@ -516,7 +516,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditSource(source)}
-                      title="수정"
+                      title={t.common.edit}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -524,7 +524,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteSource(source)}
-                      title="삭제"
+                      title={t.common.delete}
                       className="text-destructive hover:text-destructive"
                     >
                       <Trash2 className="w-4 h-4" />

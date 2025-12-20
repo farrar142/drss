@@ -25,6 +25,12 @@ export interface Translations {
     logout: string;
     back: string;
     next: string;
+    select: string;
+    test: string;
+    copy: string;
+    copySuccess: string;
+    copyFailed: string;
+    countUnit: string;
   };
 
   // Navigation
@@ -33,6 +39,7 @@ export interface Translations {
     categories: string;
     settings: string;
     feeds: string;
+    mainstream: string;
   };
 
   // Theme
@@ -77,7 +84,9 @@ export interface Translations {
     delete: string;
     deleteConfirm: string;
     name: string;
+    namePlaceholder: string;
     description: string;
+    descriptionPlaceholder: string;
     visible: string;
     refresh: string;
     refreshing: string;
@@ -103,6 +112,7 @@ export interface Translations {
     validating: string;
     validationResult: string;
     validationFailed: string;
+    validationFailedMessage: string;
     customHeaders: string;
     addHeader: string;
     noHeaders: string;
@@ -119,6 +129,30 @@ export interface Translations {
     refreshScheduled: string;
     markAllRead: string;
     markAllReadSuccess: string;
+    // Feed edit page
+    notFound: string;
+    loadFailed: string;
+    updated: string;
+    saveFailed: string;
+    saveFirst: string;
+    editDescription: string;
+    createDescription: string;
+    // Source
+    sourceDelete: string;
+    sourceDeleteConfirm: string;
+    sourceDeleteFailed: string;
+    sourceRefreshScheduled: string;
+    sourceRefreshFailed: string;
+    // Source type
+    sourceTypeRss: string;
+    sourceTypeRssDesc: string;
+    sourceTypePageScraping: string;
+    sourceTypePageScrapingDesc: string;
+    sourceTypeDetailScraping: string;
+    sourceTypeDetailScrapingDesc: string;
+    pageUrl: string;
+    waitSelector: string;
+    waitSelectorPlaceholder: string;
   };
 
   // Settings
@@ -128,6 +162,9 @@ export interface Translations {
     fontSizeDescription: string;
     fontSizeSmall: string;
     fontSizeDefault: string;
+    // Font size labels
+    fontSizeExtraSmall: string;
+    fontSizeNormal: string;
     // Preview buttons
     previewPrimary: string;
     previewSecondary: string;
@@ -144,6 +181,8 @@ export interface Translations {
     cruiseSpeedFast: string;
     preview: string;
     previewDescription: string;
+    previewSampleTitle: string;
+    previewSampleDescription: string;
     language: string;
     languageDescription: string;
     // Task related
@@ -344,5 +383,112 @@ export interface Translations {
     selectorSettings: string;
     htmlPreview: string;
     clickToExclude: string;
+    // Additional
+    editSourceDescription: string;
+    jsonParseError: string;
+    invalidJsonObject: string;
+    sourceUpdated: string;
+    sourceLoadFailed: string;
+    // RssSaveStep
+    rssSourceSettings: string;
+    rssFeedUrl: string;
+    verify: string;
+    rssFeedVerifySuccess: string;
+    rssFeedVerifyFailed: string;
+    itemCountLabel: string;
+    titleLabel: string;
+    descriptionLabelShort: string;
+    editSource: string;
+    // StepHeader
+    listSelectorStep: string;
+  };
+
+  // UI
+  ui: {
+    // Tabs
+    closeAllTabs: string;
+    newTab: string;
+    columnCount: string;
+    // AppBar
+    showAppBar: string;
+    hideAppBar: string;
+    // Cruising
+    showCruiseButtons: string;
+    hideCruiseButtons: string;
+    scrollToTop: string;
+    cruiseSettings: string;
+    startCruise: string;
+    stopCruise: string;
+    // Media
+    viewSingle: string;
+    viewDual: string;
+    centerAlign: string;
+    spreadAlign: string;
+    readLtr: string;
+    readRtl: string;
+    downloadImage: string;
+    downloadVideo: string;
+    previous: string;
+    toFirst: string;
+    toLast: string;
+    // New posts
+    newPosts: string;
+  };
+
+  // Selector
+  selector: {
+    // List page
+    listPageSelectors: string;
+    listPageSelectorsDesc: string;
+    detailPageSelectors: string;
+    detailPageSelectorsDesc: string;
+    // Selector fields
+    itemSelector: string;
+    itemSelectorDesc: string;
+    titleSelector: string;
+    titleSelectorDesc: string;
+    linkSelector: string;
+    linkSelectorDesc: string;
+    descriptionSelector: string;
+    descriptionSelectorDesc: string;
+    dateSelector: string;
+    dateSelectorDesc: string;
+    imageSelector: string;
+    imageSelectorDesc: string;
+    // Detail page
+    detailTitleSelector: string;
+    detailTitleSelectorDesc: string;
+    detailDescriptionSelector: string;
+    detailDescriptionSelectorDesc: string;
+    contentSelector: string;
+    contentSelectorDesc: string;
+    detailDateSelector: string;
+    detailDateSelectorDesc: string;
+    detailImageSelector: string;
+    detailImageSelectorDesc: string;
+    // Test and results
+    testSelector: string;
+    foundCount: string;
+    sample: string;
+    step2: string;
+    step3: string;
+    selectPlaceholder: string;
+  };
+
+  // Admin
+  admin: {
+    selectPlaceholder: string;
+  };
+
+  // Source list
+  sourceList: {
+    title: string;
+    addSource: string;
+    noSources: string;
+    noSourcesHint: string;
+    lastCrawled: string;
+    copyConfig: string;
+    configCopied: string;
+    copyFailedNoClipboard: string;
   };
 }

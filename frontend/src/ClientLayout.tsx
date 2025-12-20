@@ -7,6 +7,7 @@ import { NotificationProvider } from './components/common/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useTabStore } from './stores/tabStore';
 import { useSiteStore } from './stores/siteStore';
+import { useTranslation } from './stores/languageStore';
 import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SignupStatusSchema } from './services/api';
@@ -104,6 +105,7 @@ function SiteSettingsLoader({ initialSiteSettings }: { initialSiteSettings: Sign
 function URLParamHandler() {
   const searchParams = useSearchParams();
   const { openTab } = useTabStore();
+  const { t } = useTranslation();
   const hasProcessed = useRef(false);
 
   useEffect(() => {
@@ -119,7 +121,7 @@ function URLParamHandler() {
       hasProcessed.current = true;
       openTab({
         type: 'category',
-        title: `카테고리`,
+        title: t.nav.categories,
         path: `/category/${openCategory}`,
         resourceId: parseInt(openCategory),
       });
@@ -129,7 +131,7 @@ function URLParamHandler() {
       hasProcessed.current = true;
       openTab({
         type: 'feed',
-        title: `피드`,
+        title: t.nav.feeds,
         path: `/category/${categoryId}/feed/${openFeed}`,
         resourceId: parseInt(openFeed),
       });
@@ -138,12 +140,12 @@ function URLParamHandler() {
       hasProcessed.current = true;
       openTab({
         type: 'settings',
-        title: '설정',
+        title: t.nav.settings,
         path: '/settings',
       });
       window.history.replaceState({}, '', '/home');
     }
-  }, [searchParams, openTab]);
+  }, [searchParams, openTab, t]);
 
   return null;
 }

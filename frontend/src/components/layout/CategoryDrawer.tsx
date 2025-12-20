@@ -220,12 +220,12 @@ export const CategoryDrawer: FC<{
   // 탭으로 네비게이션하는 핸들러들
   const handleNavigateHome = useCallback(() => {
     saveCurrentScroll();
-    openTab({ type: 'home', title: '메인스트림', path: '/home' });
+    openTab({ type: 'home', title: t.nav.mainstream, path: '/home' });
     // 플로팅 모드(temporary)일 때 드로워 닫기
     if (variant === 'temporary') {
       onClose();
     }
-  }, [openTab, saveCurrentScroll, variant, onClose]);
+  }, [openTab, saveCurrentScroll, variant, onClose, t]);
 
   const handleNavigateCategory = useCallback((category: RSSCategory) => {
     saveCurrentScroll();
@@ -336,33 +336,33 @@ export const CategoryDrawer: FC<{
         <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
           <DialogContent onClose={() => setAddCategoryOpen(false)}>
             <DialogHeader>
-              <DialogTitle>카테고리 추가</DialogTitle>
+              <DialogTitle>{t.category.add}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">이름</Label>
+                <Label htmlFor="name">{t.category.name}</Label>
                 <Input
                   id="name"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="카테고리 이름"
+                  placeholder={t.category.namePlaceholder}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">설명</Label>
+                <Label htmlFor="description">{t.category.description}</Label>
                 <Input
                   id="description"
                   value={newCategoryDescription}
                   onChange={(e) => setNewCategoryDescription(e.target.value)}
-                  placeholder="카테고리 설명"
+                  placeholder={t.category.descriptionPlaceholder}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
-                취소
+                {t.common.cancel}
               </Button>
-              <Button onClick={handleAddCategory}>추가</Button>
+              <Button onClick={handleAddCategory}>{t.common.add}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

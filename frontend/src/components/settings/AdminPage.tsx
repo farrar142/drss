@@ -126,7 +126,7 @@ const getAdminSettings = (t: ReturnType<typeof useTranslation>['t']): SettingSec
         min: 10,
         max: 500,
         step: 10,
-        unit: t.feed.itemCount.includes('개') ? '개' : '',
+        unit: t.common.countUnit,
       },
       {
         key: 'default_refresh_interval',
@@ -150,6 +150,8 @@ interface FieldRendererProps {
 }
 
 function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
+  const { t } = useTranslation();
+  
   switch (field.type) {
     case 'text':
       return (
@@ -214,7 +216,7 @@ function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
             onValueChange={(v) => onChange(field.key, v)}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="선택하세요" />
+              <SelectValue placeholder={t.admin.selectPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {field.options.map((option) => (

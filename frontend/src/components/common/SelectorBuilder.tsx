@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ui/
 import { Badge } from '@/ui/badge';
 import { Tooltip } from '@/ui/tooltip';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/stores/languageStore';
+import { Translations } from '@/i18n/types';
 
 export interface ListSelectors {
   itemSelector: string;
@@ -47,83 +49,83 @@ interface SelectorBuilderProps {
 
 interface SelectorFieldConfig {
   key: string;
-  label: string;
+  labelKey: keyof Translations['selector'];
+  descKey: keyof Translations['selector'];
   placeholder: string;
-  description: string;
   required?: boolean;
 }
 
 const LIST_SELECTOR_FIELDS: SelectorFieldConfig[] = [
   {
     key: 'itemSelector',
-    label: '아이템 셀렉터',
+    labelKey: 'itemSelector',
+    descKey: 'itemSelectorDesc',
     placeholder: '.post-item, article, tr.list-row',
-    description: '각 게시글 아이템을 선택하는 CSS 셀렉터 (필수)',
     required: true,
   },
   {
     key: 'titleSelector',
-    label: '제목 셀렉터',
+    labelKey: 'titleSelector',
+    descKey: 'titleSelectorDesc',
     placeholder: '.title, h2 a, .subject',
-    description: '아이템 내에서 제목을 선택하는 셀렉터',
   },
   {
     key: 'linkSelector',
-    label: '링크 셀렉터',
+    labelKey: 'linkSelector',
+    descKey: 'linkSelectorDesc',
     placeholder: 'a, .title a, a.link',
-    description: '아이템 내에서 링크를 선택하는 셀렉터 (href 속성 추출)',
   },
   {
     key: 'descriptionSelector',
-    label: '설명 셀렉터',
+    labelKey: 'descriptionSelector',
+    descKey: 'descriptionSelectorDesc',
     placeholder: '.summary, .excerpt, p.description',
-    description: '아이템 내에서 요약/설명을 선택하는 셀렉터',
   },
   {
     key: 'dateSelector',
-    label: '날짜 셀렉터',
+    labelKey: 'dateSelector',
+    descKey: 'dateSelectorDesc',
     placeholder: '.date, time, .timestamp',
-    description: '아이템 내에서 날짜를 선택하는 셀렉터',
   },
   {
     key: 'imageSelector',
-    label: '이미지 셀렉터',
+    labelKey: 'imageSelector',
+    descKey: 'imageSelectorDesc',
     placeholder: 'img, .thumbnail img, .cover',
-    description: '아이템 내에서 이미지를 선택하는 셀렉터 (src 속성 추출)',
   },
 ];
 
 const DETAIL_SELECTOR_FIELDS: SelectorFieldConfig[] = [
   {
     key: 'detailTitleSelector',
-    label: '제목 셀렉터',
+    labelKey: 'detailTitleSelector',
+    descKey: 'detailTitleSelectorDesc',
     placeholder: 'h1, .article-title, .post-title',
-    description: '상세 페이지에서 제목을 선택하는 CSS 셀렉터',
   },
   {
     key: 'detailDescriptionSelector',
-    label: '설명 셀렉터',
+    labelKey: 'detailDescriptionSelector',
+    descKey: 'detailDescriptionSelectorDesc',
     placeholder: '.summary, .excerpt, meta[name="description"]',
-    description: '상세 페이지에서 요약/설명을 선택하는 셀렉터',
   },
   {
     key: 'detailContentSelector',
-    label: '본문 셀렉터',
+    labelKey: 'contentSelector',
+    descKey: 'contentSelectorDesc',
     placeholder: '.article-content, .post-body, #content',
-    description: '상세 페이지에서 본문 내용을 선택하는 셀렉터 (필수)',
     required: true,
   },
   {
     key: 'detailDateSelector',
-    label: '날짜 셀렉터',
+    labelKey: 'detailDateSelector',
+    descKey: 'detailDateSelectorDesc',
     placeholder: '.date, time, .published-at',
-    description: '상세 페이지에서 날짜를 선택하는 셀렉터',
   },
   {
     key: 'detailImageSelector',
-    label: '이미지 셀렉터',
+    labelKey: 'detailImageSelector',
+    descKey: 'detailImageSelectorDesc',
     placeholder: '.featured-image img, .hero-image, .thumbnail',
-    description: '상세 페이지에서 대표 이미지를 선택하는 셀렉터',
   },
 ];
 
@@ -136,6 +138,7 @@ export default function SelectorBuilder({
   onTestSelector,
   isLoading = false,
 }: SelectorBuilderProps) {
+  const { t } = useTranslation();
   const [testResults, setTestResults] = useState<Record<string, SelectorResult>>({});
   const [testingKey, setTestingKey] = useState<string | null>(null);
 
@@ -185,15 +188,15 @@ export default function SelectorBuilder({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {mode === 'list' ? '목록 페이지 셀렉터' : '상세 페이지 셀렉터'}
+          {mode === 'list' ? t.selector.listPageSelectors : t.selector.detailPageSelectors}
           <Badge variant={mode === 'list' ? 'default' : 'secondary'}>
-            {mode === 'list' ? 'Step 2' : 'Step 3'}
+            {mode === 'list' ? t.selector.step2 : t.selector.step3}
           </Badge>
         </CardTitle>
         <CardDescription>
           {mode === 'list'
-            ? 'HTML에서 각 아이템을 추출하기 위한 CSS 셀렉터를 설정합니다.'
-            : '상세 페이지에서 콘텐츠를 추출하기 위한 CSS 셀렉터를 설정합니다.'}
+            ? t.selector.listPageSelectorsDesc
+            : t.selector.detailPageSelectorsDesc}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -207,10 +210,10 @@ export default function SelectorBuilder({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Label htmlFor={field.key} className="font-medium">
-                    {field.label}
+                    {t.selector[field.labelKey]}
                     {field.required && <span className="text-destructive ml-1">*</span>}
                   </Label>
-                  <Tooltip content={field.description}>
+                  <Tooltip content={t.selector[field.descKey]}>
                     <span className="text-muted-foreground text-xs cursor-help">(?)</span>
                   </Tooltip>
                 </div>
@@ -222,7 +225,7 @@ export default function SelectorBuilder({
                       <XCircle className="h-4 w-4 text-red-500" />
                     )}
                     <span className="text-sm text-muted-foreground">
-                      {testResult.count}개 발견
+                      {t.selector.foundCount.replace('{count}', String(testResult.count))}
                     </span>
                   </div>
                 )}
@@ -247,14 +250,14 @@ export default function SelectorBuilder({
                     {isTesting ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      '테스트'
+                      t.selector.testSelector
                     )}
                   </Button>
                 )}
               </div>
               {testResult && testResult.samples.length > 0 && (
                 <div className="text-xs text-muted-foreground bg-muted p-2 rounded max-h-20 overflow-y-auto">
-                  <p className="font-medium mb-1">샘플:</p>
+                  <p className="font-medium mb-1">{t.selector.sample}:</p>
                   {testResult.samples.slice(0, 3).map((sample, i) => (
                     <p key={i} className="truncate">
                       {i + 1}. {sample}

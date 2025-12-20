@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { X, Home, Folder, Rss, Settings, Plus, Columns2, ChevronDown, Globe, ClipboardList, XCircle, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Tab, TabType, PanelId } from '@/stores/tabStore';
+import { useTranslation } from '@/stores/languageStore';
 import { cn } from '@/lib/utils';
 
 // 탭 타입별 아이콘
@@ -92,6 +93,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   onCreateFeedTab,
   onCreateCategoryTab,
 }) => {
+  const { t } = useTranslation();
   const tabsContainerRef = useRef<HTMLDivElement>(null);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
   const columnMenuRef = useRef<HTMLDivElement>(null);
@@ -457,7 +459,7 @@ export const TabBar: React.FC<TabBarProps> = ({
             onCloseAllTabs();
           }}
           className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50"
-          title="모든 탭 닫기"
+          title={t.ui.closeAllTabs}
         >
           <XCircle className="w-4 h-4 text-muted-foreground" />
         </button>
@@ -470,7 +472,7 @@ export const TabBar: React.FC<TabBarProps> = ({
           onAddTab();
         }}
         className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50"
-        title="새 탭"
+        title={t.ui.newTab}
       >
         <Plus className="w-4 h-4 text-muted-foreground" />
       </button>
@@ -480,16 +482,13 @@ export const TabBar: React.FC<TabBarProps> = ({
         <div className="relative" ref={columnMenuRef}>
           <button
             onClick={(e) => {
-              console.log('컬럼 수 조절 버튼 클릭');
               e.stopPropagation();
               e.preventDefault();
-              console.log('현재 showColumnMenu:', showColumnMenu);
-              console.log('현재 활성화된 탭 ID:', activeTabId);
               setShowColumnMenu(!showColumnMenu);
             }}
             onMouseDown={(e) => e.stopPropagation()}
             className="p-2 hover:bg-muted/50 transition-colors border-l border-border/50 flex items-center gap-0.5"
-            title="컬럼 수 조절"
+            title={t.ui.columnCount}
           >
             <Columns2 className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground font-medium">{activeColumns}</span>
@@ -499,7 +498,7 @@ export const TabBar: React.FC<TabBarProps> = ({
           {showColumnMenu && activeTabId && (
             <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-md shadow-lg z-[200] min-w-[100px]">
               <div className="p-1">
-                <div className="px-2 py-1 text-xs text-muted-foreground font-medium">컬럼 수</div>
+                <div className="px-2 py-1 text-xs text-muted-foreground font-medium">{t.ui.columnCount}</div>
                 {[1, 2, 3, 4, 5].map((col) => (
                   <button
                     key={col}
@@ -517,7 +516,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                         : "hover:bg-muted"
                     )}
                   >
-                    {col}열
+                    {col}
                   </button>
                 ))}
               </div>

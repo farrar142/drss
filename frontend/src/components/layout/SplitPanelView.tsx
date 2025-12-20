@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTabStore, Panel, Tab, PanelId } from '@/stores/tabStore';
 import { useAppBar } from '@/context/AppBarContext';
+import { useTranslation } from '@/stores/languageStore';
 import { TabBar } from './TabBar';
 import { ContentRenderer } from '../feed/ContentRenderer';
 import { cn } from '@/lib/utils';
@@ -225,6 +226,7 @@ PanelView.displayName = 'PanelView';
 export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen }) => {
   const router = useRouter();
   const { isAppBarHidden } = useAppBar();
+  const { t } = useTranslation();
   const {
     panels,
     activePanelId,
@@ -276,10 +278,10 @@ export const SplitPanelView: React.FC<SplitPanelViewProps> = ({ isMediaModalOpen
     setActivePanel(panelId);
     openTab({
       type: 'home',
-      title: '메인스트림',
+      title: t.nav.mainstream,
       path: '/home',
     });
-  }, [setActivePanel, openTab]);
+  }, [setActivePanel, openTab, t]);
 
   const handleCloseAllTabs = useCallback((panelId: PanelId) => {
     closeAllTabs(panelId);

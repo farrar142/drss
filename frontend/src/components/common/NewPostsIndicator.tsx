@@ -3,6 +3,7 @@
 import { FC } from 'react';
 import { cn } from '@/lib/utils';
 import { ArrowUp } from 'lucide-react';
+import { useTranslation } from '@/stores/languageStore';
 
 export interface NewPostsIndicatorProps {
   /** 새 글 개수 */
@@ -21,6 +22,8 @@ export const NewPostsIndicator: FC<NewPostsIndicatorProps> = ({
   progress = 0,
   isRefreshing = false,
 }) => {
+  const { t } = useTranslation();
+  
   const handleClick = () => {
     onClick();
     // 맨 위로 스크롤
@@ -86,7 +89,7 @@ export const NewPostsIndicator: FC<NewPostsIndicatorProps> = ({
 
       {/* 텍스트 */}
       <span className="text-sm font-medium whitespace-nowrap">
-        {newCount > 0 ? `새 글 ${newCount}개` : '새로고침'}
+        {newCount > 0 ? t.ui.newPosts.replace('{count}', String(newCount)) : t.common.refresh}
       </span>
     </button>
   );

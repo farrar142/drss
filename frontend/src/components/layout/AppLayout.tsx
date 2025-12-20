@@ -226,7 +226,7 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
 
           <h1
             className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
-            onClick={() => openTab({ type: 'home', title: '메인스트림', path: '/home' })}
+            onClick={() => openTab({ type: 'home', title: t.nav.mainstream, path: '/home' })}
           >
             {siteName}
           </h1>
@@ -278,7 +278,7 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
           </Tooltip>
 
           {/* Cruise Controls Toggle */}
-          <Tooltip content={showCruisingControls ? '크루즈 버튼 숨기기' : '크루즈 버튼 보이기'}>
+          <Tooltip content={showCruisingControls ? t.ui.hideCruiseButtons : t.ui.showCruiseButtons}>
             <Button
               variant="ghost"
               size="icon"
@@ -324,14 +324,14 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: '설정', path: '/settings' })}>
+              <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: t.common.settings, path: '/settings' })}>
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}
               </DropdownMenuItem>
               {user && (user.is_staff || user.is_superuser) && (
-                <DropdownMenuItem onClick={() => openTab({ type: 'admin', title: '관리자 설정', path: '/admin' })}>
+                <DropdownMenuItem onClick={() => openTab({ type: 'admin', title: t.settings.admin, path: '/admin' })}>
                   <Shield className="mr-2 h-4 w-4" />
-                  관리자 설정
+                  {t.settings.admin}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />

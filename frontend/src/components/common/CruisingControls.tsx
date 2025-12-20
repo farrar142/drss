@@ -4,6 +4,7 @@ import { FC, useState, useRef, useCallback, RefObject, useEffect, memo } from 'r
 import { ChevronDown, Pause, Ship, ChevronsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Slider } from '@/ui/slider';
+import { useTranslation } from '@/stores/languageStore';
 
 export interface CruisingControlsProps {
   isCruising: boolean;
@@ -20,6 +21,7 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
   onSpeedChange,
   scrollContainerRef,
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,8 +112,8 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
           "hover:scale-105 active:scale-95"
         )}
         data-cruising-control
-        title="맨 위로"
-        aria-label="맨 위로"
+        title={t.ui.scrollToTop}
+        aria-label={t.ui.scrollToTop}
       >
         <ChevronsUp className="w-5 h-5" />
       </button>
@@ -129,7 +131,7 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
             data-cruising-control
           >
             <div className="flex items-center gap-3 min-w-[200px]">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">느림</span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">{t.settings.cruiseSpeedSlow}</span>
               <Slider
                 value={[speedPercent]}
                 onValueChange={([value]: number[]) => onSpeedChange(value)}
@@ -139,10 +141,10 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
                 className="flex-1"
                 data-cruising-control
               />
-              <span className="text-xs text-muted-foreground whitespace-nowrap">빠름</span>
+              <span className="text-xs text-muted-foreground whitespace-nowrap">{t.settings.cruiseSpeedFast}</span>
             </div>
             <div className="text-center text-xs text-muted-foreground mt-2">
-              스크롤 속도: {Math.round(speedPercent)}%
+              {t.settings.cruiseSpeed}: {Math.round(speedPercent)}%
             </div>
           </div>
         )}
@@ -157,8 +159,8 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
             isExpanded && "bg-secondary/80"
           )}
           data-cruising-control
-          title="크루징 설정"
-          aria-label="크루징 설정"
+          title={t.ui.cruiseSettings}
+          aria-label={t.ui.cruiseSettings}
         >
           <Ship className="w-5 h-5" />
         </button>
@@ -175,8 +177,8 @@ export const CruisingControls: FC<CruisingControlsProps> = memo(({
           )}
           style={{ touchAction: 'manipulation' }}
           data-cruising-control
-          title={isCruising ? "크루징 멈춤" : "크루징 시작"}
-          aria-label={isCruising ? "크루징 멈춤" : "크루징 시작"}
+          title={isCruising ? t.ui.stopCruise : t.ui.startCruise}
+          aria-label={isCruising ? t.ui.stopCruise : t.ui.startCruise}
         >
           {isCruising ? (
             <Pause className="w-5 h-5" />

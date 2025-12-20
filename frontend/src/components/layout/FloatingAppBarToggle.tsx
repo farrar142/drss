@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/stores/languageStore';
 
 interface FloatingAppBarToggleProps {
   isAppBarHidden: boolean;
@@ -22,6 +23,7 @@ const DEFAULT_RIGHT = 16; // 오른쪽 여백
 const DEFAULT_BOTTOM = 160; // 크루즈 버튼 위
 
 export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBarToggleProps) {
+  const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const positionRef = useRef<Position>({ x: 0, y: 0 });
   const dragStartPos = useRef<Position>({ x: 0, y: 0 });
@@ -242,7 +244,7 @@ export function FloatingAppBarToggle({ isAppBarHidden, onToggle }: FloatingAppBa
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onMouseDown={handleMouseDown}
-      aria-label={isAppBarHidden ? '앱바 보이기' : '앱바 숨기기'}
+      aria-label={isAppBarHidden ? t.ui.showAppBar : t.ui.hideAppBar}
     >
       {isAppBarHidden ? (
         <Menu className="h-5 w-5 pointer-events-none" />

@@ -14,17 +14,15 @@ import { useTranslation, languageNames, availableLanguages } from '@/stores/lang
 import { useTabStore } from '@/stores/tabStore';
 import { FeedItemCard } from '@/components/feed/FeedItemCard';
 import { RSSItem } from '@/types/rss';
+import { Translations } from '@/i18n/types';
 
-// 더미 피드 아이템
-const dummyItem: RSSItem = {
-  id: 0,
-  feed_id: 0,
-  title: '샘플 피드 아이템 제목입니다',
-  link: 'https://example.com',
-  description: '<p>이것은 피드 아이템의 설명 미리보기입니다. 폰트 사이즈가 어떻게 보이는지 확인할 수 있습니다.</p><p>여러 줄의 텍스트가 포함되어 있어 가독성을 테스트할 수 있습니다.</p>',
-  published_at: new Date().toISOString(),
-  is_read: false,
-  is_favorite: true,
+// fontSizeLevel에 해당하는 번역 키 맵핑
+const fontSizeLabelKeys: Record<FontSizeLevel, keyof Translations['settings']> = {
+  xs: 'fontSizeExtraSmall',
+  sm: 'fontSizeSmall',
+  md: 'fontSizeNormal',
+  lg: 'fontSizeLarge',
+  xl: 'fontSizeExtraLarge',
 };
 
 // Preset color themes (HEX values)
@@ -44,6 +42,18 @@ export function SettingsPage() {
   const { fontSizeLevel, setFontSizeLevel, cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
   const { t, language, setLanguage } = useTranslation();
   const { openTab } = useTabStore();
+
+  // 더미 피드 아이템 - 번역 적용
+  const dummyItem: RSSItem = {
+    id: 0,
+    feed_id: 0,
+    title: t.settings.previewSampleTitle,
+    link: 'https://example.com',
+    description: t.settings.previewSampleDescription,
+    published_at: new Date().toISOString(),
+    is_read: false,
+    is_favorite: true,
+  };
 
   // Local state for color pickers
   const [primaryHex, setPrimaryHex] = useState(colors.primary);
@@ -350,11 +360,7 @@ export function SettingsPage() {
                 className="flex-1"
                 size="sm"
               >
-                {level === 'xs' ? t.settings.fontSizeSmall :
-                  level === 'sm' ? t.settings.fontSizeDefault :
-                    level === 'md' ? t.settings.fontSizeLarge :
-                      level === 'lg' ? t.settings.fontSizeExtraLarge :
-                        'XL'}
+                {t.settings[fontSizeLabelKeys[level]]}
               </Button>
             ))}
           </div>

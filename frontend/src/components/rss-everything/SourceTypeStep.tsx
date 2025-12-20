@@ -56,20 +56,20 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
     {
       type: 'rss',
       icon: <Rss className="w-6 h-6" />,
-      title: t.rssEverything?.sourceTypeRss || 'RSS/Atom 피드',
-      description: t.rssEverything?.sourceTypeRssDesc || '표준 RSS 또는 Atom 피드 URL을 입력합니다. 가장 간단한 방식입니다.',
+      title: t.rssEverything.sourceTypeRss,
+      description: t.rssEverything.sourceTypeRssDesc,
     },
     {
       type: 'page_scraping',
       icon: <Globe className="w-6 h-6" />,
-      title: t.rssEverything?.sourceTypePageScraping || '페이지 스크래핑',
-      description: t.rssEverything?.sourceTypePageScrapingDesc || '목록 페이지에서 CSS 셀렉터로 아이템을 추출합니다.',
+      title: t.rssEverything.sourceTypePageScraping,
+      description: t.rssEverything.sourceTypePageScrapingDesc,
     },
     {
       type: 'detail_page_scraping',
       icon: <FileText className="w-6 h-6" />,
-      title: t.rssEverything?.sourceTypeDetailScraping || '상세 페이지 스크래핑',
-      description: t.rssEverything?.sourceTypeDetailScrapingDesc || '목록 페이지에서 링크를 수집하고, 각 상세 페이지에서 내용을 추출합니다.',
+      title: t.rssEverything.sourceTypeDetailScraping,
+      description: t.rssEverything.sourceTypeDetailScrapingDesc,
     },
   ];
 
@@ -86,7 +86,7 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
 
       // 유효성 검사
       if (typeof parsed !== 'object' || parsed === null) {
-        setJsonError('유효한 JSON 객체가 아닙니다.');
+        setJsonError(t.rssEverything.invalidJsonObject);
         return;
       }
 
@@ -105,7 +105,7 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
 
       setParsedConfig(parsed as SourceConfig);
     } catch {
-      setJsonError('JSON 파싱 오류: 유효한 JSON 형식인지 확인하세요.');
+      setJsonError(t.rssEverything.jsonParseError);
     }
   };
 
@@ -121,9 +121,9 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h2 className="text-lg font-semibold mb-2">{t.rssEverything?.selectSourceType || '소스 타입 선택'}</h2>
+        <h2 className="text-lg font-semibold mb-2">{t.rssEverything.selectSourceType}</h2>
         <p className="text-sm text-muted-foreground">
-          {t.rssEverything?.selectSourceTypeDesc || '피드 아이템을 가져올 방식을 선택하세요.'}
+          {t.rssEverything.selectSourceTypeDesc}
         </p>
       </div>
 
@@ -192,7 +192,7 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
       {/* 다음 버튼 */}
       <div className="flex justify-end">
         <Button onClick={handleContinue}>
-          {t.common?.next || '다음'} <ArrowRight className="w-4 h-4 ml-1" />
+          {t.common.next} <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
     </div>

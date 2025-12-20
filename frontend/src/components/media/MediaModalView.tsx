@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { FeedImage } from '@/components/feed/FeedImage';
 import { FeedVideo } from '@/components/feed/FeedVideo';
 import { UseMediaModalControllerReturn } from '@/hooks/media/useMediaModalController';
+import { useTranslation } from '@/stores/languageStore';
 
 export interface MediaModalViewProps extends UseMediaModalControllerReturn { }
 
@@ -149,12 +150,14 @@ const DualViewToggleButtons = memo(function DualViewToggleButtons({
   toggleDualAlignment: (e: React.MouseEvent) => void;
   toggleReadDirection: (e: React.MouseEvent) => void;
 }) {
+  const { t } = useTranslation();
+  
   return (
     <>
       {/* Dual Alignment Toggle Button - Top Left */}
       <button
         onClick={toggleDualAlignment}
-        title={dualAlignment === 'spread' ? '중앙에 모아보기' : '좌우로 분리하기'}
+        title={dualAlignment === 'spread' ? t.ui.centerAlign : t.ui.spreadAlign}
         className={cn(
           "absolute top-4 left-4 z-20 p-2 rounded-full backdrop-blur-sm transition-colors",
           dualAlignment === 'center'
@@ -172,7 +175,7 @@ const DualViewToggleButtons = memo(function DualViewToggleButtons({
       {/* Reading Direction Toggle Button - Top Right */}
       <button
         onClick={toggleReadDirection}
-        title={readDirection === 'ltr' ? '오른쪽→왼쪽으로 보기' : '왼쪽→오른쪽으로 보기'}
+        title={readDirection === 'ltr' ? t.ui.readRtl : t.ui.readLtr}
         className={cn(
           "absolute top-4 right-4 z-20 p-2 rounded-full backdrop-blur-sm transition-colors",
           readDirection === 'rtl'
@@ -244,6 +247,8 @@ const BottomControlBar = memo(function BottomControlBar({
   clickTimeoutRef: React.MutableRefObject<number | null>;
   CLICK_STATE_WINDOW: number;
 }) {
+  const { t } = useTranslation();
+  
   const handleNavWithClickState = (
     e: React.MouseEvent,
     isLeft: boolean,
@@ -301,7 +306,7 @@ const BottomControlBar = memo(function BottomControlBar({
             {modalMedia && (
               <button
                 onClick={handleDownloadCurrent}
-                title={modalMedia.type === 'video' ? '현재 비디오 다운로드' : '현재 이미지 다운로드'}
+                title={modalMedia.type === 'video' ? t.ui.downloadVideo : t.ui.downloadImage}
                 className="p-2 rounded-full hover:bg-white/20 transition-colors"
               >
                 <Download className="w-5 h-5 text-white" />
@@ -338,7 +343,7 @@ const BottomControlBar = memo(function BottomControlBar({
             <button
               onClick={(e) => handleNavWithClickState(e, true, handlePrev)}
               onDoubleClick={(e) => handleNavDoubleClick(e, true)}
-              title="이전"
+              title={t.ui.previous}
               aria-label="previous"
               className={cn(
                 "p-1 rounded-full hover:bg-white/20 transition-colors",
@@ -353,7 +358,7 @@ const BottomControlBar = memo(function BottomControlBar({
             <button
               onClick={(e) => handleNavWithClickState(e, true, handleFirst)}
               onDoubleClick={(e) => handleNavDoubleClick(e, true)}
-              title="처음으로"
+              title={t.ui.toFirst}
               aria-label="first"
               className={cn(
                 "p-1 rounded-full hover:bg-white/20 transition-colors",
@@ -373,7 +378,7 @@ const BottomControlBar = memo(function BottomControlBar({
             <button
               onClick={(e) => handleNavWithClickState(e, false, handleLast)}
               onDoubleClick={(e) => handleNavDoubleClick(e, false)}
-              title="마지막으로"
+              title={t.ui.toLast}
               aria-label="last"
               className={cn(
                 "p-1 rounded-full hover:bg-white/20 transition-colors",
@@ -388,7 +393,7 @@ const BottomControlBar = memo(function BottomControlBar({
             <button
               onClick={(e) => handleNavWithClickState(e, false, handleNext)}
               onDoubleClick={(e) => handleNavDoubleClick(e, false)}
-              title="다음"
+              title={t.common.next}
               aria-label="next"
               className={cn(
                 "p-1 rounded-full hover:bg-white/20 transition-colors",
@@ -409,7 +414,7 @@ const BottomControlBar = memo(function BottomControlBar({
         {mediaCount > 1 && (
           <button
             onClick={toggleViewMode}
-            title={viewMode === 1 ? '2개씩 보기' : '1개씩 보기'}
+            title={viewMode === 1 ? t.ui.viewDual : t.ui.viewSingle}
             className={cn(
               "p-2 rounded-full hover:bg-white/20 transition-colors",
               viewMode === 2 && "bg-white/20"
@@ -425,7 +430,7 @@ const BottomControlBar = memo(function BottomControlBar({
         {/* Close */}
         <button
           onClick={closeModal}
-          title="닫기"
+          title={t.common.close}
           className="p-2 rounded-full hover:bg-white/20 transition-colors"
         >
           <X className="w-5 h-5 text-white" />

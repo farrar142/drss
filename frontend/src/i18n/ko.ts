@@ -23,6 +23,12 @@ export const ko: Translations = {
     logout: '로그아웃',
     back: '이전',
     next: '다음',
+    select: '선택하세요',
+    test: '테스트',
+    copy: '복사',
+    copySuccess: '클립보드에 복사되었습니다.',
+    copyFailed: '복사에 실패했습니다.',
+    countUnit: '개',
   },
 
   // Navigation
@@ -31,6 +37,7 @@ export const ko: Translations = {
     categories: '카테고리',
     settings: '설정',
     feeds: '피드',
+    mainstream: '메인스트림',
   },
 
   // Theme
@@ -75,7 +82,9 @@ export const ko: Translations = {
     delete: '카테고리 삭제',
     deleteConfirm: '이 카테고리를 삭제하시겠습니까? 포함된 피드도 함께 삭제됩니다.',
     name: '이름',
+    namePlaceholder: '카테고리 이름',
     description: '설명',
+    descriptionPlaceholder: '카테고리 설명',
     visible: '표시',
     refresh: '피드 새로고침',
     refreshing: '새로고침 중...',
@@ -101,6 +110,7 @@ export const ko: Translations = {
     validating: '검증 중',
     validationResult: '검증 결과',
     validationFailed: '피드 검증 실패',
+    validationFailedMessage: 'RSS 피드 검증에 실패했습니다. URL을 확인해주세요.',
     customHeaders: '커스텀 헤더',
     addHeader: '추가',
     noHeaders: '헤더가 없습니다. 추가 버튼을 눌러 헤더를 추가하세요.',
@@ -117,6 +127,30 @@ export const ko: Translations = {
     refreshScheduled: '피드 새로고침이 예약되었습니다.',
     markAllRead: '전체 읽음 처리',
     markAllReadSuccess: '모든 아이템을 읽음으로 표시했습니다.',
+    // Feed edit page
+    notFound: '피드를 찾을 수 없습니다.',
+    loadFailed: '피드 로드에 실패했습니다.',
+    updated: '피드가 업데이트되었습니다.',
+    saveFailed: '피드 저장에 실패했습니다.',
+    saveFirst: '먼저 피드를 저장하세요.',
+    editDescription: '피드 정보를 수정하고 소스를 관리하세요.',
+    createDescription: '새 피드를 생성하세요. 저장 후 소스를 추가할 수 있습니다.',
+    // Source
+    sourceDelete: '소스 삭제',
+    sourceDeleteConfirm: '이 소스를 삭제하시겠습니까?',
+    sourceDeleteFailed: '소스 삭제에 실패했습니다.',
+    sourceRefreshScheduled: '소스 새로고침이 예약되었습니다.',
+    sourceRefreshFailed: '소스 새로고침에 실패했습니다.',
+    // Source type
+    sourceTypeRss: '표준 RSS/Atom 피드',
+    sourceTypeRssDesc: '표준 RSS/Atom 피드',
+    sourceTypePageScraping: '페이지 스크래핑',
+    sourceTypePageScrapingDesc: '목록 페이지에서 아이템 추출',
+    sourceTypeDetailScraping: '상세 페이지 스크래핑',
+    sourceTypeDetailScrapingDesc: '상세 페이지까지 크롤링',
+    pageUrl: '페이지 URL',
+    waitSelector: '대기 셀렉터',
+    waitSelectorPlaceholder: '페이지 로드 완료 확인용 셀렉터',
   },
 
   // Settings
@@ -126,6 +160,9 @@ export const ko: Translations = {
     fontSizeDescription: '피드 아이템의 텍스트 크기를 조절합니다.',
     fontSizeSmall: '작게',
     fontSizeDefault: '기본',
+    // Font size labels
+    fontSizeExtraSmall: '아주 작게',
+    fontSizeNormal: '보통',
     // Preview buttons
     previewPrimary: 'Primary 버튼',
     previewSecondary: 'Secondary 버튼',
@@ -142,6 +179,8 @@ export const ko: Translations = {
     cruiseSpeedFast: '빠르게',
     preview: '미리보기',
     previewDescription: '설정이 적용된 모습을 확인할 수 있습니다.',
+    previewSampleTitle: '샘플 피드 아이템 제목입니다',
+    previewSampleDescription: '<p>이것은 피드 아이템의 설명 미리보기입니다. 폰트 사이즈가 어떻게 보이는지 확인할 수 있습니다.</p><p>여러 줄의 텍스트가 포함되어 있어 가독성을 테스트할 수 있습니다.</p>',
     language: '언어',
     languageDescription: '인터페이스 언어를 선택합니다.',
     // Task related
@@ -342,5 +381,112 @@ export const ko: Translations = {
     selectorSettings: '셀렉터 설정',
     htmlPreview: 'HTML 미리보기',
     clickToExclude: '클릭하여 제외할 요소 선택',
+    // Additional
+    editSourceDescription: 'RSS 소스 URL과 설정을 수정합니다.',
+    jsonParseError: 'JSON 파싱 오류: 유효한 JSON 형식인지 확인하세요.',
+    invalidJsonObject: '유효한 JSON 객체가 아닙니다.',
+    sourceUpdated: '소스가 업데이트되었습니다.',
+    sourceLoadFailed: '소스 데이터를 불러오는데 실패했습니다.',
+    // RssSaveStep
+    rssSourceSettings: 'RSS 소스 설정',
+    rssFeedUrl: 'RSS 피드 URL',
+    verify: '검증',
+    rssFeedVerifySuccess: 'RSS 피드 검증 성공',
+    rssFeedVerifyFailed: 'RSS 피드 검증에 실패했습니다. URL을 확인해주세요.',
+    itemCountLabel: '아이템 수',
+    titleLabel: '제목',
+    descriptionLabelShort: '설명',
+    editSource: '소스 수정',
+    // StepHeader
+    listSelectorStep: '목록 셀렉터',
+  },
+
+  // UI
+  ui: {
+    // Tabs
+    closeAllTabs: '모든 탭 닫기',
+    newTab: '새 탭',
+    columnCount: '컬럼 수 조절',
+    // AppBar
+    showAppBar: '앱바 보이기',
+    hideAppBar: '앱바 숨기기',
+    // Cruising
+    showCruiseButtons: '크루즈 버튼 보이기',
+    hideCruiseButtons: '크루즈 버튼 숨기기',
+    scrollToTop: '맨 위로',
+    cruiseSettings: '크루징 설정',
+    startCruise: '크루징 시작',
+    stopCruise: '크루징 멈춤',
+    // Media
+    viewSingle: '1개씩 보기',
+    viewDual: '2개씩 보기',
+    centerAlign: '중앙에 모아보기',
+    spreadAlign: '좌우로 분리하기',
+    readLtr: '왼쪽→오른쪽으로 보기',
+    readRtl: '오른쪽→왼쪽으로 보기',
+    downloadImage: '현재 이미지 다운로드',
+    downloadVideo: '현재 비디오 다운로드',
+    previous: '이전',
+    toFirst: '처음으로',
+    toLast: '마지막으로',
+    // New posts
+    newPosts: '새 글 {count}개',
+  },
+
+  // Selector
+  selector: {
+    // List page
+    listPageSelectors: '목록 페이지 셀렉터',
+    listPageSelectorsDesc: 'HTML에서 각 아이템을 추출하기 위한 CSS 셀렉터를 설정합니다.',
+    detailPageSelectors: '상세 페이지 셀렉터',
+    detailPageSelectorsDesc: '상세 페이지에서 콘텐츠를 추출하기 위한 CSS 셀렉터를 설정합니다.',
+    // Selector fields
+    itemSelector: '아이템 셀렉터',
+    itemSelectorDesc: '각 게시글 아이템을 선택하는 CSS 셀렉터 (필수)',
+    titleSelector: '제목 셀렉터',
+    titleSelectorDesc: '아이템 내에서 제목을 선택하는 셀렉터',
+    linkSelector: '링크 셀렉터',
+    linkSelectorDesc: '아이템 내에서 링크를 선택하는 셀렉터 (href 속성 추출)',
+    descriptionSelector: '설명 셀렉터',
+    descriptionSelectorDesc: '아이템 내에서 요약/설명을 선택하는 셀렉터',
+    dateSelector: '날짜 셀렉터',
+    dateSelectorDesc: '아이템 내에서 날짜를 선택하는 셀렉터',
+    imageSelector: '이미지 셀렉터',
+    imageSelectorDesc: '아이템 내에서 이미지를 선택하는 셀렉터 (src 속성 추출)',
+    // Detail page
+    detailTitleSelector: '제목 셀렉터',
+    detailTitleSelectorDesc: '상세 페이지에서 제목을 선택하는 CSS 셀렉터',
+    detailDescriptionSelector: '설명 셀렉터',
+    detailDescriptionSelectorDesc: '상세 페이지에서 요약/설명을 선택하는 셀렉터',
+    contentSelector: '본문 셀렉터',
+    contentSelectorDesc: '상세 페이지에서 본문 내용을 선택하는 셀렉터 (필수)',
+    detailDateSelector: '날짜 셀렉터',
+    detailDateSelectorDesc: '상세 페이지에서 날짜를 선택하는 셀렉터',
+    detailImageSelector: '이미지 셀렉터',
+    detailImageSelectorDesc: '상세 페이지에서 대표 이미지를 선택하는 셀렉터',
+    // Test and results
+    testSelector: '테스트',
+    foundCount: '{count}개 발견',
+    sample: '샘플',
+    step2: 'Step 2',
+    step3: 'Step 3',
+    selectPlaceholder: '선택하세요',
+  },
+
+  // Admin
+  admin: {
+    selectPlaceholder: '선택하세요',
+  },
+
+  // Source list
+  sourceList: {
+    title: '소스 목록',
+    addSource: '소스 추가',
+    noSources: '등록된 소스가 없습니다.',
+    noSourcesHint: '위의 "소스 추가" 버튼을 클릭하여 소스를 추가하세요.',
+    lastCrawled: '마지막 크롤링',
+    copyConfig: '설정 복사',
+    configCopied: '소스 설정이 클립보드에 복사되었습니다.',
+    copyFailedNoClipboard: '복사에 실패했습니다. 브라우저가 클립보드 접근을 지원하지 않습니다.',
   },
 };

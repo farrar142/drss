@@ -23,6 +23,12 @@ export const en: Translations = {
     logout: 'Logout',
     back: 'Back',
     next: 'Next',
+    select: 'Select',
+    test: 'Test',
+    copy: 'Copy',
+    copySuccess: 'Copied to clipboard.',
+    copyFailed: 'Failed to copy.',
+    countUnit: '',
   },
 
   // Navigation
@@ -31,6 +37,7 @@ export const en: Translations = {
     categories: 'Categories',
     settings: 'Settings',
     feeds: 'Feeds',
+    mainstream: 'Mainstream',
   },
 
   // Theme
@@ -75,7 +82,9 @@ export const en: Translations = {
     delete: 'Delete Category',
     deleteConfirm: 'Delete this category? All included feeds will also be deleted.',
     name: 'Name',
+    namePlaceholder: 'Category name',
     description: 'Description',
+    descriptionPlaceholder: 'Category description',
     visible: 'Visible',
     refresh: 'Refresh Feeds',
     refreshing: 'Refreshing...',
@@ -101,6 +110,7 @@ export const en: Translations = {
     validating: 'Validating',
     validationResult: 'Validation Result',
     validationFailed: 'Feed validation failed',
+    validationFailedMessage: 'RSS feed validation failed. Please check the URL.',
     customHeaders: 'Custom Headers',
     addHeader: 'Add',
     noHeaders: 'No headers. Click Add to add a header.',
@@ -117,6 +127,30 @@ export const en: Translations = {
     refreshScheduled: 'Feed refresh has been scheduled.',
     markAllRead: 'Mark All Read',
     markAllReadSuccess: 'All items marked as read.',
+    // Feed edit page
+    notFound: 'Feed not found.',
+    loadFailed: 'Failed to load feed.',
+    updated: 'Feed updated.',
+    saveFailed: 'Failed to save feed.',
+    saveFirst: 'Please save the feed first.',
+    editDescription: 'Edit feed information and manage sources.',
+    createDescription: 'Create a new feed. You can add sources after saving.',
+    // Source
+    sourceDelete: 'Delete Source',
+    sourceDeleteConfirm: 'Delete this source?',
+    sourceDeleteFailed: 'Failed to delete source.',
+    sourceRefreshScheduled: 'Source refresh has been scheduled.',
+    sourceRefreshFailed: 'Failed to refresh source.',
+    // Source type
+    sourceTypeRss: 'Standard RSS/Atom Feed',
+    sourceTypeRssDesc: 'Standard RSS/Atom feed',
+    sourceTypePageScraping: 'Page Scraping',
+    sourceTypePageScrapingDesc: 'Extract items from list page',
+    sourceTypeDetailScraping: 'Detail Page Scraping',
+    sourceTypeDetailScrapingDesc: 'Crawl to detail pages',
+    pageUrl: 'Page URL',
+    waitSelector: 'Wait Selector',
+    waitSelectorPlaceholder: 'Selector to confirm page load',
   },
 
   // Settings
@@ -126,6 +160,9 @@ export const en: Translations = {
     fontSizeDescription: 'Adjust the text size of feed items.',
     fontSizeSmall: 'Small',
     fontSizeDefault: 'Default',
+    // Font size labels
+    fontSizeExtraSmall: 'Extra Small',
+    fontSizeNormal: 'Normal',
     // Preview buttons
     previewPrimary: 'Primary Button',
     previewSecondary: 'Secondary Button',
@@ -142,6 +179,8 @@ export const en: Translations = {
     cruiseSpeedFast: 'Fast',
     preview: 'Preview',
     previewDescription: 'See how the settings will look.',
+    previewSampleTitle: 'Sample Feed Item Title',
+    previewSampleDescription: '<p>This is a preview of the feed item description. You can see how the font size will look.</p><p>Multiple lines of text are included to test readability.</p>',
     language: 'Language',
     languageDescription: 'Select interface language.',
     // Task related
@@ -342,5 +381,112 @@ export const en: Translations = {
     selectorSettings: 'Selector Settings',
     htmlPreview: 'HTML Preview',
     clickToExclude: 'Click to select element to exclude',
+    // Additional
+    editSourceDescription: 'Edit RSS source URL and settings.',
+    jsonParseError: 'JSON parse error: Please check the JSON format.',
+    invalidJsonObject: 'Invalid JSON object.',
+    sourceUpdated: 'Source has been updated.',
+    sourceLoadFailed: 'Failed to load source data.',
+    // RssSaveStep
+    rssSourceSettings: 'RSS Source Settings',
+    rssFeedUrl: 'RSS Feed URL',
+    verify: 'Verify',
+    rssFeedVerifySuccess: 'RSS feed verification successful',
+    rssFeedVerifyFailed: 'RSS feed verification failed. Please check the URL.',
+    itemCountLabel: 'Item count',
+    titleLabel: 'Title',
+    descriptionLabelShort: 'Description',
+    editSource: 'Edit Source',
+    // StepHeader
+    listSelectorStep: 'List Selectors',
+  },
+
+  // UI
+  ui: {
+    // Tabs
+    closeAllTabs: 'Close all tabs',
+    newTab: 'New tab',
+    columnCount: 'Column count',
+    // AppBar
+    showAppBar: 'Show app bar',
+    hideAppBar: 'Hide app bar',
+    // Cruising
+    showCruiseButtons: 'Show cruise buttons',
+    hideCruiseButtons: 'Hide cruise buttons',
+    scrollToTop: 'Scroll to top',
+    cruiseSettings: 'Cruise settings',
+    startCruise: 'Start cruising',
+    stopCruise: 'Stop cruising',
+    // Media
+    viewSingle: 'View single',
+    viewDual: 'View dual',
+    centerAlign: 'Center align',
+    spreadAlign: 'Spread apart',
+    readLtr: 'Read left to right',
+    readRtl: 'Read right to left',
+    downloadImage: 'Download current image',
+    downloadVideo: 'Download current video',
+    previous: 'Previous',
+    toFirst: 'Go to first',
+    toLast: 'Go to last',
+    // New posts
+    newPosts: '{count} new posts',
+  },
+
+  // Selector
+  selector: {
+    // List page
+    listPageSelectors: 'List Page Selectors',
+    listPageSelectorsDesc: 'Set CSS selectors to extract items from HTML.',
+    detailPageSelectors: 'Detail Page Selectors',
+    detailPageSelectorsDesc: 'Set CSS selectors to extract content from detail pages.',
+    // Selector fields
+    itemSelector: 'Item Selector',
+    itemSelectorDesc: 'CSS selector for each post item (required)',
+    titleSelector: 'Title Selector',
+    titleSelectorDesc: 'Selector for title within item',
+    linkSelector: 'Link Selector',
+    linkSelectorDesc: 'Selector for link within item (extracts href)',
+    descriptionSelector: 'Description Selector',
+    descriptionSelectorDesc: 'Selector for summary/description within item',
+    dateSelector: 'Date Selector',
+    dateSelectorDesc: 'Selector for date within item',
+    imageSelector: 'Image Selector',
+    imageSelectorDesc: 'Selector for image within item (extracts src)',
+    // Detail page
+    detailTitleSelector: 'Title Selector',
+    detailTitleSelectorDesc: 'CSS selector for title on detail page',
+    detailDescriptionSelector: 'Description Selector',
+    detailDescriptionSelectorDesc: 'Selector for summary/description on detail page',
+    contentSelector: 'Content Selector',
+    contentSelectorDesc: 'Selector for main content on detail page (required)',
+    detailDateSelector: 'Date Selector',
+    detailDateSelectorDesc: 'Selector for date on detail page',
+    detailImageSelector: 'Image Selector',
+    detailImageSelectorDesc: 'Selector for featured image on detail page',
+    // Test and results
+    testSelector: 'Test',
+    foundCount: '{count} found',
+    sample: 'Sample',
+    step2: 'Step 2',
+    step3: 'Step 3',
+    selectPlaceholder: 'Select',
+  },
+
+  // Admin
+  admin: {
+    selectPlaceholder: 'Select',
+  },
+
+  // Source list
+  sourceList: {
+    title: 'Source List',
+    addSource: 'Add Source',
+    noSources: 'No sources registered.',
+    noSourcesHint: 'Click "Add Source" button above to add a source.',
+    lastCrawled: 'Last crawled',
+    copyConfig: 'Copy config',
+    configCopied: 'Source config copied to clipboard.',
+    copyFailedNoClipboard: 'Copy failed. Browser does not support clipboard access.',
   },
 };

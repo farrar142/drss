@@ -12,6 +12,7 @@ import {
 import { Button } from '@/ui/button';
 import { AlertTriangle, HelpCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/stores/languageStore';
 
 export type ConfirmType = 'danger' | 'warning' | 'info' | 'destructive';
 
@@ -49,6 +50,8 @@ const confirmButtonStyles: Record<ConfirmType, string> = {
 };
 
 export function ConfirmDialog({ open, options, onConfirm, onCancel }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  
   if (!options) return null;
 
   // variant='destructive' -> type='destructive' 매핑
@@ -69,13 +72,13 @@ export function ConfirmDialog({ open, options, onConfirm, onCancel }: ConfirmDia
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onCancel}>
-            {options.cancelLabel || options.cancelText || '취소'}
+            {options.cancelLabel || options.cancelText || t.common.cancel}
           </Button>
           <Button
             className={cn(confirmButtonStyles[type])}
             onClick={onConfirm}
           >
-            {options.confirmLabel || options.confirmText || '확인'}
+            {options.confirmLabel || options.confirmText || t.common.confirm}
           </Button>
         </DialogFooter>
       </DialogContent>

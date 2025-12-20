@@ -52,7 +52,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
       setLocalValidationResult(result);
     } catch (error) {
       console.error('Validation error:', error);
-      setValidationError('RSS 피드 검증에 실패했습니다. URL을 확인해주세요.');
+      setValidationError(t.rssEverything.rssFeedVerifyFailed);
     } finally {
       setIsValidating(false);
     }
@@ -66,14 +66,14 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
       <div>
         <h2 className="text-lg font-semibold mb-2">
           {isEditMode
-            ? (t.rssEverything?.saveFeed || 'RSS 소스 수정')
-            : (t.rssEverything?.addSource || 'RSS 소스 추가')
+            ? t.rssEverything.editSource
+            : t.rssEverything.addSource
           }
         </h2>
         <p className="text-sm text-muted-foreground">
           {isEditMode
-            ? 'RSS 소스 URL과 설정을 수정합니다.'
-            : (t.rssEverything?.addSourceDescription || 'RSS 소스를 기존 피드에 추가합니다.')
+            ? t.rssEverything.editSourceDescription
+            : t.rssEverything.addSourceDescription
           }
         </p>
       </div>
@@ -81,7 +81,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            RSS 소스 설정
+            {t.rssEverything.rssSourceSettings}
           </CardTitle>
           <CardDescription>
             {url}
@@ -90,7 +90,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
         <CardContent className="space-y-4">
           {/* URL 편집 */}
           <div className="space-y-2">
-            <Label htmlFor="feed-url">RSS 피드 URL</Label>
+            <Label htmlFor="feed-url">{t.rssEverything.rssFeedUrl}</Label>
             <div className="flex gap-2">
               <Input
                 id="feed-url"
@@ -110,7 +110,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
                 ) : (
                   <Search className="w-4 h-4" />
                 )}
-                <span className="ml-1">검증</span>
+                <span className="ml-1">{t.rssEverything.verify}</span>
               </Button>
             </div>
 
@@ -126,13 +126,13 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
               <div className="p-3 bg-green-500/10 text-green-700 dark:text-green-400 rounded-md text-sm space-y-1">
                 <div className="flex items-center gap-2 font-medium">
                   <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>RSS 피드 검증 성공</span>
+                  <span>{t.rssEverything.rssFeedVerifySuccess}</span>
                 </div>
                 <div className="ml-6 space-y-0.5 text-muted-foreground">
-                  <p>제목: {displayValidationResult.title}</p>
-                  <p>아이템 수: {displayValidationResult.items_count}개</p>
+                  <p>{t.rssEverything.titleLabel}: {displayValidationResult.title}</p>
+                  <p>{t.rssEverything.itemCountLabel}: {displayValidationResult.items_count}</p>
                   {displayValidationResult.description && (
-                    <p className="truncate">설명: {displayValidationResult.description}</p>
+                    <p className="truncate">{t.rssEverything.descriptionLabelShort}: {displayValidationResult.description}</p>
                   )}
                 </div>
               </div>
@@ -143,7 +143,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> {t.common?.back || '이전'}
+          <ArrowLeft className="w-4 h-4 mr-1" /> {t.common.back}
         </Button>
         <Button
           onClick={onSave}
@@ -154,7 +154,7 @@ export const RssSaveStep: React.FC<RssSaveStepProps> = ({
           ) : (
             <Save className="w-4 h-4 mr-1" />
           )}
-          {isEditMode ? '수정' : (t.rssEverything?.addSource || '추가')}
+          {isEditMode ? t.common.edit : t.rssEverything.addSource}
         </Button>
       </div>
     </div>
