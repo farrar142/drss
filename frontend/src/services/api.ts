@@ -331,6 +331,22 @@ export interface CategoryReorderSchema {
   category_ids: number[];
 }
 
+export type ItemRefreshResponseUpdatedFields = string[] | null;
+
+export type ItemRefreshResponseMessage = string | null;
+
+export type ItemRefreshResponseError = string | null;
+
+/**
+ * 아이템 새로고침 응답
+ */
+export interface ItemRefreshResponse {
+  success: boolean;
+  updated_fields?: ItemRefreshResponseUpdatedFields;
+  message?: ItemRefreshResponseMessage;
+  error?: ItemRefreshResponseError;
+}
+
 export type InputCursor = string | null;
 
 export type InputOrderingField = string | null;
@@ -342,12 +358,15 @@ export interface Input {
   ordering_field?: InputOrderingField;
 }
 
+export type ItemSchemaSourceId = number | null;
+
 /**
  * 아이템 스키마
  */
 export interface ItemSchema {
   id: number;
   feed_id: number;
+  source_id?: ItemSchemaSourceId;
   title: string;
   link: string;
   description: string;
@@ -1227,6 +1246,19 @@ export const getCategoryStats = (
     }
   
 /**
+ * 아이템 새로고침 (상세 페이지 다시 크롤링)
+ * @summary Refresh Item
+ */
+export const refreshItem = (
+    itemId: number,
+ ) => {
+      return axiosInstance<ItemRefreshResponse>(
+      {url: `/api/items/${itemId}/refresh`, method: 'POST'
+    },
+      );
+    }
+  
+/**
  * 아이템 즐겨찾기 토글
  * @summary Toggle Item Favorite
  */
@@ -1731,6 +1763,7 @@ export type DeleteCategoryResult = NonNullable<Awaited<ReturnType<typeof deleteC
 export type ReorderCategoriesResult = NonNullable<Awaited<ReturnType<typeof reorderCategories>>>
 export type RefreshCategoryFeedsResult = NonNullable<Awaited<ReturnType<typeof refreshCategoryFeeds>>>
 export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCategoryStats>>>
+export type RefreshItemResult = NonNullable<Awaited<ReturnType<typeof refreshItem>>>
 export type ToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof toggleItemFavorite>>>
 export type ToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof toggleItemRead>>>
 export type ListAllItemsResult = NonNullable<Awaited<ReturnType<typeof listAllItems>>>

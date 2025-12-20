@@ -118,11 +118,10 @@ export function UrlStep({
                   <button
                     type="button"
                     onClick={() => onBrowserServiceChange('realbrowser')}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      browserService === 'realbrowser'
+                    className={`p-3 rounded-lg border text-left transition-colors ${browserService === 'realbrowser'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:bg-muted/50'
-                    }`}
+                      }`}
                   >
                     <div className="font-medium text-sm">{t.rssEverything.browserServiceRealbrowser}</div>
                     <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceRealbrowserDesc}</div>
@@ -130,11 +129,10 @@ export function UrlStep({
                   <button
                     type="button"
                     onClick={() => onBrowserServiceChange('browserless')}
-                    className={`p-3 rounded-lg border text-left transition-colors ${
-                      browserService === 'browserless'
+                    className={`p-3 rounded-lg border text-left transition-colors ${browserService === 'browserless'
                         ? 'border-primary bg-primary/5'
                         : 'border-border hover:bg-muted/50'
-                    }`}
+                      }`}
                   >
                     <div className="font-medium text-sm">{t.rssEverything.browserServiceBrowserless}</div>
                     <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceBrowserlessDesc}</div>

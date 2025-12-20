@@ -1,9 +1,9 @@
 'use client';
 
-import { CheckCircle, Heart, User, Tag } from "lucide-react";
+import { CheckCircle, Heart, User, Tag, RefreshCw } from "lucide-react";
 import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
-import { toggleItemFavorite, toggleItemRead } from "../../services/api";
+import { toggleItemFavorite, toggleItemRead, refreshItem } from "../../services/api";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../../stores/settingsStore";
 import { useRSSStore } from "../../stores/rssStore";
@@ -271,8 +271,9 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   item: RSSItem,
   onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
   onCollapseChange?: (id: number, collapsed: boolean) => void,
+  onItemRefreshed?: (itemId: number, updatedItem: Partial<RSSItem>) => void,
   fontSizeOverride?: FontSizeLevel, // 미리보기용 오버라이드
-}>(({ item, onMediaClick, onCollapseChange, fontSizeOverride }, ref) => {
+}>(({ item, onMediaClick, onCollapseChange, onItemRefreshed, fontSizeOverride }, ref) => {
   const { viewMode, fontSizeLevel: storeFontSize } = useSettingsStore();
   const fontSizeLevel = fontSizeOverride || storeFontSize;
   const fontSize = fontSizeConfig[fontSizeLevel];
@@ -281,6 +282,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   const [collapsed, setCollapsed] = useState(viewMode !== 'feed');
   const [isRead, setIsRead] = useState(item.is_read);
   const [isFavorite, setIsFavorite] = useState(item.is_favorite);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const localRef = useRef<HTMLDivElement | null>(null);
 
   // Use ref for onMediaClick to avoid re-rendering description on callback change
@@ -337,6 +339,22 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       console.error(error);
     }
   }, [item.id, isFavorite]);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const result = await refreshItem(item.id);
+      if (result.success && result.updated_fields && result.updated_fields.length > 0) {
+        // 부모 컴포넌트에 업데이트 알림 (필요시 아이템 다시 로드)
+        onItemRefreshed?.(item.id, {});
+      }
+    } catch (error) {
+      console.error('Failed to refresh item:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [item.id, isRefreshing, onItemRefreshed]);
 
   const adjustFeedItemCount = useRSSStore((state) => state.adjustFeedItemCount);
 
@@ -443,6 +461,22 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
 
         {/* Actions */}
         <div className={cn("flex items-center shrink-0", fontSize.gap)}>
+          {/* Refresh Button - only shown if source_id exists */}
+          {item.source_id && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleRefresh(); }}
+              disabled={isRefreshing}
+              className={cn(
+                "p-1 rounded-full transition-colors flex items-center justify-center",
+                "text-muted-foreground hover:bg-muted",
+                isRefreshing && "animate-spin"
+              )}
+              title="Refresh item"
+            >
+              <RefreshCw className={cn(fontSize.icon)} />
+            </button>
+          )}
+
           {/* Read Toggle Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handleToggleRead(); }}
