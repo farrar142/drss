@@ -6,6 +6,7 @@ from django.utils import timezone as django_timezone
 from feeds.utils.feed_fetcher import fetch_feed_data
 from feeds.utils.date_parser import parse_date
 from feeds.utils.html_parser import extract_html, extract_src
+from feeds.utils.html_utils import strip_html_tags
 from feeds.utils.web_scraper import crawl_list_page_items
 from urllib.parse import urljoin
 from feeds.services.source import SourceService
@@ -207,6 +208,7 @@ def _update_from_rss_source(feed, source):
                 title=title,
                 link=link,
                 description=description,
+                description_text=strip_html_tags(description),
                 author=author,
                 categories=categories,
                 image=image,
@@ -336,6 +338,7 @@ def _crawl_list_page(source, items, existing_guids):
                 title=item["title"][:199],
                 link=item["link"],
                 description=item["description"],
+                description_text=strip_html_tags(item["description"]),
                 published_at=published_at,
                 guid=item["guid"][:499],
                 author=item["author"],
@@ -398,6 +401,7 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
                 title=item["title"][:199],
                 link=item["link"],
                 description=item["description"],
+                description_text=strip_html_tags(item["description"]),
                 published_at=published_at,
                 guid=item["link"][:499],
                 author=author,

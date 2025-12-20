@@ -16,8 +16,9 @@ class RSSItemManager(models.Manager):
         search = search.strip()
 
         # 전문 검색 벡터 (config='simple'로 언어 독립적 검색)
+        # description_text는 HTML 태그가 제거된 순수 텍스트
         search_vector = SearchVector("title", weight="A", config="simple") + SearchVector(
-            "description", weight="B", config="simple"
+            "description_text", weight="B", config="simple"
         )
         search_query = SearchQuery(search, config="simple", search_type="plain")
 
@@ -31,7 +32,7 @@ class RSSItemManager(models.Manager):
             .filter(
                 models.Q(search=search_query) |  # 전문 검색 매칭
                 models.Q(title__icontains=search) |  # 제목 부분 문자열
-                models.Q(description__icontains=search)  # 설명 부분 문자열
+                models.Q(description_text__icontains=search)  # 설명 부분 문자열 (HTML 제거된 텍스트)
             )
             .order_by("-rank", "-published_at")  # 관련도 순, 동점이면 최신순
             .distinct()

@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from feeds.models import RSSFeed, RSSItem
+from feeds.utils.html_utils import strip_html_tags
 import feedparser
 import requests
 from datetime import datetime, timedelta
@@ -96,6 +97,7 @@ class Command(BaseCommand):
                 title=entry.get("title", "No Title"),
                 link=entry.get("link", ""),
                 description=entry.get("description", ""),
+                description_text=strip_html_tags(entry.get("description", "")),
                 published_at=published_at,
                 guid=guid,
             )

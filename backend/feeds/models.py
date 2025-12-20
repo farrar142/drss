@@ -97,6 +97,11 @@ class RSSItem(BaseModel):
     title = models.CharField(max_length=500)
     link = models.URLField()
     description = models.TextField(blank=True)
+    description_text = models.TextField(
+        blank=True, 
+        default="",
+        help_text="HTML 태그가 제거된 순수 텍스트 (검색용)"
+    )
     author = models.CharField(max_length=255, blank=True, help_text="아이템 작성자")
     categories = models.JSONField(
         default=list, blank=True, help_text="카테고리 목록 (예: ['Tech', 'News'])"
@@ -121,6 +126,18 @@ class RSSItem(BaseModel):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        """저장 시 description에서 HTML 태그를 제거하여 description_text에 저장"""
+        from feeds.utils.html_utils import strip_html_tags
+        
+        # description이 변경되었거나 description_text가 비어있으면 업데이트
+        if self.description and not self.description_text:
+            self.description_text = strip_html_tags(self.description)
+        elif self.pk is None:  # 새로 생성되는 경우
+            self.description_text = strip_html_tags(self.description) if self.description else ""
+        
+        super().save(*args, **kwargs)
 
 
 class RSSEverythingSource(BaseModel):
