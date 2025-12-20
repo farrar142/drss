@@ -306,17 +306,17 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <Button>Primary 버튼</Button>
-            <Button variant="secondary">Secondary 버튼</Button>
-            <Button variant="outline">Outline 버튼</Button>
-            <Button variant="ghost">Ghost 버튼</Button>
-            <Button variant="destructive">Destructive 버튼</Button>
+            <Button>{t.settings.previewPrimary}</Button>
+            <Button variant="secondary">{t.settings.previewSecondary}</Button>
+            <Button variant="outline">{t.settings.previewOutline}</Button>
+            <Button variant="ghost">{t.settings.previewGhost}</Button>
+            <Button variant="destructive">{t.settings.previewDestructive}</Button>
           </div>
           <div className="p-4 rounded-lg bg-accent">
-            <p className="text-accent-foreground">Accent 배경 영역</p>
+            <p className="text-accent-foreground">{t.settings.previewAccentArea}</p>
           </div>
           <div className="p-4 rounded-lg bg-muted">
-            <p className="text-muted-foreground">Muted 배경 영역</p>
+            <p className="text-muted-foreground">{t.settings.previewMutedArea}</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center">

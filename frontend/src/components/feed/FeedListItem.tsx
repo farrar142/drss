@@ -23,6 +23,7 @@ import {
 import { useRSSStore } from '../../stores/rssStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useToast, useConfirm } from '../../stores/toastStore';
+import { useTranslation } from '../../stores/languageStore';
 import {
   FeedSchema,
   deleteFeed,
@@ -44,12 +45,13 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   const { openTab, closeTabsByFeedId } = useTabStore();
   const toast = useToast();
   const confirm = useConfirm();
+  const { t } = useTranslation();
 
   // 피드 수정 - FeedEdit 탭 열기
   const handleEdit = () => {
     openTab({
       type: 'feed-edit',
-      title: `${feed.title} - 수정`,
+      title: `${feed.title} - ${t.feed.edit}`,
       path: '/feed-edit',
       resourceId: feed.id, // 피드별로 다른 탭이 열리도록
       feedEditContext: {
@@ -62,7 +64,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
   const handleRefresh = async () => {
     try {
       await refreshFeed(feed.id);
-      toast.success('피드 새로고침이 예약되었습니다.');
+      toast.success(t.feed.refreshScheduled);
     } catch (error) {
       console.error(error);
     }
@@ -70,8 +72,8 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
   const handleDelete = async () => {
     const confirmed = await confirm({
-      title: '피드 삭제',
-      description: '정말로 이 피드를 삭제하시겠습니까?',
+      title: t.feed.deleteTitle,
+      description: t.feed.deleteConfirm,
       variant: 'destructive',
     });
     if (!confirmed) return;
@@ -91,7 +93,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
       await markAllFeedItemsRead(feed.id);
       // 모든 아이템을 읽음으로 표시했으므로 unread count를 0으로 만듦
       adjustFeedItemCount(feed.id, -previousCount);
-      toast.success('모든 아이템을 읽음으로 표시했습니다.');
+      toast.success(t.feed.markAllReadSuccess);
     } catch (error) {
       console.error(error);
     }
@@ -211,28 +213,28 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
             <DropdownMenuItem onClick={handleEdit}>
-              <Pencil className="w-4 h-4 mr-2 text-primary" /> 수정
+              <Pencil className="w-4 h-4 mr-2 text-primary" /> {t.feed.edit}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleToggleVisible}>
               {feed.visible ? (
                 <>
-                  <EyeOff className="w-4 h-4 mr-2 text-orange-500" /> 숨기기
+                  <EyeOff className="w-4 h-4 mr-2 text-orange-500" /> {t.feed.hide}
                 </>
               ) : (
                 <>
-                  <Eye className="w-4 h-4 mr-2 text-green-500" /> 표시하기
+                  <Eye className="w-4 h-4 mr-2 text-green-500" /> {t.feed.show}
                 </>
               )}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleRefresh}>
-              <RefreshCw className="w-4 h-4 mr-2 text-blue-500" /> 새로고침
+              <RefreshCw className="w-4 h-4 mr-2 text-blue-500" /> {t.feed.refresh}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleMarkAllRead}>
-              <CheckCircle className="w-4 h-4 mr-2 text-cyan-500" /> 전체 읽음 처리
+              <CheckCircle className="w-4 h-4 mr-2 text-cyan-500" /> {t.feed.markAllRead}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-              <Trash2 className="w-4 h-4 mr-2" /> 삭제
+              <Trash2 className="w-4 h-4 mr-2" /> {t.common.delete}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -92,6 +92,7 @@ export interface Translations {
     add: string;
     edit: string;
     delete: string;
+    deleteTitle: string;
     deleteConfirm: string;
     url: string;
     title: string;
@@ -111,6 +112,13 @@ export interface Translations {
     itemCount: string;
     latestItemDate: string;
     enterUrl: string;
+    // Dropdown menu
+    hide: string;
+    show: string;
+    refresh: string;
+    refreshScheduled: string;
+    markAllRead: string;
+    markAllReadSuccess: string;
   };
 
   // Settings
@@ -120,6 +128,14 @@ export interface Translations {
     fontSizeDescription: string;
     fontSizeSmall: string;
     fontSizeDefault: string;
+    // Preview buttons
+    previewPrimary: string;
+    previewSecondary: string;
+    previewOutline: string;
+    previewGhost: string;
+    previewDestructive: string;
+    previewAccentArea: string;
+    previewMutedArea: string;
     fontSizeLarge: string;
     fontSizeExtraLarge: string;
     cruiseSpeed: string;

@@ -100,8 +100,8 @@ export const useRSSStore = create<RSSStore>((set) => ({
 
   // 특정 피드의 아이템 카운트를 증감 (낙관적 업데이트용)
   adjustFeedItemCount: (feedId, delta) => set((state) => ({
-    feeds: state.feeds.map(feed => 
-      feed.id === feedId 
+    feeds: state.feeds.map(feed =>
+      feed.id === feedId
         ? { ...feed, item_count: Math.max(0, feed.item_count + delta) }
         : feed
     )

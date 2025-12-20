@@ -90,7 +90,8 @@ export const en: Translations = {
     add: 'Add Feed',
     edit: 'Edit Feed',
     delete: 'Delete Feed',
-    deleteConfirm: 'Delete this feed?',
+    deleteTitle: 'Delete Feed',
+    deleteConfirm: 'Are you sure you want to delete this feed?',
     url: 'URL',
     title: 'Title',
     description: 'Description',
@@ -109,6 +110,13 @@ export const en: Translations = {
     itemCount: 'Item Count',
     latestItemDate: 'Latest Item Date',
     enterUrl: 'Please enter a URL.',
+    // Dropdown menu
+    hide: 'Hide',
+    show: 'Show',
+    refresh: 'Refresh',
+    refreshScheduled: 'Feed refresh has been scheduled.',
+    markAllRead: 'Mark All Read',
+    markAllReadSuccess: 'All items marked as read.',
   },
 
   // Settings
@@ -118,6 +126,14 @@ export const en: Translations = {
     fontSizeDescription: 'Adjust the text size of feed items.',
     fontSizeSmall: 'Small',
     fontSizeDefault: 'Default',
+    // Preview buttons
+    previewPrimary: 'Primary Button',
+    previewSecondary: 'Secondary Button',
+    previewOutline: 'Outline Button',
+    previewGhost: 'Ghost Button',
+    previewDestructive: 'Destructive Button',
+    previewAccentArea: 'Accent Background Area',
+    previewMutedArea: 'Muted Background Area',
     fontSizeLarge: 'Large',
     fontSizeExtraLarge: 'Extra Large',
     cruiseSpeed: 'Cruise Speed',

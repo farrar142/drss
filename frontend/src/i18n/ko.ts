@@ -90,7 +90,8 @@ export const ko: Translations = {
     add: '피드 추가',
     edit: '피드 편집',
     delete: '피드 삭제',
-    deleteConfirm: '이 피드를 삭제하시겠습니까?',
+    deleteTitle: '피드 삭제',
+    deleteConfirm: '정말로 이 피드를 삭제하시겠습니까?',
     url: 'URL',
     title: '제목',
     description: '설명',
@@ -109,6 +110,13 @@ export const ko: Translations = {
     itemCount: '아이템 수',
     latestItemDate: '최신 아이템 날짜',
     enterUrl: 'URL을 입력하세요.',
+    // Dropdown menu
+    hide: '숨기기',
+    show: '표시하기',
+    refresh: '새로고침',
+    refreshScheduled: '피드 새로고침이 예약되었습니다.',
+    markAllRead: '전체 읽음 처리',
+    markAllReadSuccess: '모든 아이템을 읽음으로 표시했습니다.',
   },
 
   // Settings
@@ -118,6 +126,14 @@ export const ko: Translations = {
     fontSizeDescription: '피드 아이템의 텍스트 크기를 조절합니다.',
     fontSizeSmall: '작게',
     fontSizeDefault: '기본',
+    // Preview buttons
+    previewPrimary: 'Primary 버튼',
+    previewSecondary: 'Secondary 버튼',
+    previewOutline: 'Outline 버튼',
+    previewGhost: 'Ghost 버튼',
+    previewDestructive: 'Destructive 버튼',
+    previewAccentArea: 'Accent 배경 영역',
+    previewMutedArea: 'Muted 배경 영역',
     fontSizeLarge: '크게',
     fontSizeExtraLarge: '매우 크게',
     cruiseSpeed: '크루즈 속도',
