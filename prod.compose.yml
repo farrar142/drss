@@ -96,6 +96,8 @@ services:
     restart: always
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - nextjs_cache:/app/.next/cache
     environment:
       - NODE_ENV=production
       - TZ=Asia/Seoul
@@ -162,3 +164,4 @@ networks:
 volumes:
   static_volume:
   media_volume:
+  nextjs_cache:
