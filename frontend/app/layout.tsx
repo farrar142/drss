@@ -4,12 +4,7 @@ import { cookies, headers } from "next/headers";
 import "./globals.css";
 import { ClientLayout } from '@/ClientLayout';
 import { THEME_COOKIE_NAME, getThemeFromCookie, getInitialThemeStyles } from '@/stores/themeStore';
-import { SignupStatusSchema, UserResponse, CategorySchema, FeedSchema } from '@/services/api';
-
-// 카테고리 + 피드를 포함한 타입 (서버사이드 전용)
-interface CategoryWithFeeds extends CategorySchema {
-  feeds: FeedSchema[];
-}
+import { SignupStatusSchema } from '@/services/api';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,42 +48,6 @@ async function fetchSiteSettings(): Promise<SignupStatusSchema | null> {
   }
 }
 
-// 서버 사이드에서 토큰으로 사용자 정보 조회 (로그인 플래시 방지)
-async function fetchUserFromToken(token: string): Promise<UserResponse | null> {
-  try {
-    const apiUrl = process.env.INTERNAL_API_URL || 'http://django:8000';
-    const res = await fetch(`${apiUrl}/api/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store', // 사용자 정보는 캐시하지 않음
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    console.error('Failed to fetch user from token:', e);
-    return null;
-  }
-}
-
-// 서버 사이드에서 카테고리 목록 + 피드 조회 (한 번에)
-async function fetchCategoriesWithFeeds(token: string): Promise<CategoryWithFeeds[]> {
-  try {
-    const apiUrl = process.env.INTERNAL_API_URL || 'http://django:8000';
-    const res = await fetch(`${apiUrl}/api/categories/with-feeds`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-    if (!res.ok) return [];
-    return await res.json();
-  } catch (e) {
-    console.error('Failed to fetch categories with feeds:', e);
-    return [];
-  }
-}
-
 // 동적 메타데이터 생성
 export async function generateMetadata(): Promise<Metadata> {
   const siteSettings = await fetchSiteSettings();
@@ -110,21 +69,8 @@ export default async function RootLayout({
   const themeCookie = cookieStore.get(THEME_COOKIE_NAME);
   const themeData = themeCookie ? getThemeFromCookie(themeCookie.value ? `${THEME_COOKIE_NAME}=${themeCookie.value}` : undefined) : null;
 
-  // 서버에서 토큰 쿠키를 읽어 사용자 정보 미리 조회 (로그인 플래시 방지)
-  const tokenCookie = cookieStore.get('token');
-
-  // 병렬로 사용자 정보, 사이트 설정, 카테고리+피드 조회
-  const token = tokenCookie?.value;
-  const [initialUser, siteSettingsResult, categoriesWithFeeds] = await Promise.all([
-    token ? fetchUserFromToken(token) : Promise.resolve(null),
-    fetchSiteSettings(),
-    token ? fetchCategoriesWithFeeds(token) : Promise.resolve([]),
-  ]);
-  const siteSettings = siteSettingsResult ?? { site_name: 'DRSS', allow_signup: true };
-
-  // 카테고리에서 피드 분리
-  const initialCategories = categoriesWithFeeds.map(({ feeds, ...cat }) => cat);
-  const initialFeeds = categoriesWithFeeds.flatMap(cat => cat.feeds);
+  // 서버에서 사이트 설정 미리 불러오기 (실패 시 기본값 사용)
+  const siteSettings = await fetchSiteSettings() ?? { site_name: 'DRSS', allow_signup: true };
 
   // 초기 다크모드 클래스 결정 (system인 경우 기본 dark)
   const initialDark = themeData?.mode === 'dark' || themeData?.mode === 'system' || !themeData;
@@ -141,13 +87,7 @@ export default async function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: `:root { ${initialStyles} }` }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ClientLayout
-          initialTheme={themeData}
-          initialSiteSettings={siteSettings}
-          initialUser={initialUser}
-          initialCategories={initialCategories}
-          initialFeeds={initialFeeds}
-        >
+        <ClientLayout initialTheme={themeData} initialSiteSettings={siteSettings}>
           {children}
         </ClientLayout>
       </body>

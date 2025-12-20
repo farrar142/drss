@@ -132,6 +132,14 @@ def crawl_detail_page_items(
                     timeout=30000,
                     custom_headers=custom_headers,
                 )
+                # FetchHtmlResponse 객체인 경우 속성으로 접근
+                if hasattr(detail_result, 'success'):
+                    success = detail_result.success
+                    html = detail_result.html if success else None
+                else:
+                    # dict인 경우 .get()으로 접근
+                    success = detail_result.get("success")
+                    html = detail_result.get("html") if success else None
             else:
                 # 기본 구현
                 if use_browser:
@@ -147,17 +155,13 @@ def crawl_detail_page_items(
                         use_browser_on_fail=True,
                         custom_headers=custom_headers,
                     )
-                detail_result = {
-                    "success": result.success,
-                    "html": result.html if result.success else None,
-                    "url": result.url or item_info["link"],
-                    "error": result.error if not result.success else None,
-                }
+                success = result.success
+                html = result.html if success else None
 
-            if not detail_result.get("success") or not detail_result.get("html"):
+            if not success or not html:
                 continue
 
-            detail_soup = BeautifulSoup(detail_result["html"], "html.parser")
+            detail_soup = BeautifulSoup(html, "html.parser")
 
             # exclude_selectors 적용 - 지정된 요소들 제거
             if exclude_selectors:

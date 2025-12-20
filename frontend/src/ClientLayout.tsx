@@ -1,16 +1,15 @@
 'use client';
 
-import { AuthProvider, useAuth, User } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppBarProvider } from './context/AppBarContext';
 import AppLayout from './components/layout/AppLayout';
 import { NotificationProvider } from './components/common/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
 import { useTabStore } from './stores/tabStore';
 import { useSiteStore } from './stores/siteStore';
-import { useRSSStore } from './stores/rssStore';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { SignupStatusSchema, CategorySchema, FeedSchema } from './services/api';
+import { SignupStatusSchema } from './services/api';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -23,16 +22,10 @@ export function ClientLayout({
   children,
   initialTheme,
   initialSiteSettings,
-  initialUser,
-  initialCategories,
-  initialFeeds,
 }: {
   children: React.ReactNode;
   initialTheme?: InitialTheme | null;
   initialSiteSettings: SignupStatusSchema;
-  initialUser?: User | null;
-  initialCategories?: CategorySchema[];
-  initialFeeds?: FeedSchema[];
 }) {
   const { mode, colors } = useThemeStore();
 
@@ -82,15 +75,13 @@ export function ClientLayout({
   }, [mode, colors]);
 
   return (
-    <AuthProvider initialUser={initialUser}>
+    <AuthProvider>
       <AppBarProvider>
         <NotificationProvider>
           <SiteSettingsLoader initialSiteSettings={initialSiteSettings} />
-          <RSSDataLoader initialCategories={initialCategories} initialFeeds={initialFeeds}>
-            <URLParamHandler />
-            <TabHistoryManager />
-            <AppLayout authChildren={children} siteName={initialSiteSettings.site_name} />
-          </RSSDataLoader>
+          <URLParamHandler />
+          <TabHistoryManager />
+          <AppLayout authChildren={children} siteName={initialSiteSettings.site_name} />
         </NotificationProvider>
       </AppBarProvider>
     </AuthProvider>
@@ -101,51 +92,12 @@ export function ClientLayout({
 function SiteSettingsLoader({ initialSiteSettings }: { initialSiteSettings: SignupStatusSchema }) {
   const { initializeSiteSettings } = useSiteStore();
 
-  // useLayoutEffect로 페인트 전에 동기화 (플래시 방지)
-  useLayoutEffect(() => {
+  useEffect(() => {
+    // 서버에서 받은 초기 설정을 스토어에 동기화 (설정 페이지 등에서 사용)
     initializeSiteSettings(initialSiteSettings);
   }, [initialSiteSettings, initializeSiteSettings]);
 
   return null;
-}
-
-// RSS 데이터(카테고리, 피드)를 스토어에 동기화하는 컴포넌트
-function RSSDataLoader({
-  initialCategories,
-  initialFeeds,
-  children,
-}: {
-  initialCategories?: CategorySchema[];
-  initialFeeds?: FeedSchema[];
-  children: React.ReactNode;
-}) {
-  const _initialized = useRSSStore((state) => state._initialized);
-  const initializeFromServer = useRSSStore((state) => state.initializeFromServer);
-  const [ready, setReady] = useState(false);
-
-  // 마운트 시 즉시 초기화
-  useLayoutEffect(() => {
-    if (_initialized) {
-      setReady(true);
-      return;
-    }
-
-    if (initialCategories?.length || initialFeeds?.length) {
-      const normalized = (initialCategories || []).map((c: any) => ({
-        ...c,
-        visible: c.visible ?? true,
-        order: c.order ?? 0,
-      }));
-      normalized.sort((a, b) => a.order - b.order);
-      initializeFromServer(normalized, initialFeeds || []);
-    }
-    setReady(true);
-  }, []); // 마운트 시 한 번만 실행
-
-  // 초기화 완료 전까지 children 렌더 지연
-  if (!ready) return null;
-
-  return <>{children}</>;
 }
 
 // URL 파라미터를 읽어서 탭을 여는 컴포넌트

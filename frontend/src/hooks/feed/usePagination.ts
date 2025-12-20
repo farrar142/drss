@@ -139,9 +139,10 @@ export const usePagination = <T extends { id: number }>(
     console.log(`[usePagination:${key}] triggering initial load`);
     loadItems(undefined, 'before');
   }, [enabled, cacheKey, loadItems, key]);
-
   // cacheKey 변경 시 상태 리셋
   useEffect(() => {
+    if (items.length === 0) return;
+    setItems([])
     return () => {
       // cleanup: 다음 마운트를 위해 리셋하지 않음 (Strict Mode 대응)
     };

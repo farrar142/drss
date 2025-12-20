@@ -48,7 +48,7 @@ const Column = memo(function Column({
       {/* Sentinel: 이 컬럼의 끝이 보이면 대기열에서 아이템 추가 */}
       <div
         ref={setSentinelRef(columnIndex)}
-        className="h-4 w-full"
+        className="flex-grow min-h-[100px]"
         data-column-sentinel={columnIndex}
       />
     </div>
