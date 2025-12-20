@@ -84,6 +84,7 @@ class SourceService:
         wait_selector: str = "body",
         timeout: int = 30000,
         custom_headers: Optional[dict] = None,
+        use_cache: bool = True,
     ) -> FetchHtmlResponse:
         """URL에서 HTML을 가져옴"""
         try:
@@ -94,6 +95,7 @@ class SourceService:
                     timeout=timeout,
                     custom_headers=custom_headers,
                     service=browser_service,
+                    use_cache=use_cache,
                 )
             else:
                 result = fetch_html_smart(
@@ -101,6 +103,7 @@ class SourceService:
                     use_browser_on_fail=True,
                     browser_selector=wait_selector,
                     custom_headers=custom_headers,
+                    use_cache=use_cache,
                 )
 
             if result.success:

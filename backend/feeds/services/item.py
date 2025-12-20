@@ -78,7 +78,7 @@ class ItemService:
             }
 
         try:
-            # 상세 페이지 HTML 가져오기
+            # 상세 페이지 HTML 가져오기 (캐시 사용 안함 - 항상 최신 데이터 가져오기)
             fetch_result = SourceService.fetch_html(
                 url=item.link,
                 use_browser=source.use_browser,
@@ -86,6 +86,7 @@ class ItemService:
                 wait_selector=source.wait_selector or "body",
                 timeout=source.timeout or 30000,
                 custom_headers=source.custom_headers,
+                use_cache=False,
             )
 
             if not fetch_result.success or not fetch_result.html:
@@ -138,9 +139,26 @@ class ItemService:
                 item.save(update_fields=updated_fields)
                 logger.info(f"Refreshed item {item_id}: updated {updated_fields}")
 
+            # 아이템 데이터 준비 (업데이트 여부와 상관없이 반환)
+            item_data = {
+                "id": item.id,
+                "feed_id": item.feed_id,
+                "source_id": item.source_id,
+                "title": item.title,
+                "link": item.link,
+                "description": item.description,
+                "author": item.author or "",
+                "categories": item.categories or [],
+                "image": item.image or "",
+                "published_at": item.published_at,
+                "is_read": item.is_read,
+                "is_favorite": item.is_favorite,
+            }
+
             return {
                 "success": True,
                 "updated_fields": updated_fields,
+                "item": item_data,
                 "message": f"Updated {len(updated_fields)} field(s)" if updated_fields else "No changes detected",
             }
 

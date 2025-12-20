@@ -28,12 +28,14 @@ const Column = memo(function Column({
   handleCollapseChange,
   handleMediaClick,
   setSentinelRef,
+  onItemRefreshed,
 }: {
   columnData: RSSItem[];
   columnIndex: number;
   handleCollapseChange: (id: number, collapsed: boolean) => void;
   handleMediaClick: (src: string, type?: 'image' | 'video', itemId?: number) => void;
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
+  onItemRefreshed: (itemId: number, updatedData: Partial<RSSItem>) => void;
 }) {
   return (
     <div className="flex flex-col gap-4" style={{ contain: 'layout style' }}>
@@ -43,6 +45,7 @@ const Column = memo(function Column({
           item={item}
           onMediaClick={handleMediaClick}
           onCollapseChange={handleCollapseChange}
+          onItemRefreshed={onItemRefreshed}
         />
       ))}
       {/* Sentinel: 이 컬럼의 끝이 보이면 대기열에서 아이템 추가 */}
@@ -70,6 +73,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
   handleLoadNew,
   queueLength,
   scrollContainerRef,
+  onItemRefreshed,
 }) {
   // cruising에서 필요한 값만 추출 (객체 참조 변경으로 인한 리렌더링 방지)
   const { isCruising, speedPercent, toggleCruising, setSpeedPercent } = cruising;
@@ -87,7 +91,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
         <div className="w-full">
           {/* Content Grid */}
           {viewMode === 'board' ? (
-            // Board 모드: 단일 컬럼으로 모든 아이템 표시
+            // Board 모드: 단일 컴럼으로 모든 아이템 표시
             <div className="w-full space-y-3 px-1">
               {items.map((item) => (
                 <FeedItemCard
@@ -95,6 +99,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
                   item={item}
                   onMediaClick={handleMediaClick}
                   onCollapseChange={handleCollapseChange}
+                  onItemRefreshed={onItemRefreshed}
                 />
               ))}
               {hasNext && (
@@ -122,6 +127,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
                   handleCollapseChange={handleCollapseChange}
                   handleMediaClick={handleMediaClick}
                   setSentinelRef={setSentinelRef}
+                  onItemRefreshed={onItemRefreshed}
                 />
               ))}
             </div>

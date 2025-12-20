@@ -158,5 +158,12 @@ export const usePagination = <T extends { id: number }>(
     }
   }, [newestCursor, loadItems]);
 
-  return { items, handleLoadMore, handleLoadNew, hasNext, loading };
+  // 아이템 업데이트 함수 (새로고침 등에서 사용)
+  const updateItem = useCallback((itemId: number, updatedData: Partial<T>) => {
+    setItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, ...updatedData } : item
+    ));
+  }, []);
+
+  return { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem };
 }

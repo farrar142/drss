@@ -43,7 +43,7 @@ const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive:
     return base;
   }, [filter, searchQuery]);
 
-  const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
+  const { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem } = usePagination<RSSItem>(
     listAllItems,
     (item) => item.published_at,
     'home',
@@ -61,6 +61,7 @@ const HomeFeed = memo(({ isActive, maxColumns, scrollContainerRef }: { isActive:
       isActive={isActive}
       maxColumns={maxColumns}
       scrollContainerRef={scrollContainerRef}
+      onItemUpdate={updateItem}
     />
   );
 });
@@ -90,7 +91,7 @@ const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRe
     return base;
   }, [filter, searchQuery]);
 
-  const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
+  const { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem } = usePagination<RSSItem>(
     (args) => listItemsByCategory(categoryId, args),
     (item) => item.published_at,
     `category-${categoryId}`,
@@ -108,6 +109,7 @@ const CategoryFeed = memo(({ categoryId, isActive, maxColumns, scrollContainerRe
       isActive={isActive}
       maxColumns={maxColumns}
       scrollContainerRef={scrollContainerRef}
+      onItemUpdate={updateItem}
     />
   );
 });
@@ -137,7 +139,7 @@ const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: {
     return base;
   }, [filter, searchQuery]);
 
-  const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
+  const { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem } = usePagination<RSSItem>(
     (args) => listItemsByFeed(feedId, args),
     (item) => item.published_at,
     `feed-${feedId}`,
@@ -155,6 +157,7 @@ const SingleFeed = memo(({ feedId, isActive, maxColumns, scrollContainerRef }: {
       isActive={isActive}
       maxColumns={maxColumns}
       scrollContainerRef={scrollContainerRef}
+      onItemUpdate={updateItem}
     />
   );
 });

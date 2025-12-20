@@ -345,9 +345,9 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
     setIsRefreshing(true);
     try {
       const result = await refreshItem(item.id);
-      if (result.success && result.updated_fields && result.updated_fields.length > 0) {
-        // 부모 컴포넌트에 업데이트 알림 (필요시 아이템 다시 로드)
-        onItemRefreshed?.(item.id, {});
+      if (result.success && result.item) {
+        // 반환된 아이템 데이터로 부모 컴포넌트에 업데이트 알림
+        onItemRefreshed?.(item.id, result.item);
       }
     } catch (error) {
       console.error('Failed to refresh item:', error);

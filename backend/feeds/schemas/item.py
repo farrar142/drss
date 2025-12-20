@@ -45,5 +45,6 @@ class ItemRefreshResponse(Schema):
 
     success: bool
     updated_fields: Optional[list[str]] = None
+    item: Optional[ItemSchema] = None  # 업데이트된 아이템 데이터
     message: Optional[str] = None
     error: Optional[str] = None

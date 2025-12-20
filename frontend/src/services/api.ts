@@ -333,6 +333,8 @@ export interface CategoryReorderSchema {
 
 export type ItemRefreshResponseUpdatedFields = string[] | null;
 
+export type ItemRefreshResponseItem = ItemSchema | null;
+
 export type ItemRefreshResponseMessage = string | null;
 
 export type ItemRefreshResponseError = string | null;
@@ -343,19 +345,9 @@ export type ItemRefreshResponseError = string | null;
 export interface ItemRefreshResponse {
   success: boolean;
   updated_fields?: ItemRefreshResponseUpdatedFields;
+  item?: ItemRefreshResponseItem;
   message?: ItemRefreshResponseMessage;
   error?: ItemRefreshResponseError;
-}
-
-export type InputCursor = string | null;
-
-export type InputOrderingField = string | null;
-
-export interface Input {
-  cursor?: InputCursor;
-  limit?: number;
-  direction?: string;
-  ordering_field?: InputOrderingField;
 }
 
 export type ItemSchemaSourceId = number | null;
@@ -376,6 +368,17 @@ export interface ItemSchema {
   published_at: string;
   is_read: boolean;
   is_favorite: boolean;
+}
+
+export type InputCursor = string | null;
+
+export type InputOrderingField = string | null;
+
+export interface Input {
+  cursor?: InputCursor;
+  limit?: number;
+  direction?: string;
+  ordering_field?: InputOrderingField;
 }
 
 export type PagedItemSchemaNextCursor = string | null;

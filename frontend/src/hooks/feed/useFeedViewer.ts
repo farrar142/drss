@@ -20,10 +20,12 @@ export interface UseFeedViewerOptions {
   autoRefreshInterval?: number;
   /** 탭 활성화 여부 (비활성 시 IntersectionObserver 비활성화) */
   isActive?: boolean;
-  /** 최대 컬럼 수 (탭별 설정, 기본 3) */
+  /** 최대 컴럼 수 (탭별 설정, 기본 3) */
   maxColumns?: number;
   /** 스크롤 컨테이너 ref (개별 패널 스크롤용) */
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
+  /** 아이템 업데이트 콜백 */
+  onItemUpdate?: (itemId: number, updatedData: Partial<RSSItem>) => void;
 }
 
 export interface UseFeedViewerReturn {
@@ -64,6 +66,9 @@ export interface UseFeedViewerReturn {
 
   // 스크롤 컨테이너 (PullToRefresh에서 사용)
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
+
+  // 아이템 새로고침 핸들러
+  onItemRefreshed: (itemId: number, updatedData: Partial<RSSItem>) => void;
 }
 
 export function useFeedViewer({
@@ -77,6 +82,7 @@ export function useFeedViewer({
   isActive = true,
   maxColumns = 3,
   scrollContainerRef,
+  onItemUpdate,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
   const { viewMode } = useSettingsStore();
   // 극도로 작은 화면 (480px 이하): 무조건 1열
@@ -199,6 +205,14 @@ export function useFeedViewer({
     mediaModalRef.current.openMedia(src, type, itemId);
   }, []);
 
+  // 아이템 새로고침 핸들러 - onItemUpdate가 있으면 호출
+  const onItemUpdateRef = useRef(onItemUpdate);
+  onItemUpdateRef.current = onItemUpdate;
+
+  const onItemRefreshed = useCallback((itemId: number, updatedData: Partial<RSSItem>) => {
+    onItemUpdateRef.current?.(itemId, updatedData);
+  }, []);
+
   // 반환 객체를 useMemo로 안정화 - 실제 값이 변경될 때만 새 객체 생성
   return useMemo(() => ({
     viewMode,
@@ -219,6 +233,7 @@ export function useFeedViewer({
     queueLength,
     resetDistributor,
     scrollContainerRef,
+    onItemRefreshed,
   }), [
     viewMode,
     columns,
@@ -238,5 +253,6 @@ export function useFeedViewer({
     queueLength,
     resetDistributor,
     scrollContainerRef,
+    onItemRefreshed,
   ]);
 }
