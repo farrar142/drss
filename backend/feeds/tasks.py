@@ -205,6 +205,7 @@ def _update_from_rss_source(feed, source):
         new_items.append(
             RSSItem(
                 feed=feed,
+                source=source,
                 title=title,
                 link=link,
                 description=description,
@@ -337,6 +338,7 @@ def _crawl_list_page(source, items, existing_guids):
         # RSSItem 객체 생성
         new_items.append(
             RSSItem(
+                source=source,
                 title=item["title"][:199],
                 link=item["link"],
                 description=item["description"],
@@ -401,6 +403,7 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
         # RSSItem 객체 생성
         new_items.append(
             RSSItem(
+                source=source,
                 title=item["title"][:199],
                 link=item["link"],
                 description=item["description"],

@@ -38,6 +38,7 @@ from .item import (
     ItemSchema,
     ItemFilterSchema,
     PaginatedResponse,
+    ItemRefreshResponse,
 )
 from .task_result import (
     FeedInfo,
@@ -86,6 +87,7 @@ __all__ = [
     "ItemSchema",
     "ItemFilterSchema",
     "PaginatedResponse",
+    "ItemRefreshResponse",
     # Task Result
     "FeedInfo",
     "TaskResultSchema",

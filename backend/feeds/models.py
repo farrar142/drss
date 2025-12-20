@@ -94,6 +94,14 @@ class RSSFeed(BaseModel):
 class RSSItem(BaseModel):
     objects: RSSItemManager = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
+    source = models.ForeignKey(
+        "RSSEverythingSource",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="items",
+        help_text="이 아이템을 생성한 소스",
+    )
     title = models.CharField(max_length=500)
     link = models.URLField()
     description = models.TextField(blank=True)

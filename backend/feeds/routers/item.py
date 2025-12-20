@@ -13,10 +13,16 @@ from base.authentications import JWTAuth
 from base.paginations import CursorPagination
 from feeds.models import RSSItem, RSSFeed, RSSCategory
 from feeds.services import ItemService
-from feeds.schemas import ItemSchema
+from feeds.schemas import ItemSchema, ItemRefreshResponse
 from feeds.utils.rss_generator import generate_rss_xml, generate_atom_xml
 
 router = Router(tags=["items"], auth=JWTAuth())
+
+
+@router.post("/{item_id}/refresh", response=ItemRefreshResponse, operation_id="refreshItem")
+def refresh_item(request, item_id: int):
+    """아이템 새로고침 (상세 페이지 다시 크롤링)"""
+    return ItemService.refresh_item(request.auth, item_id)
 
 
 @router.put("/{item_id}/favorite", operation_id="toggleItemFavorite")

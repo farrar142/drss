@@ -12,6 +12,7 @@ class ItemSchema(Schema):
 
     id: int
     feed_id: int
+    source_id: Optional[int] = None
     title: str
     link: str
     description: str
@@ -37,3 +38,12 @@ class PaginatedResponse[T](Schema):
     items: list[T]
     has_next: bool
     next_cursor: Optional[str] = None
+
+
+class ItemRefreshResponse(Schema):
+    """아이템 새로고침 응답"""
+
+    success: bool
+    updated_fields: Optional[list[str]] = None
+    message: Optional[str] = None
+    error: Optional[str] = None
