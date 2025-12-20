@@ -40,7 +40,7 @@ interface FeedListItemProps {
 }
 
 export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
-  const { updateFeed, removeFeed } = useRSSStore();
+  const { updateFeed, removeFeed, adjustFeedItemCount } = useRSSStore();
   const { openTab, closeTabsByFeedId } = useTabStore();
   const toast = useToast();
   const confirm = useConfirm();
@@ -87,7 +87,10 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
 
   const handleMarkAllRead = async () => {
     try {
+      const previousCount = feed.item_count;
       await markAllFeedItemsRead(feed.id);
+      // 모든 아이템을 읽음으로 표시했으므로 unread count를 0으로 만듦
+      adjustFeedItemCount(feed.id, -previousCount);
       toast.success('모든 아이템을 읽음으로 표시했습니다.');
     } catch (error) {
       console.error(error);

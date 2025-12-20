@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { RSSFeed, RSSCategory } from '../types/rss';
-import { FeedSchema } from '../services/api';
+import { FeedSchema, listCategoriesWithFeeds } from '../services/api';
 
 interface RSSStore {
   // Data
@@ -27,6 +27,12 @@ interface RSSStore {
 
   // 서버 초기 데이터로 초기화 (SSR에서 사용)
   initializeFromServer: (categories: RSSCategory[], feeds: FeedSchema[]) => void;
+
+  // 카테고리와 피드를 서버에서 새로 불러와 갱신
+  refreshCategoriesWithFeeds: () => Promise<void>;
+
+  // 특정 피드의 아이템 카운트를 증감
+  adjustFeedItemCount: (feedId: number, delta: number) => void;
 }
 
 export const useRSSStore = create<RSSStore>((set) => ({
@@ -63,4 +69,41 @@ export const useRSSStore = create<RSSStore>((set) => ({
     feeds,
     _initialized: true
   }),
+
+  // 카테고리와 피드를 서버에서 새로 불러와 갱신
+  refreshCategoriesWithFeeds: async () => {
+    try {
+      const categoriesWithFeeds = await listCategoriesWithFeeds();
+      const normalizedCategories = (categoriesWithFeeds || []).map((c) => ({
+        ...c,
+        visible: c.visible ?? true,
+        order: c.order ?? 0
+      })).sort((a, b) => a.order - b.order);
+
+      // 모든 피드를 추출
+      const allFeeds: FeedSchema[] = [];
+      for (const cat of categoriesWithFeeds || []) {
+        if (cat.feeds) {
+          allFeeds.push(...cat.feeds);
+        }
+      }
+
+      set({
+        categories: normalizedCategories,
+        feeds: allFeeds,
+        _initialized: true
+      });
+    } catch (error) {
+      console.error('Failed to refresh categories with feeds:', error);
+    }
+  },
+
+  // 특정 피드의 아이템 카운트를 증감 (낙관적 업데이트용)
+  adjustFeedItemCount: (feedId, delta) => set((state) => ({
+    feeds: state.feeds.map(feed => 
+      feed.id === feedId 
+        ? { ...feed, item_count: Math.max(0, feed.item_count + delta) }
+        : feed
+    )
+  })),
 }));

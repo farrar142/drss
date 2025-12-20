@@ -24,9 +24,7 @@ import { CategoryItem } from './CategoryItem';
 import {
   createCategory,
   deleteCategory,
-  listCategories,
   reorderCategories,
-  listFeeds,
   FeedSchema,
 } from '@/services/api';
 
@@ -205,7 +203,7 @@ export const CategoryDrawer: FC<{
 }> = ({ open, pathname, variant = 'permanent', onClose }) => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { categories, setCategories, addCategory, removeCategory, feeds, setFeeds } = useRSSStore();
+  const { categories, setCategories, addCategory, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
   const { openTab, activeTabId, saveScrollPosition } = useTabStore();
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -264,27 +262,9 @@ export const CategoryDrawer: FC<{
   useEffect(() => {
     // 서버에서 이미 초기화된 경우 스킵
     if (_initialized) return;
-    listFeeds().then(setFeeds);
-  }, [setFeeds, _initialized]);
-
-  useEffect(() => {
-    // 서버에서 이미 초기화된 경우 스킵
-    if (_initialized) return;
-
-    // The backend OpenAPI/types may not always include the `visible` field
-    // (older specs). Ensure we normalize the response to `RSSCategory` by
-    // defaulting `visible` to `true` when absent.
-    listCategories().then((cats) => {
-      const normalized = (cats || []).map((c: any) => ({
-        ...c,
-        visible: (c.visible ?? true),
-        order: (c.order ?? 0)
-      }));
-      // order로 정렬
-      normalized.sort((a, b) => a.order - b.order);
-      setCategories(normalized);
-    });
-  }, [setCategories, _initialized]);
+    // 카테고리와 피드를 한 번에 불러옴
+    refreshCategoriesWithFeeds();
+  }, [_initialized, refreshCategoriesWithFeeds]);
 
   const handleAddCategory = async () => {
     try {
@@ -323,11 +303,9 @@ export const CategoryDrawer: FC<{
     } catch (error) {
       console.error('Failed to save category order:', error);
       // 실패 시 원래 순서로 복구
-      listCategories().then((cats) =>
-        setCategories((cats || []).map((c: any) => ({ ...c, visible: (c.visible ?? true), order: (c.order ?? 0) })))
-      );
+      refreshCategoriesWithFeeds();
     }
-  }, [setCategories]);
+  }, [setCategories, refreshCategoriesWithFeeds]);
 
   // Temporary (mobile) drawer
   if (variant === 'temporary') {

@@ -6,6 +6,7 @@ import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } fro
 import { toggleItemFavorite, toggleItemRead } from "../../services/api";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../../stores/settingsStore";
+import { useRSSStore } from "../../stores/rssStore";
 import { RSSItem } from "../../types/rss";
 import { FeedImage } from "./FeedImage";
 import { FeedVideo } from "./FeedVideo";
@@ -337,14 +338,21 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
     }
   }, [item.id, isFavorite]);
 
+  const adjustFeedItemCount = useRSSStore((state) => state.adjustFeedItemCount);
+
   const handleToggleRead = useCallback(async () => {
     try {
       await toggleItemRead(item.id);
-      setIsRead(!isRead);
+      const newIsRead = !isRead;
+      setIsRead(newIsRead);
+      // 읽음 상태가 변경되면 피드의 item_count 조절
+      // isRead가 false -> true 이면 unread count 감소 (delta = -1)
+      // isRead가 true -> false 이면 unread count 증가 (delta = +1)
+      adjustFeedItemCount(item.feed_id, newIsRead ? -1 : 1);
     } catch (error) {
       console.error(error);
     }
-  }, [item.id, isRead]);
+  }, [item.id, item.feed_id, isRead, adjustFeedItemCount]);
 
   return (
     <div
