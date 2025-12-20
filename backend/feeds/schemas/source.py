@@ -11,6 +11,9 @@ from ninja import Schema as BaseModel, Field
 # Source 타입 정의
 SourceType = Literal["rss", "page_scraping", "detail_page_scraping"]
 
+# Browser 서비스 타입 정의
+BrowserServiceType = Literal["realbrowser", "browserless"]
+
 
 class SourceSchema(Schema):
     """소스 스키마"""
@@ -42,6 +45,7 @@ class SourceSchema(Schema):
     date_formats: list[str] = []
     date_locale: str = "ko_KR"
     use_browser: bool = False
+    browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = ""
     timeout: int = 30000
 
@@ -80,6 +84,7 @@ class SourceCreateSchema(Schema):
     date_formats: list[str] = []
     date_locale: str = "ko_KR"
     use_browser: bool = False
+    browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = ""
     timeout: int = 30000
 
@@ -116,6 +121,7 @@ class SourceUpdateSchema(Schema):
     date_formats: Optional[list[str]] = None
     date_locale: Optional[str] = None
     use_browser: Optional[bool] = None
+    browser_service: Optional[BrowserServiceType] = None
     wait_selector: Optional[str] = None
     timeout: Optional[int] = None
 
@@ -128,6 +134,7 @@ class FetchHTMLRequest(BaseModel):
 
     url: str
     use_browser: bool = True
+    browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = "body"
     timeout: int = 30000
     custom_headers: dict = Field(default_factory=dict)
@@ -191,6 +198,7 @@ class PreviewItemRequest(BaseModel):
     date_selector: str = ""
     image_selector: str = ""
     use_browser: bool = True
+    browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = "body"
     custom_headers: dict = Field(default_factory=dict)
     exclude_selectors: list[str] = Field(default_factory=list)
@@ -238,6 +246,7 @@ class RSSEverythingCreateRequest(BaseModel):
     date_formats: list[str] = Field(default_factory=list)
     date_locale: str = "ko_KR"
     use_browser: bool = True
+    browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = "body"
     timeout: int = 30000
 
@@ -269,6 +278,7 @@ class RSSEverythingUpdateRequest(BaseModel):
     date_formats: Optional[list[str]] = None
     date_locale: Optional[str] = None
     use_browser: Optional[bool] = None
+    browser_service: Optional[BrowserServiceType] = None
     wait_selector: Optional[str] = None
     timeout: Optional[int] = None
 
@@ -301,6 +311,7 @@ class RSSEverythingSchema(BaseModel):
     date_formats: list[str]
     date_locale: str
     use_browser: bool
+    browser_service: BrowserServiceType
     wait_selector: str
     timeout: int
     custom_headers: dict
@@ -337,6 +348,7 @@ class RSSEverythingSchema(BaseModel):
             date_formats=obj.date_formats or [],
             date_locale=obj.date_locale or "ko_KR",
             use_browser=obj.use_browser,
+            browser_service=obj.browser_service or "realbrowser",
             wait_selector=obj.wait_selector or "",
             timeout=obj.timeout,
             custom_headers=obj.custom_headers or {},

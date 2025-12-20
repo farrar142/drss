@@ -80,6 +80,7 @@ class SourceService:
     def fetch_html(
         url: str,
         use_browser: bool = True,
+        browser_service: str = "realbrowser",
         wait_selector: str = "body",
         timeout: int = 30000,
         custom_headers: Optional[dict] = None,
@@ -92,6 +93,7 @@ class SourceService:
                     selector=wait_selector,
                     timeout=timeout,
                     custom_headers=custom_headers,
+                    service=browser_service,
                 )
             else:
                 result = fetch_html_smart(
@@ -174,6 +176,7 @@ class SourceService:
         detail_date_selector: str = "",
         detail_image_selector: str = "",
         use_browser: bool = True,
+        browser_service: str = "realbrowser",
         wait_selector: str = "body",
         custom_headers: Optional[dict] = None,
         exclude_selectors: Optional[list] = None,
@@ -202,6 +205,7 @@ class SourceService:
             detail_date_selector=detail_date_selector,
             detail_image_selector=detail_image_selector,
             use_browser=use_browser,
+            browser_service=browser_service,
             wait_selector=wait_selector,
             custom_headers=custom_headers,
             exclude_selectors=exclude_selectors,
@@ -222,6 +226,7 @@ class SourceService:
         date_selector: str = "",
         image_selector: str = "",
         use_browser: bool = True,
+        browser_service: str = "realbrowser",
         wait_selector: str = "body",
         custom_headers: Optional[dict] = None,
         exclude_selectors: Optional[list] = None,
@@ -238,6 +243,7 @@ class SourceService:
             fetch_result = SourceService.fetch_html(
                 url=url,
                 use_browser=use_browser,
+                browser_service=browser_service,
                 wait_selector=wait_selector,
                 timeout=30000,
                 custom_headers=custom_headers,
@@ -279,6 +285,7 @@ class SourceService:
                     detail_date_selector=detail_date_selector,
                     detail_image_selector=detail_image_selector,
                     use_browser=use_browser,
+                    browser_service=browser_service,
                     wait_selector=wait_selector,
                     custom_headers=custom_headers,
                     exclude_selectors=exclude_selectors,

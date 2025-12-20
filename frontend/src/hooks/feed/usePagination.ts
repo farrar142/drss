@@ -48,7 +48,6 @@ export const usePagination = <T extends { id: number }>(
 
   // cacheKey 변경 감지 및 리셋
   if (prevCacheKeyRef.current !== cacheKey) {
-    console.log(`[usePagination:${key}] cacheKey changed, resetting`);
     prevCacheKeyRef.current = cacheKey;
     initialLoadDoneRef.current = false;
     loadingRef.current = false;
@@ -57,14 +56,11 @@ export const usePagination = <T extends { id: number }>(
   const loadItems = useCallback(async (cursor?: string | null, direction: 'after' | 'before' = 'before') => {
     // enabled가 false면 로딩하지 않음
     if (!enabledRef.current) {
-      console.log(`[usePagination:${key}] loadItems skipped - not enabled`);
       return;
     }
 
-    console.log(`[usePagination:${key}] loadItems called`, { cursor, direction, loading: loadingRef.current });
 
     if (loadingRef.current) {
-      console.log(`[usePagination:${key}] loadItems skipped - already loading`);
       return;
     }
 
@@ -80,7 +76,6 @@ export const usePagination = <T extends { id: number }>(
         ...filtersRef.current
       });
 
-      console.log(`[usePagination:${key}] API response`, { itemCount: response.items.length, hasNext: response.has_next });
 
       const newItems = response.items;
 
@@ -117,9 +112,7 @@ export const usePagination = <T extends { id: number }>(
 
       initialLoadDoneRef.current = true;
     } catch (error) {
-      console.error(`[usePagination:${key}] error:`, error);
     } finally {
-      console.log(`[usePagination:${key}] loadItems finished`);
       loadingRef.current = false;
       setLoading(false);
     }
@@ -127,24 +120,19 @@ export const usePagination = <T extends { id: number }>(
 
   // 초기 로드
   useEffect(() => {
-    console.log(`[usePagination:${key}] useEffect`, { enabled, initialLoadDone: initialLoadDoneRef.current, loading: loadingRef.current });
 
     if (!enabled) {
-      console.log(`[usePagination:${key}] skipped - not enabled`);
       return;
     }
 
     if (initialLoadDoneRef.current) {
-      console.log(`[usePagination:${key}] skipped - already loaded`);
       return;
     }
 
     if (loadingRef.current) {
-      console.log(`[usePagination:${key}] skipped - already loading`);
       return;
     }
 
-    console.log(`[usePagination:${key}] triggering initial load`);
     loadItems(undefined, 'before');
   }, [enabled, cacheKey, loadItems, key]);
   // cacheKey 변경 시 상태 리셋

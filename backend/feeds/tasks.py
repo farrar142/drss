@@ -250,6 +250,7 @@ def _update_from_scraping_source(feed, source):
             selector=source.wait_selector,
             timeout=source.timeout,
             custom_headers=source.custom_headers,
+            service=source.browser_service or "realbrowser",
         )
     else:
         result = fetch_html_smart(
@@ -257,6 +258,7 @@ def _update_from_scraping_source(feed, source):
             use_browser_on_fail=True,
             browser_selector=source.wait_selector,
             custom_headers=source.custom_headers,
+            browser_service=source.browser_service or "realbrowser",
         )
 
     if not result.success or not result.html:
@@ -372,6 +374,7 @@ def _crawl_detail_pages(source, items, existing_guids, list_soup):
         detail_date_selector=source.detail_date_selector,
         detail_image_selector=source.detail_image_selector,
         use_browser=source.use_browser,
+        browser_service=source.browser_service or "realbrowser",
         wait_selector=source.wait_selector,
         custom_headers=source.custom_headers,
         exclude_selectors=source.exclude_selectors,

@@ -55,6 +55,15 @@ export const SourceSchemaSourceType = {
 
 export type SourceSchemaCustomHeaders = { [key: string]: unknown };
 
+export type SourceSchemaBrowserService = typeof SourceSchemaBrowserService[keyof typeof SourceSchemaBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const SourceSchemaBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
+
 export type SourceSchemaLastCrawledAt = string | null;
 
 /**
@@ -82,6 +91,7 @@ export interface SourceSchema {
   date_formats?: string[];
   date_locale?: string;
   use_browser?: boolean;
+  browser_service?: SourceSchemaBrowserService;
   wait_selector?: string;
   timeout?: number;
   last_crawled_at?: SourceSchemaLastCrawledAt;
@@ -114,6 +124,15 @@ export const SourceCreateSchemaSourceType = {
 
 export type SourceCreateSchemaCustomHeaders = { [key: string]: unknown };
 
+export type SourceCreateSchemaBrowserService = typeof SourceCreateSchemaBrowserService[keyof typeof SourceCreateSchemaBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const SourceCreateSchemaBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
+
 /**
  * 소스 생성 스키마
  */
@@ -140,6 +159,7 @@ export interface SourceCreateSchema {
   date_formats?: string[];
   date_locale?: string;
   use_browser?: boolean;
+  browser_service?: SourceCreateSchemaBrowserService;
   wait_selector?: string;
   timeout?: number;
 }
@@ -216,6 +236,8 @@ export type SourceUpdateSchemaDateLocale = string | null;
 
 export type SourceUpdateSchemaUseBrowser = boolean | null;
 
+export type SourceUpdateSchemaBrowserService = 'realbrowser' | 'browserless' | null;
+
 export type SourceUpdateSchemaWaitSelector = string | null;
 
 export type SourceUpdateSchemaTimeout = number | null;
@@ -247,6 +269,7 @@ export interface SourceUpdateSchema {
   date_formats?: SourceUpdateSchemaDateFormats;
   date_locale?: SourceUpdateSchemaDateLocale;
   use_browser?: SourceUpdateSchemaUseBrowser;
+  browser_service?: SourceUpdateSchemaBrowserService;
   wait_selector?: SourceUpdateSchemaWaitSelector;
   timeout?: SourceUpdateSchemaTimeout;
 }
@@ -429,6 +452,15 @@ export interface FetchHTMLResponse {
   error?: FetchHTMLResponseError;
 }
 
+export type FetchHTMLRequestBrowserService = typeof FetchHTMLRequestBrowserService[keyof typeof FetchHTMLRequestBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const FetchHTMLRequestBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
+
 export type FetchHTMLRequestCustomHeaders = { [key: string]: unknown };
 
 /**
@@ -437,6 +469,7 @@ export type FetchHTMLRequestCustomHeaders = { [key: string]: unknown };
 export interface FetchHTMLRequest {
   url: string;
   use_browser?: boolean;
+  browser_service?: FetchHTMLRequestBrowserService;
   wait_selector?: string;
   timeout?: number;
   custom_headers?: FetchHTMLRequestCustomHeaders;
@@ -502,6 +535,15 @@ export interface PreviewItemResponse {
   error?: PreviewItemResponseError;
 }
 
+export type PreviewItemRequestBrowserService = typeof PreviewItemRequestBrowserService[keyof typeof PreviewItemRequestBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const PreviewItemRequestBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
+
 export type PreviewItemRequestCustomHeaders = { [key: string]: unknown };
 
 /**
@@ -516,6 +558,7 @@ export interface PreviewItemRequest {
   date_selector?: string;
   image_selector?: string;
   use_browser?: boolean;
+  browser_service?: PreviewItemRequestBrowserService;
   wait_selector?: string;
   custom_headers?: PreviewItemRequestCustomHeaders;
   exclude_selectors?: string[];
@@ -526,6 +569,15 @@ export interface PreviewItemRequest {
   detail_date_selector?: string;
   detail_image_selector?: string;
 }
+
+export type RSSEverythingSchemaBrowserService = typeof RSSEverythingSchemaBrowserService[keyof typeof RSSEverythingSchemaBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const RSSEverythingSchemaBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
 
 export type RSSEverythingSchemaCustomHeaders = { [key: string]: unknown };
 
@@ -560,6 +612,7 @@ export interface RSSEverythingSchema {
   date_formats: string[];
   date_locale: string;
   use_browser: boolean;
+  browser_service: RSSEverythingSchemaBrowserService;
   wait_selector: string;
   timeout: number;
   custom_headers: RSSEverythingSchemaCustomHeaders;
@@ -570,6 +623,15 @@ export interface RSSEverythingSchema {
 }
 
 export type RSSEverythingCreateRequestCustomHeaders = { [key: string]: unknown };
+
+export type RSSEverythingCreateRequestBrowserService = typeof RSSEverythingCreateRequestBrowserService[keyof typeof RSSEverythingCreateRequestBrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const RSSEverythingCreateRequestBrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
 
 /**
  * RSSEverything 소스 생성 요청
@@ -599,6 +661,7 @@ export interface RSSEverythingCreateRequest {
   date_formats?: string[];
   date_locale?: string;
   use_browser?: boolean;
+  browser_service?: RSSEverythingCreateRequestBrowserService;
   wait_selector?: string;
   timeout?: number;
 }
@@ -653,6 +716,8 @@ export type RSSEverythingUpdateRequestDateLocale = string | null;
 
 export type RSSEverythingUpdateRequestUseBrowser = boolean | null;
 
+export type RSSEverythingUpdateRequestBrowserService = 'realbrowser' | 'browserless' | null;
+
 export type RSSEverythingUpdateRequestWaitSelector = string | null;
 
 export type RSSEverythingUpdateRequestTimeout = number | null;
@@ -685,6 +750,7 @@ export interface RSSEverythingUpdateRequest {
   date_formats?: RSSEverythingUpdateRequestDateFormats;
   date_locale?: RSSEverythingUpdateRequestDateLocale;
   use_browser?: RSSEverythingUpdateRequestUseBrowser;
+  browser_service?: RSSEverythingUpdateRequestBrowserService;
   wait_selector?: RSSEverythingUpdateRequestWaitSelector;
   timeout?: RSSEverythingUpdateRequestTimeout;
 }
@@ -1368,7 +1434,7 @@ export const usersRouterGetSignupStatus = (
     }
   
 /**
- * URL에서 HTML을 가져옴
+ * 사용자가 선택한 브라우저 서비스로 URL에서 HTML을 가져옴
  * @summary Fetch Html
  */
 export const fetchHtml = (

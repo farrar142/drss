@@ -23,6 +23,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     currentStep,
     url,
     useBrowser,
+    browserService,
     waitSelector,
     isLoading,
     error,
@@ -60,6 +61,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     // Setters
     setUrl,
     setUseBrowser,
+    setBrowserService,
     setWaitSelector,
     setParseMode,
     setListSelectors,
@@ -123,12 +125,14 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
           <UrlStep
             url={url}
             useBrowser={useBrowser}
+            browserService={browserService}
             waitSelector={waitSelector}
             parseMode={parseMode}
             isLoading={isLoading}
             customHeaders={customHeaders}
             onUrlChange={setUrl}
             onUseBrowserChange={setUseBrowser}
+            onBrowserServiceChange={setBrowserService}
             onWaitSelectorChange={setWaitSelector}
             onParseModeChange={setParseMode}
             onCustomHeadersChange={setCustomHeaders}

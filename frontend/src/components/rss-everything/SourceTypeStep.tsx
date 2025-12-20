@@ -8,6 +8,8 @@ import { Textarea } from '@/ui/textarea';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/stores/languageStore';
 
+import { BrowserServiceType } from '@/types/rss';
+
 export type SourceType = 'rss' | 'page_scraping' | 'detail_page_scraping';
 
 // 소스 설정 타입 (JSON에서 가져올 수 있는 필드들)
@@ -33,6 +35,7 @@ export interface SourceConfig {
   date_formats?: string[];
   date_locale?: string;
   use_browser?: boolean;
+  browser_service?: BrowserServiceType;
   wait_selector?: string;
   timeout?: number;
   custom_headers?: Record<string, unknown>;

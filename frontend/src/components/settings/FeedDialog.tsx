@@ -10,7 +10,7 @@ import { Switch } from '@/ui/switch';
 import { validateFeed, FeedValidationResponse } from '@/services/api';
 import { useTranslation } from '@/stores/languageStore';
 import { useToast } from '@/stores/toastStore';
-import { SourceType, RSSSource, RSSSourceCreate } from '@/types/rss';
+import { SourceType, RSSSource, RSSSourceCreate, BrowserServiceType } from '@/types/rss';
 
 interface HeaderEntry {
   key: string;
@@ -128,6 +128,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
   const [descriptionSelector, setDescriptionSelector] = useState(initial.source?.description_selector ?? '');
   const [dateSelector, setDateSelector] = useState(initial.source?.date_selector ?? '');
   const [useBrowser, setUseBrowser] = useState(initial.source?.use_browser ?? false);
+  const [browserService, setBrowserService] = useState<BrowserServiceType>(initial.source?.browser_service ?? 'realbrowser');
   const [waitSelector, setWaitSelector] = useState(initial.source?.wait_selector ?? '');
 
   // 상세 페이지 설정
@@ -156,6 +157,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       setDescriptionSelector(initial.source?.description_selector ?? '');
       setDateSelector(initial.source?.date_selector ?? '');
       setUseBrowser(initial.source?.use_browser ?? false);
+      setBrowserService(initial.source?.browser_service ?? 'realbrowser');
       setWaitSelector(initial.source?.wait_selector ?? '');
       setDetailTitleSelector(initial.source?.detail_title_selector ?? '');
       setDetailContentSelector(initial.source?.detail_content_selector ?? '');
@@ -219,6 +221,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
           source.description_selector = descriptionSelector;
           source.date_selector = dateSelector;
           source.use_browser = useBrowser;
+          source.browser_service = browserService;
           source.wait_selector = waitSelector;
 
           if (sourceType === 'detail_page_scraping') {
@@ -424,20 +427,53 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
               {/* 브라우저 설정 */}
               <div className="flex items-center justify-between">
                 <div>
-                  <Label>브라우저 렌더링</Label>
-                  <p className="text-xs text-muted-foreground">JavaScript가 필요한 페이지에서 사용</p>
+                  <Label>{t.rssEverything.useBrowser}</Label>
+                  <p className="text-xs text-muted-foreground">{t.rssEverything.useBrowserDesc}</p>
                 </div>
                 <Switch checked={useBrowser} onCheckedChange={setUseBrowser} />
               </div>
 
               {useBrowser && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Wait Selector</Label>
-                  <Input
-                    value={waitSelector}
-                    onChange={(e) => setWaitSelector(e.target.value)}
-                    placeholder="페이지 로드 완료 확인용 셀렉터"
-                  />
+                <div className="space-y-3">
+                  {/* 브라우저 서비스 선택 */}
+                  <div className="space-y-2">
+                    <Label className="text-xs">{t.rssEverything.browserService}</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setBrowserService('realbrowser')}
+                        className={`p-3 rounded-lg border text-left transition-colors ${
+                          browserService === 'realbrowser'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="font-medium text-sm">{t.rssEverything.browserServiceRealbrowser}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceRealbrowserDesc}</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBrowserService('browserless')}
+                        className={`p-3 rounded-lg border text-left transition-colors ${
+                          browserService === 'browserless'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="font-medium text-sm">{t.rssEverything.browserServiceBrowserless}</div>
+                        <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceBrowserlessDesc}</div>
+                      </button>
+                    </div>
+                  </div>
+                  {/* Wait Selector */}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Wait Selector</Label>
+                    <Input
+                      value={waitSelector}
+                      onChange={(e) => setWaitSelector(e.target.value)}
+                      placeholder={t.feed.waitSelectorPlaceholder || '페이지 로드 완료 확인용 셀렉터'}
+                    />
+                  </div>
                 </div>
               )}
             </>

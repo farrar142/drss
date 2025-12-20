@@ -301,6 +301,12 @@ export interface Translations {
     fetching: string;
     useBrowser: string;
     useBrowserDesc: string;
+    browserService: string;
+    browserServiceDesc: string;
+    browserServiceRealbrowser: string;
+    browserServiceRealbrowserDesc: string;
+    browserServiceBrowserless: string;
+    browserServiceBrowserlessDesc: string;
     customHeaders: string;
     addHeader: string;
     headerName: string;

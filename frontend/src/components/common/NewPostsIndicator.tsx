@@ -23,7 +23,7 @@ export const NewPostsIndicator: FC<NewPostsIndicatorProps> = ({
   isRefreshing = false,
 }) => {
   const { t } = useTranslation();
-  
+
   const handleClick = () => {
     onClick();
     // 맨 위로 스크롤

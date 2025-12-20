@@ -10,16 +10,19 @@ import { RadioGroup, RadioGroupItem } from '@/ui/radio-group';
 import { ParseMode } from '@/hooks/rss-everything/useRSSEverything';
 import { useTranslation } from '@/stores/languageStore';
 import { useState } from 'react';
+import { BrowserServiceType } from '@/types/rss';
 
 interface UrlStepProps {
   url: string;
   useBrowser: boolean;
+  browserService: BrowserServiceType;
   waitSelector: string;
   parseMode: ParseMode;
   isLoading: boolean;
   customHeaders: Record<string, string>;
   onUrlChange: (url: string) => void;
   onUseBrowserChange: (value: boolean) => void;
+  onBrowserServiceChange: (value: BrowserServiceType) => void;
   onWaitSelectorChange: (value: string) => void;
   onParseModeChange: (mode: ParseMode) => void;
   onCustomHeadersChange: (headers: Record<string, string>) => void;
@@ -29,12 +32,14 @@ interface UrlStepProps {
 export function UrlStep({
   url,
   useBrowser,
+  browserService,
   waitSelector,
   parseMode,
   isLoading,
   customHeaders,
   onUrlChange,
   onUseBrowserChange,
+  onBrowserServiceChange,
   onWaitSelectorChange,
   onParseModeChange,
   onCustomHeadersChange,
@@ -105,17 +110,50 @@ export function UrlStep({
           </div>
 
           {useBrowser && (
-            <div className="space-y-2">
-              <Label htmlFor="wait-selector">{t.rssEverything.selectElement}</Label>
-              <Input
-                id="wait-selector"
-                placeholder="body"
-                value={waitSelector}
-                onChange={(e) => onWaitSelectorChange(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                CSS selector to wait for before capturing HTML
-              </p>
+            <div className="space-y-4">
+              {/* 브라우저 서비스 선택 */}
+              <div className="space-y-2">
+                <Label>{t.rssEverything.browserService}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onBrowserServiceChange('realbrowser')}
+                    className={`p-3 rounded-lg border text-left transition-colors ${
+                      browserService === 'realbrowser'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{t.rssEverything.browserServiceRealbrowser}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceRealbrowserDesc}</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onBrowserServiceChange('browserless')}
+                    className={`p-3 rounded-lg border text-left transition-colors ${
+                      browserService === 'browserless'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">{t.rssEverything.browserServiceBrowserless}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{t.rssEverything.browserServiceBrowserlessDesc}</div>
+                  </button>
+                </div>
+              </div>
+              {/* Wait Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="wait-selector">Wait Selector</Label>
+                <Input
+                  id="wait-selector"
+                  placeholder="body"
+                  value={waitSelector}
+                  onChange={(e) => onWaitSelectorChange(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  CSS selector to wait for before capturing HTML
+                </p>
+              </div>
             </div>
           )}
 

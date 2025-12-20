@@ -51,7 +51,7 @@ const confirmButtonStyles: Record<ConfirmType, string> = {
 
 export function ConfirmDialog({ open, options, onConfirm, onCancel }: ConfirmDialogProps) {
   const { t } = useTranslation();
-  
+
   if (!options) return null;
 
   // variant='destructive' -> type='destructive' 매핑

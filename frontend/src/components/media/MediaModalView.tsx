@@ -151,7 +151,7 @@ const DualViewToggleButtons = memo(function DualViewToggleButtons({
   toggleReadDirection: (e: React.MouseEvent) => void;
 }) {
   const { t } = useTranslation();
-  
+
   return (
     <>
       {/* Dual Alignment Toggle Button - Top Left */}
@@ -248,7 +248,7 @@ const BottomControlBar = memo(function BottomControlBar({
   CLICK_STATE_WINDOW: number;
 }) {
   const { t } = useTranslation();
-  
+
   const handleNavWithClickState = (
     e: React.MouseEvent,
     isLeft: boolean,

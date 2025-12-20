@@ -16,6 +16,7 @@ import {
   RSSEverythingUpdateRequest,
   PreviewItem,
 } from '@/services/api';
+import { BrowserServiceType } from '@/types/rss';
 import { ListSelectors, DetailSelectors } from '@/components/common/SelectorBuilder';
 import { SourceConfig } from '@/components/rss-everything/SourceTypeStep';
 
@@ -85,6 +86,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // URL step
   const [url, setUrl] = useState('');
   const [useBrowser, setUseBrowser] = useState(true);
+  const [browserService, setBrowserService] = useState<BrowserServiceType>('realbrowser');
   const [waitSelector, setWaitSelector] = useState('body');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +146,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           // 기본 정보 설정
           setUrl(source.url);
           setUseBrowser(source.use_browser);
+          setBrowserService((source.browser_service as BrowserServiceType) || 'realbrowser');
           setWaitSelector(source.wait_selector || 'body');
           setCustomHeaders(source.custom_headers as Record<string, string> || {});
           setDateFormats(source.date_formats || []);
@@ -220,6 +223,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
       // 기타 설정들
       if (config.use_browser !== undefined) setUseBrowser(config.use_browser);
+      if (config.browser_service) setBrowserService(config.browser_service);
       if (config.wait_selector) setWaitSelector(config.wait_selector);
       if (config.custom_headers) setCustomHeaders(config.custom_headers as Record<string, string>);
       if (config.date_formats) setDateFormats(config.date_formats);
@@ -361,6 +365,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       const request: FetchHTMLRequest = {
         url,
         use_browser: useBrowser,
+        browser_service: browserService,
         wait_selector: waitSelector,
         timeout: 30000,
         custom_headers: customHeaders,
@@ -379,7 +384,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [url, useBrowser, waitSelector, customHeaders]);
+  }, [url, useBrowser, browserService, waitSelector, customHeaders]);
 
   // 상세 페이지 HTML 가져오기
   const handleFetchDetailHTML = useCallback(async () => {
@@ -395,6 +400,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       const request: FetchHTMLRequest = {
         url: detailUrl,
         use_browser: useBrowser,
+        browser_service: browserService,
         wait_selector: waitSelector,
         timeout: 30000,
         custom_headers: customHeaders,
@@ -412,7 +418,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [detailUrl, useBrowser, waitSelector, customHeaders]);
+  }, [detailUrl, useBrowser, browserService, waitSelector, customHeaders]);
 
   // HTMLViewer에서 셀렉터 선택시
   const handleListSelectorFromViewer = useCallback((selector: string) => {
@@ -572,6 +578,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         date_selector: listSelectors.dateSelector,
         image_selector: listSelectors.imageSelector,
         use_browser: useBrowser,
+        browser_service: browserService,
         wait_selector: waitSelector,
         custom_headers: customHeaders,
         exclude_selectors: excludeSelectors,
@@ -596,7 +603,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setPreviewLoading(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, customHeaders, excludeSelectors]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, customHeaders, excludeSelectors]);
 
   // Save RSS Everything source (page_scraping / detail_page_scraping)
   const handleSave = useCallback(async () => {
@@ -629,6 +636,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
         detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
         use_browser: useBrowser,
+        browser_service: browserService,
         wait_selector: waitSelector,
         date_formats: dateFormats,
         exclude_selectors: excludeSelectors,
@@ -653,7 +661,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {
@@ -661,6 +669,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     setSourceType('rss');
     setUrl('');
     setUseBrowser(true);
+    setBrowserService('realbrowser');
     setWaitSelector('body');
     setParseMode('list');
     setListHtml(null);
@@ -763,6 +772,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     currentStep,
     url,
     useBrowser,
+    browserService,
     waitSelector,
     isLoading,
     error,
@@ -788,6 +798,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     // Setters
     setUrl,
     setUseBrowser,
+    setBrowserService,
     setWaitSelector,
     setParseMode,
     setListSelectors,

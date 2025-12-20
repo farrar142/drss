@@ -47,6 +47,7 @@ def crawl_detail_page_items(
     detail_date_selector: str = "",
     detail_image_selector: str = "",
     use_browser: bool = True,
+    browser_service: str = "realbrowser",
     wait_selector: str = "body",
     custom_headers: Optional[dict] = None,
     exclude_selectors: Optional[list] = None,
@@ -128,6 +129,7 @@ def crawl_detail_page_items(
                 detail_result = fetch_html_func(
                     url=item_info["link"],
                     use_browser=use_browser,
+                    browser_service=browser_service,
                     wait_selector=wait_selector,
                     timeout=30000,
                     custom_headers=custom_headers,
@@ -148,12 +150,14 @@ def crawl_detail_page_items(
                         selector=wait_selector,
                         timeout=30000,
                         custom_headers=custom_headers,
+                        service=browser_service,
                     )
                 else:
                     result = fetch_html_smart(
                         url=item_info["link"],
                         use_browser_on_fail=True,
                         custom_headers=custom_headers,
+                        browser_service=browser_service,
                     )
                 success = result.success
                 html = result.html if success else None

@@ -151,7 +151,7 @@ interface FieldRendererProps {
 
 function FieldRenderer({ field, value, onChange }: FieldRendererProps) {
   const { t } = useTranslation();
-  
+
   switch (field.type) {
     case 'text':
       return (

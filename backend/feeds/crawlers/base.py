@@ -184,8 +184,11 @@ class BaseBrowserCrawler(AbstractBrowserCrawler):
 
         if use_cache:
             logger.debug("Checking cache...")
+            print("Checking cache...")
             cached_html = _get_cached_html(cache_key)
             if cached_html:
+                logger.info(f"Returning cached HTML {cache_key}")
+                print(f"Returning cached HTML {cache_key}")
                 return CrawlResult(
                     success=True,
                     html=cached_html,

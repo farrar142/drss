@@ -26,10 +26,11 @@ router = Router(tags=["rss-everything"])
 
 @router.post("/fetch-html", response=FetchHTMLResponse, auth=JWTAuth(), operation_id="fetchHtml")
 def fetch_html(request, data: FetchHTMLRequest):
-    """URL에서 HTML을 가져옴"""
+    """사용자가 선택한 브라우저 서비스로 URL에서 HTML을 가져옴"""
     result = SourceService.fetch_html(
         url=data.url,
         use_browser=data.use_browser,
+        browser_service=data.browser_service,
         wait_selector=data.wait_selector,
         timeout=data.timeout,
         custom_headers=data.custom_headers if data.custom_headers else None,
@@ -62,6 +63,7 @@ def preview_items(request, data: PreviewItemRequest):
         date_selector=data.date_selector,
         image_selector=data.image_selector,
         use_browser=data.use_browser,
+        browser_service=data.browser_service,
         wait_selector=data.wait_selector,
         custom_headers=data.custom_headers if data.custom_headers else None,
         exclude_selectors=data.exclude_selectors,

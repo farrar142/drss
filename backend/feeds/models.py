@@ -255,6 +255,17 @@ class RSSEverythingSource(BaseModel):
     use_browser = models.BooleanField(
         default=False, help_text="브라우저 렌더링 사용 여부 (JavaScript 필요 시)"
     )
+
+    class BrowserService(models.TextChoices):
+        REALBROWSER = "realbrowser", "RealBrowser (Puppeteer)"
+        BROWSERLESS = "browserless", "Browserless (CDP)"
+
+    browser_service = models.CharField(
+        max_length=20,
+        choices=BrowserService.choices,
+        default=BrowserService.REALBROWSER,
+        help_text="사용할 브라우저 서비스 (RealBrowser 또는 Browserless)",
+    )
     wait_selector = models.CharField(
         max_length=500, blank=True, help_text="페이지 로드 완료 확인용 셀렉터"
     )
