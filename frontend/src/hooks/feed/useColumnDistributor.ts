@@ -50,6 +50,8 @@ interface UseColumnDistributorReturn<T> {
   queueLength: number;
   /** 초기화 (새 피드 로드 시) */
   reset: () => void;
+  /** 특정 아이템 업데이트 */
+  updateItem: (itemId: number, updatedData: Partial<T>) => void;
 }
 
 export function useColumnDistributor<T extends { id: number }>({
@@ -407,10 +409,29 @@ export function useColumnDistributor<T extends { id: number }>({
     setQueueLength(0);
   }, [columns]);
 
+  // 특정 아이템 업데이트 함수
+  const updateItem = useCallback((itemId: number, updatedData: Partial<T>) => {
+    setColumnItems(prev => {
+      let found = false;
+      const next = prev.map(column => 
+        column.map(item => {
+          if (item.id === itemId) {
+            found = true;
+            return { ...item, ...updatedData };
+          }
+          return item;
+        })
+      );
+      // 아이템을 찾지 못했으면 이전 상태 반환 (불필요한 리렌더링 방지)
+      return found ? next : prev;
+    });
+  }, []);
+
   return {
     columnItems,
     setSentinelRef,
     queueLength,
     reset,
+    updateItem,
   };
 }

@@ -109,7 +109,8 @@ export function useFeedViewer({
     columnItems,
     setSentinelRef,
     queueLength,
-    reset: resetDistributor
+    reset: resetDistributor,
+    updateItem: updateColumnItem,
   } = useColumnDistributor({
     items,
     columns,
@@ -205,13 +206,16 @@ export function useFeedViewer({
     mediaModalRef.current.openMedia(src, type, itemId);
   }, []);
 
-  // 아이템 새로고침 핸들러 - onItemUpdate가 있으면 호출
+  // 아이템 새로고침 핸들러 - columnItems와 외부 onItemUpdate 둘 다 업데이트
   const onItemUpdateRef = useRef(onItemUpdate);
   onItemUpdateRef.current = onItemUpdate;
 
   const onItemRefreshed = useCallback((itemId: number, updatedData: Partial<RSSItem>) => {
+    // columnItems 업데이트 (화면에 바로 반영)
+    updateColumnItem(itemId, updatedData);
+    // 외부 콜백도 호출 (usePagination의 items 업데이트)
     onItemUpdateRef.current?.(itemId, updatedData);
-  }, []);
+  }, [updateColumnItem]);
 
   // 반환 객체를 useMemo로 안정화 - 실제 값이 변경될 때만 새 객체 생성
   return useMemo(() => ({
