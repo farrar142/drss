@@ -95,9 +95,10 @@ def crawl_detail_page_items(
 
     new_items = []
     links_to_fetch = []
+    seen_links = set()  # 중복 링크 체크용
 
-    # 먼저 목록에서 링크들을 수집
-    for item in items[:max_items]:
+    # 먼저 모든 아이템에서 링크들을 수집 (중복 제외)
+    for item in items:
         if link_selector:
             link_el = item.select_one(link_selector)
         else:
@@ -106,7 +107,12 @@ def crawl_detail_page_items(
         if link_el:
             href = extract_href(link_el, base_url)
             if href:
-                # GUID 체크 (existing_guids가 제공된 경우에만)
+                # 이미 수집한 링크인지 체크
+                if href in seen_links:
+                    continue
+                seen_links.add(href)
+
+                # 기존 GUID 체크 (existing_guids가 제공된 경우에만)
                 if href in existing_guids:
                     continue
 
@@ -120,6 +126,10 @@ def crawl_detail_page_items(
                     title = extract_text(link_el)
 
                 links_to_fetch.append({"link": href, "list_title": title})
+
+                # max_items 개수만큼 수집하면 중단
+                if len(links_to_fetch) >= max_items:
+                    break
 
     # 각 상세 페이지 가져오기
     for item_info in links_to_fetch:
