@@ -401,6 +401,7 @@ class SourceService:
             date_formats=data.get("date_formats", []),
             date_locale=data.get("date_locale", "ko_KR"),
             use_browser=data.get("use_browser", True),
+            browser_service=data.get("browser_service", "realbrowser"),
             wait_selector=data.get("wait_selector", "body"),
             timeout=data.get("timeout", 30000),
         )
@@ -452,6 +453,7 @@ class SourceService:
             "date_formats",
             "date_locale",
             "use_browser",
+            "browser_service",
             "wait_selector",
             "timeout",
         ]:
@@ -519,6 +521,7 @@ class SourceService:
             date_formats=data.date_formats,
             date_locale=data.date_locale,
             use_browser=data.use_browser,
+            browser_service=data.browser_service,
             wait_selector=data.wait_selector,
             timeout=data.timeout,
         )
