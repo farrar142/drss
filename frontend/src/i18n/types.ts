@@ -512,6 +512,7 @@ export interface Translations {
     delayMsUnit: string;
     startCrawl: string;
     crawling: string;
+    crawlScheduled: string;
     crawlSuccess: string;
     crawlFailed: string;
     crawlErrors: string;

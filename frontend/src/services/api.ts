@@ -787,14 +787,12 @@ export interface RefreshResponse {
 }
 
 /**
- * 페이지네이션 크롤링 응답
+ * 페이지네이션 크롤링 응답 (비동기 task 스케줄링)
  */
 export interface PaginationCrawlResponse {
   success: boolean;
-  total_pages?: number;
-  total_items_found?: number;
-  total_items_created?: number;
-  errors?: string[];
+  task_id?: string;
+  task_result_id?: number;
   message?: string;
 }
 

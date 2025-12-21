@@ -360,7 +360,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   // 페이지네이션 크롤링 실행
   const handleStartPaginationCrawl = async () => {
     if (!paginationSourceId) return;
-    
+
     if (paginationVariables.length === 0) {
       toast.warning(t.sourceList.noVariables);
       return;
@@ -387,16 +387,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       });
 
       if (result.success) {
-        toast.success(
-          t.sourceList.crawlSuccess
-            .replace('{pages}', String(result.total_pages))
-            .replace('{created}', String(result.total_items_created))
-        );
-        if (result.errors && result.errors.length > 0) {
-          toast.warning(
-            t.sourceList.crawlErrors.replace('{count}', String(result.errors.length))
-          );
-        }
+        toast.success(t.sourceList.crawlScheduled);
       } else {
         toast.error(t.sourceList.crawlFailed + ': ' + (result.message || ''));
       }

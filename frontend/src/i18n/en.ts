@@ -510,6 +510,7 @@ export const en: Translations = {
     delayMsUnit: 'ms',
     startCrawl: 'Start Crawl',
     crawling: 'Crawling...',
+    crawlScheduled: 'Crawl scheduled. Running in background.',
     crawlSuccess: 'Crawl complete: {created} items created from {pages} pages',
     crawlFailed: 'Crawl failed',
     crawlErrors: 'Errors on some pages: {count}',

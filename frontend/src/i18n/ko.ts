@@ -510,6 +510,7 @@ export const ko: Translations = {
     delayMsUnit: 'ms',
     startCrawl: '크롤링 시작',
     crawling: '크롤링 중...',
+    crawlScheduled: '크롤링이 예약되었습니다. 백그라운드에서 실행됩니다.',
     crawlSuccess: '크롤링 완료: {pages}개 페이지에서 {created}개 아이템 생성',
     crawlFailed: '크롤링 실패',
     crawlErrors: '일부 페이지에서 오류 발생: {count}개',
