@@ -375,7 +375,7 @@ def _update_from_detail_scraping_source_async(feed, source):
 
     # 디테일 URL들 추출
     detail_tasks_data = []
-    for item in items[:20]:  # max 20 items
+    for item in items[:30]:  # max 20 items
         link = None
         if source.link_selector:
             link_el = item.select_one(source.link_selector)

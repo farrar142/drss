@@ -274,7 +274,7 @@ class SourceService:
             if follow_links:
                 # 상세 페이지 파싱 모드 - 공통 함수 사용
                 crawled_items = SourceService.crawl_detail_page_items(
-                    items=items,
+                    items=items[:5],
                     base_url=url,
                     item_selector=item_selector,
                     title_selector=title_selector,
