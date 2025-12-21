@@ -56,10 +56,12 @@ class ImageStorageService:
         """MinIO 오브젝트의 public URL 반환"""
         return f"{self.public_url}/{self.bucket_name}/{key}"
 
-    def _generate_image_key(self, image_url: str, content_type: str) -> str:
+    def _generate_image_key(
+        self, image_url: str, content_type: str, feed_id: Optional[int] = None, item_id: Optional[int] = None
+    ) -> str:
         """
         이미지 URL에서 고유한 파일 키 생성
-        /images/ab/cd/abcdef123456.jpg 형식
+        /images/{feed_id}/{item_id}/hash.ext 형식
         """
         # URL 해시로 고유 ID 생성
         url_hash = hashlib.sha256(image_url.encode()).hexdigest()[:16]
@@ -67,8 +69,12 @@ class ImageStorageService:
         # 확장자 결정
         ext = self._get_extension(image_url, content_type)
 
-        # 디렉토리 구조: 처음 2글자 / 다음 2글자 / 파일명
-        return f"{self.IMAGES_PREFIX}/{url_hash[:2]}/{url_hash[2:4]}/{url_hash}{ext}"
+        # 디렉토리 구조: images / feed_id / item_id / 파일명
+        if feed_id and item_id:
+            return f"{self.IMAGES_PREFIX}/{feed_id}/{item_id}/{url_hash}{ext}"
+        elif feed_id:
+            return f"{self.IMAGES_PREFIX}/{feed_id}/{url_hash}{ext}"
+        return f"{self.IMAGES_PREFIX}/{url_hash}{ext}"
 
     def _get_extension(self, url: str, content_type: str) -> str:
         """URL 또는 Content-Type에서 확장자 추출"""
@@ -95,7 +101,11 @@ class ImageStorageService:
             return False
 
     def upload_image_from_url(
-        self, image_url: str, base_url: Optional[str] = None
+        self,
+        image_url: str,
+        base_url: Optional[str] = None,
+        feed_id: Optional[int] = None,
+        item_id: Optional[int] = None,
     ) -> Optional[str]:
         """
         URL에서 이미지를 스트리밍으로 다운로드하여 MinIO에 업로드
@@ -103,9 +113,11 @@ class ImageStorageService:
         Args:
             image_url: 이미지 원본 URL
             base_url: 상대 URL인 경우 기준이 되는 URL
+            feed_id: 피드 ID (이미지 경로에 포함)
+            item_id: 아이템 ID (이미지 경로에 포함)
 
         Returns:
-            MinIO 내 이미지 경로 (/images/xx/yy/hash.ext) 또는 None
+            MinIO 내 이미지 경로 (/images/{feed_id}/{item_id}/hash.ext) 또는 None
         """
         # 상대 URL 처리
         if base_url and not image_url.startswith(("http://", "https://")):
@@ -145,7 +157,7 @@ class ImageStorageService:
                 return None
 
             # 이미지 키 생성
-            key = self._generate_image_key(image_url, content_type)
+            key = self._generate_image_key(image_url, content_type, feed_id, item_id)
 
             # 이미 존재하면 업로드 스킵
             if self._check_existing(key):
@@ -190,7 +202,11 @@ class ImageStorageService:
             return None
 
     def upload_images_and_replace_html(
-        self, html_content: str, base_url: Optional[str] = None
+        self,
+        html_content: str,
+        base_url: Optional[str] = None,
+        feed_id: Optional[int] = None,
+        item_id: Optional[int] = None,
     ) -> tuple[str, int]:
         """
         HTML 내의 모든 이미지를 MinIO에 업로드하고 URL을 교체
@@ -198,6 +214,8 @@ class ImageStorageService:
         Args:
             html_content: HTML 문자열
             base_url: 상대 URL 기준 (디테일 페이지 URL)
+            feed_id: 피드 ID (이미지 경로에 포함)
+            item_id: 아이템 ID (이미지 경로에 포함)
 
         Returns:
             (교체된 HTML, 교체된 이미지 수)
@@ -218,7 +236,7 @@ class ImageStorageService:
                 continue
 
             # MinIO 경로로 업로드
-            new_path = self.upload_image_from_url(src, base_url)
+            new_path = self.upload_image_from_url(src, base_url, feed_id, item_id)
 
             if new_path:
                 img["src"] = new_path

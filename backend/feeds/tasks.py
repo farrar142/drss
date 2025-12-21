@@ -443,7 +443,7 @@ def upload_images_for_item(item_id: int):
     from feeds.services.image_storage import get_image_storage_service
 
     try:
-        item = RSSItem.objects.get(id=item_id)
+        item = RSSItem.objects.select_related("feed").get(id=item_id)
     except RSSItem.DoesNotExist:
         return f"RSSItem {item_id} does not exist"
 
@@ -453,8 +453,11 @@ def upload_images_for_item(item_id: int):
 
     try:
         storage_service = get_image_storage_service()
+        feed_id = item.feed_id
+        item_id = item.id
+
         new_description, replaced_count = storage_service.upload_images_and_replace_html(
-            description, base_url=item.link
+            description, base_url=item.link, feed_id=feed_id, item_id=item_id
         )
 
         if replaced_count > 0:
@@ -463,7 +466,9 @@ def upload_images_for_item(item_id: int):
 
             # 대표 이미지도 업로드
             if item.image and item.image.startswith(("http://", "https://")):
-                new_image_path = storage_service.upload_image_from_url(item.image, base_url=item.link)
+                new_image_path = storage_service.upload_image_from_url(
+                    item.image, base_url=item.link, feed_id=feed_id, item_id=item_id
+                )
                 if new_image_path:
                     item.image = new_image_path
                     item.save(update_fields=["image"])
@@ -485,13 +490,15 @@ def upload_single_image(image_url: str, item_id: int, field: str = "description"
     from feeds.services.image_storage import get_image_storage_service
 
     try:
-        item = RSSItem.objects.get(id=item_id)
+        item = RSSItem.objects.select_related("feed").get(id=item_id)
     except RSSItem.DoesNotExist:
         return {"success": False, "error": f"RSSItem {item_id} does not exist"}
 
     try:
         storage_service = get_image_storage_service()
-        new_path = storage_service.upload_image_from_url(image_url, base_url=item.link)
+        new_path = storage_service.upload_image_from_url(
+            image_url, base_url=item.link, feed_id=item.feed_id, item_id=item.id
+        )
 
         if new_path:
             if field == "image":
