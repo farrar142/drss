@@ -689,43 +689,8 @@ def precache_images_for_item(item_id: int):
         return f"RSSItem {item_id} has no description"
 
     # MinIO 이미지 업로드가 활성화되어 있으면 먼저 업로드 후 URL 교체
-    if ENABLE_IMAGE_UPLOAD:
-        upload_images_for_item.delay(item_id)
-        return f"Scheduled image upload for RSSItem {item_id}"
-
-    # 기존 로직: Next.js 이미지 캐시만 수행
-    soup = BeautifulSoup(description, "html.parser")
-    img_tags = soup.find_all("img")
-
-    if not img_tags:
-        return f"No images found in RSSItem {item_id}"
-
-    # 캐시할 이미지 사이즈들 (Next.js deviceSizes 기본값 기준)
-    widths = [640, 750, 828, 1080, 1200]
-    quality = 75
-
-    dispatched_count = 0
-
-    for img in img_tags:
-        src = img.get("src")
-        if not src:
-            continue
-
-        # 상대 URL이면 스킵 (외부 이미지만 캐시)
-        if not src.startswith(("http://", "https://")):
-            continue
-
-        # data: URL 스킵
-        if src.startswith("data:"):
-            continue
-
-        # 각 사이즈별로 큐4로 태스크 분배
-        for width in widths:
-            cache_single_image.delay(src, width, quality)
-            dispatched_count += 1
-
-    return f"Dispatched {dispatched_count} image cache tasks for RSSItem {item_id}"
-
+    upload_images_for_item.delay(item_id)
+    return f"Scheduled image upload for RSSItem {item_id}"
 
 # ===========================================
 # 큐 5: image_upload - MinIO 이미지 업로드
