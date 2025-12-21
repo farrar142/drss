@@ -92,12 +92,13 @@ services:
           memory: 1G
 
   # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
+  # 큐 5: image_upload - MinIO 이미지 업로드도 함께 처리
   celery-image-aggregate:
     <<: *backend
     image: drss-backend:production
     container_name: drss-celery-image-aggregate
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "image_aggregate"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "image_aggregate,image_upload"]
     depends_on:
       - django
     deploy:
