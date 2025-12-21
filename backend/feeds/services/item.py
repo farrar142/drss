@@ -139,6 +139,11 @@ class ItemService:
                 item.save(update_fields=updated_fields)
                 logger.info(f"Refreshed item {item_id}: updated {updated_fields}")
 
+                # 이미지 캐시 스케줄링 (description이 업데이트된 경우)
+                if "description" in updated_fields:
+                    from feeds.tasks import precache_images_for_item
+                    precache_images_for_item.delay(item.id)
+
             # 아이템 데이터 준비 (업데이트 여부와 상관없이 반환)
             item_data = {
                 "id": item.id,
