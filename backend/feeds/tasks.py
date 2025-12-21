@@ -418,7 +418,8 @@ def crawl_paginated_task(
 def precache_images_for_item(item_id: int):
     """RSSItem의 이미지 업로드 스케줄링"""
     from feeds.models import RSSItem
-
+    if ENABLE_IMAGE_UPLOAD is False:
+        return f"Image upload disabled for RSSItem {item_id}"
     try:
         item = RSSItem.objects.get(id=item_id)
     except RSSItem.DoesNotExist:
