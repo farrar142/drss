@@ -789,57 +789,6 @@ def upload_single_image(image_url: str, item_id: int, field: str = "description"
         return {"success": False, "error": str(e)}
 
 
-# ===========================================
-# 큐 4: image_worker - 실제 Next.js 이미지 캐시
-# ===========================================
-
-
-@shared_task
-def cache_single_image(image_url: str, width: int, quality: int = 75):
-    """
-    Next.js 이미지 최적화 엔드포인트로 단일 이미지 캐시 (큐 4: image_worker)
-    """
-    import os
-
-    # Next.js 서버 URL (Docker 내부 네트워크)
-    nextjs_host = os.environ.get("NEXTJS_HOST", "node")
-    nextjs_port = os.environ.get("NEXTJS_PORT", "3000")
-    nextjs_base_url = f"http://{nextjs_host}:{nextjs_port}"
-
-    try:
-        # Next.js 이미지 최적화 URL 생성
-        params = urlencode(
-            {
-                "url": image_url,
-                "w": width,
-                "q": quality,
-            }
-        )
-        cache_url = f"{nextjs_base_url}/_next/image?{params}"
-
-        # 요청 (타임아웃 30초)
-        response = requests.get(
-            cache_url,
-            timeout=30,
-            headers={
-                "User-Agent": "DRSS-ImagePrecacher/1.0",
-                "Accept": "image/webp,image/avif,image/*,*/*;q=0.8",
-            },
-        )
-
-        if response.status_code == 200:
-            logger.debug(f"Cached: {image_url} (w={width})")
-            return {"success": True, "url": image_url, "width": width}
-        else:
-            logger.warning(
-                f"Failed to cache {image_url} (w={width}): {response.status_code}"
-            )
-            return {"success": False, "url": image_url, "width": width, "status": response.status_code}
-
-    except requests.RequestException as e:
-        logger.warning(f"Failed to cache {image_url}: {str(e)}")
-        return {"success": False, "url": image_url, "width": width, "error": str(e)}
-
 
 # ===========================================
 # 스케줄러 태스크들

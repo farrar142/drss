@@ -231,8 +231,6 @@ CELERY_TASK_ROUTES = {
     "feeds.tasks.collect_detail_results": {"queue": "detail_worker"},
     # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
     "feeds.tasks.precache_images_for_item": {"queue": "image_aggregate"},
-    # 큐 4: image_worker - 실제 Next.js 이미지 캐시
-    "feeds.tasks.cache_single_image": {"queue": "image_worker"},
     # 큐 5: image_upload - MinIO 이미지 업로드
     "feeds.tasks.upload_images_for_item": {"queue": "image_upload"},
     "feeds.tasks.upload_single_image": {"queue": "image_upload"},
