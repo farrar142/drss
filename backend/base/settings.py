@@ -226,6 +226,7 @@ CELERY_TASK_ROUTES = {
     "feeds.tasks.update_all_feeds": {"queue": "feed_main"},
     "feeds.tasks.update_feeds_by_category": {"queue": "feed_main"},
     "feeds.tasks.crawl_rss_everything_source": {"queue": "feed_main"},
+    "feeds.tasks.crawl_paginated_task": {"queue": "feed_main"},
     # 큐 2: detail_worker - 개별 디테일 페이지 크롤링 후 이미지 캐시 요청 (기다리지 않음)
     "feeds.tasks.crawl_detail_page": {"queue": "detail_worker"},
     "feeds.tasks.collect_detail_results": {"queue": "detail_worker"},
