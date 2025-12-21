@@ -367,3 +367,38 @@ class RefreshResponse(BaseModel):
     success: bool
     task_result_id: int
     message: str
+
+
+class PaginationCrawlRequest(BaseModel):
+    """페이지네이션 크롤링 요청
+    
+    URL 템플릿에 {변수명} 형태로 변수를 지정하면
+    해당 변수를 start부터 end까지 순회하며 크롤링합니다.
+    
+    예시:
+    - url_template: "https://example.com/posts?page={page}"
+    - variables: [{"name": "page", "start": 1, "end": 10}]
+    
+    여러 변수도 가능:
+    - url_template: "https://example.com/posts?page={page}&category={cat}"
+    - variables: [
+        {"name": "page", "start": 1, "end": 5},
+        {"name": "cat", "start": 1, "end": 3}
+      ]
+    """
+    
+    source_id: int  # 소스 설정을 가져올 소스 ID
+    url_template: str  # URL 템플릿 (예: https://example.com?page={page})
+    variables: list[dict]  # [{"name": "page", "start": 1, "end": 10, "step": 1}]
+    delay_ms: int = 1000  # 각 요청 사이의 딜레이 (밀리초)
+
+
+class PaginationCrawlResponse(BaseModel):
+    """페이지네이션 크롤링 응답"""
+    
+    success: bool
+    total_pages: int = 0
+    total_items_found: int = 0
+    total_items_created: int = 0
+    errors: list[str] = Field(default_factory=list)
+    message: str = ""

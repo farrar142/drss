@@ -787,6 +787,44 @@ export interface RefreshResponse {
 }
 
 /**
+ * 페이지네이션 크롤링 응답
+ */
+export interface PaginationCrawlResponse {
+  success: boolean;
+  total_pages?: number;
+  total_items_found?: number;
+  total_items_created?: number;
+  errors?: string[];
+  message?: string;
+}
+
+export type PaginationCrawlRequestVariablesItem = { [key: string]: unknown };
+
+/**
+ * 페이지네이션 크롤링 요청
+
+URL 템플릿에 {변수명} 형태로 변수를 지정하면
+해당 변수를 start부터 end까지 순회하며 크롤링합니다.
+
+예시:
+- url_template: "https://example.com/posts?page={page}"
+- variables: [{"name": "page", "start": 1, "end": 10}]
+
+여러 변수도 가능:
+- url_template: "https://example.com/posts?page={page}&category={cat}"
+- variables: [
+    {"name": "page", "start": 1, "end": 5},
+    {"name": "cat", "start": 1, "end": 3}
+  ]
+ */
+export interface PaginationCrawlRequest {
+  source_id: number;
+  url_template: string;
+  variables: PaginationCrawlRequestVariablesItem[];
+  delay_ms?: number;
+}
+
+/**
  * 피드 기본 정보
  */
 export interface FeedInfo {
@@ -1597,6 +1635,34 @@ export const refreshRssEverythingSource = (
     }
   
 /**
+ * 페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
+
+URL 템플릿에 {변수명} 형태로 변수를 지정합니다.
+
+예시:
+- url_template: "https://example.com/posts?page={page}"
+- variables: [{"name": "page", "start": 1, "end": 10, "step": 1}]
+
+여러 변수도 가능 (Cartesian product):
+- url_template: "https://example.com?page={page}&category={cat}"
+- variables: [
+    {"name": "page", "start": 1, "end": 5},
+    {"name": "cat", "start": 1, "end": 3}
+  ]
+ * @summary Crawl Paginated
+ */
+export const crawlPaginated = (
+    paginationCrawlRequest: PaginationCrawlRequest,
+ ) => {
+      return axiosInstance<PaginationCrawlResponse>(
+      {url: `/api/rss-everything/crawl-paginated`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: paginationCrawlRequest
+    },
+      );
+    }
+  
+/**
  * Task 결과 목록 조회
  * @summary List Task Results
  */
@@ -1791,6 +1857,7 @@ export type GetRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof
 export type UpdateRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof updateRssEverythingSource>>>
 export type DeleteRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof deleteRssEverythingSource>>>
 export type RefreshRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof refreshRssEverythingSource>>>
+export type CrawlPaginatedResult = NonNullable<Awaited<ReturnType<typeof crawlPaginated>>>
 export type ListTaskResultsResult = NonNullable<Awaited<ReturnType<typeof listTaskResults>>>
 export type ClearTaskResultsResult = NonNullable<Awaited<ReturnType<typeof clearTaskResults>>>
 export type GetTaskStatsResult = NonNullable<Awaited<ReturnType<typeof getTaskStats>>>

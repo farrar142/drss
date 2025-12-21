@@ -13,6 +13,8 @@ import {
   AlertCircle,
   Loader2,
   Copy,
+  Layers,
+  X,
 } from 'lucide-react';
 import { Label } from '@/ui/label';
 import { Input } from '@/ui/input';
@@ -30,7 +32,15 @@ import {
   listFeeds,
   deleteFeedSource,
   refreshRssEverythingSource,
+  crawlPaginated,
 } from '@/services/api';
+
+interface PaginationVariable {
+  name: string;
+  start: number;
+  end: number;
+  step: number;
+}
 
 interface FeedEditPageProps {
   context?: FeedEditContext;
@@ -71,6 +81,16 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [visible, setVisible] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
+
+  // 페이지네이션 크롤링 모달 상태
+  const [paginationModalOpen, setPaginationModalOpen] = useState(false);
+  const [paginationSourceId, setPaginationSourceId] = useState<number | null>(null);
+  const [paginationUrlTemplate, setPaginationUrlTemplate] = useState('');
+  const [paginationVariables, setPaginationVariables] = useState<PaginationVariable[]>([
+    { name: 'page', start: 1, end: 10, step: 1 }
+  ]);
+  const [paginationDelayMs, setPaginationDelayMs] = useState(1000);
+  const [paginationCrawling, setPaginationCrawling] = useState(false);
 
   // 피드 데이터 로드 (스토어에서 먼저 찾고, 없으면 API 호출)
   const loadFeed = useCallback(async () => {
@@ -304,6 +324,91 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     }
   };
 
+  // 페이지네이션 크롤링 모달 열기
+  const handleOpenPaginationModal = (source: SourceSchema) => {
+    setPaginationSourceId(source.id);
+    setPaginationUrlTemplate(source.url);
+    setPaginationVariables([{ name: 'page', start: 1, end: 10, step: 1 }]);
+    setPaginationDelayMs(1000);
+    setPaginationModalOpen(true);
+  };
+
+  // 페이지네이션 변수 추가
+  const handleAddVariable = () => {
+    setPaginationVariables([
+      ...paginationVariables,
+      { name: '', start: 1, end: 10, step: 1 }
+    ]);
+  };
+
+  // 페이지네이션 변수 제거
+  const handleRemoveVariable = (index: number) => {
+    setPaginationVariables(paginationVariables.filter((_, i) => i !== index));
+  };
+
+  // 페이지네이션 변수 업데이트
+  const handleUpdateVariable = (index: number, field: keyof PaginationVariable, value: string | number) => {
+    const updated = [...paginationVariables];
+    if (field === 'name') {
+      updated[index] = { ...updated[index], [field]: value as string };
+    } else {
+      updated[index] = { ...updated[index], [field]: Number(value) };
+    }
+    setPaginationVariables(updated);
+  };
+
+  // 페이지네이션 크롤링 실행
+  const handleStartPaginationCrawl = async () => {
+    if (!paginationSourceId) return;
+    
+    if (paginationVariables.length === 0) {
+      toast.warning(t.sourceList.noVariables);
+      return;
+    }
+
+    const validVariables = paginationVariables.filter(v => v.name.trim());
+    if (validVariables.length === 0) {
+      toast.warning(t.sourceList.noVariables);
+      return;
+    }
+
+    setPaginationCrawling(true);
+    try {
+      const result = await crawlPaginated({
+        source_id: paginationSourceId,
+        url_template: paginationUrlTemplate,
+        variables: validVariables.map(v => ({
+          name: v.name,
+          start: v.start,
+          end: v.end,
+          step: v.step,
+        })),
+        delay_ms: paginationDelayMs,
+      });
+
+      if (result.success) {
+        toast.success(
+          t.sourceList.crawlSuccess
+            .replace('{pages}', String(result.total_pages))
+            .replace('{created}', String(result.total_items_created))
+        );
+        if (result.errors && result.errors.length > 0) {
+          toast.warning(
+            t.sourceList.crawlErrors.replace('{count}', String(result.errors.length))
+          );
+        }
+      } else {
+        toast.error(t.sourceList.crawlFailed + ': ' + (result.message || ''));
+      }
+      setPaginationModalOpen(false);
+    } catch (err) {
+      console.error('Pagination crawl failed:', err);
+      toast.error(t.sourceList.crawlFailed);
+    } finally {
+      setPaginationCrawling(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full p-8">
@@ -507,6 +612,14 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => handleOpenPaginationModal(source)}
+                      title={t.sourceList.paginationCrawl}
+                    >
+                      <Layers className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleRefreshSource(source)}
                       title={t.common.refresh}
                     >
@@ -534,6 +647,141 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 페이지네이션 크롤링 모달 */}
+      {paginationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-background border rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold">{t.sourceList.paginationCrawl}</h3>
+                <p className="text-sm text-muted-foreground">{t.sourceList.paginationCrawlDescription}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPaginationModalOpen(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* 모달 콘텐츠 */}
+            <div className="p-4 space-y-4">
+              {/* URL 템플릿 */}
+              <div className="space-y-2">
+                <Label>{t.sourceList.urlTemplate}</Label>
+                <Input
+                  value={paginationUrlTemplate}
+                  onChange={(e) => setPaginationUrlTemplate(e.target.value)}
+                  placeholder={t.sourceList.urlTemplatePlaceholder}
+                />
+                <p className="text-xs text-muted-foreground">{t.sourceList.urlTemplateHint}</p>
+              </div>
+
+              {/* 변수 설정 */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>{t.sourceList.variables}</Label>
+                  <Button variant="outline" size="sm" onClick={handleAddVariable}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    {t.sourceList.addVariable}
+                  </Button>
+                </div>
+
+                {paginationVariables.map((variable, index) => (
+                  <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-muted/30">
+                    <div className="flex-1 grid grid-cols-4 gap-2">
+                      <div>
+                        <Label className="text-xs">{t.sourceList.variableName}</Label>
+                        <Input
+                          value={variable.name}
+                          onChange={(e) => handleUpdateVariable(index, 'name', e.target.value)}
+                          placeholder="page"
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.sourceList.variableStart}</Label>
+                        <Input
+                          type="number"
+                          value={variable.start}
+                          onChange={(e) => handleUpdateVariable(index, 'start', e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.sourceList.variableEnd}</Label>
+                        <Input
+                          type="number"
+                          value={variable.end}
+                          onChange={(e) => handleUpdateVariable(index, 'end', e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{t.sourceList.variableStep}</Label>
+                        <Input
+                          type="number"
+                          value={variable.step}
+                          onChange={(e) => handleUpdateVariable(index, 'step', e.target.value)}
+                          className="h-8"
+                          min={1}
+                        />
+                      </div>
+                    </div>
+                    {paginationVariables.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveVariable(index)}
+                        className="flex-shrink-0 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* 딜레이 설정 */}
+              <div className="space-y-2">
+                <Label>{t.sourceList.delayMs}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={paginationDelayMs}
+                    onChange={(e) => setPaginationDelayMs(Number(e.target.value))}
+                    className="w-32"
+                    min={0}
+                    step={100}
+                  />
+                  <span className="text-muted-foreground">{t.sourceList.delayMsUnit}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 모달 푸터 */}
+            <div className="flex justify-end gap-2 p-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setPaginationModalOpen(false)}
+                disabled={paginationCrawling}
+              >
+                {t.common.cancel}
+              </Button>
+              <Button
+                onClick={handleStartPaginationCrawl}
+                disabled={paginationCrawling}
+              >
+                {paginationCrawling && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {paginationCrawling ? t.sourceList.crawling : t.sourceList.startCrawl}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

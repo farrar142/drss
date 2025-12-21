@@ -19,6 +19,8 @@ from feeds.schemas import (
     RSSEverythingCreateRequest,
     RSSEverythingUpdateRequest,
     RefreshResponse,
+    PaginationCrawlRequest,
+    PaginationCrawlResponse,
 )
 
 router = Router(tags=["rss-everything"])
@@ -125,3 +127,31 @@ def refresh_source(request, source_id: int):
     """RSSEverything 소스를 새로고침"""
     result = SourceService.refresh_source(request.auth, source_id)
     return RefreshResponse(**result)
+
+
+@router.post("/crawl-paginated", response=PaginationCrawlResponse, auth=JWTAuth(), operation_id="crawlPaginated")
+def crawl_paginated(request, data: PaginationCrawlRequest):
+    """
+    페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
+    
+    URL 템플릿에 {변수명} 형태로 변수를 지정합니다.
+    
+    예시:
+    - url_template: "https://example.com/posts?page={page}"
+    - variables: [{"name": "page", "start": 1, "end": 10, "step": 1}]
+    
+    여러 변수도 가능 (Cartesian product):
+    - url_template: "https://example.com?page={page}&category={cat}"
+    - variables: [
+        {"name": "page", "start": 1, "end": 5},
+        {"name": "cat", "start": 1, "end": 3}
+      ]
+    """
+    result = SourceService.crawl_with_pagination(
+        user=request.auth,
+        source_id=data.source_id,
+        url_template=data.url_template,
+        variables=data.variables,
+        delay_ms=data.delay_ms,
+    )
+    return PaginationCrawlResponse(**result)

@@ -496,5 +496,25 @@ export interface Translations {
     copyConfig: string;
     configCopied: string;
     copyFailedNoClipboard: string;
+    paginationCrawl: string;
+    paginationCrawlDescription: string;
+    urlTemplate: string;
+    urlTemplatePlaceholder: string;
+    urlTemplateHint: string;
+    variables: string;
+    variableName: string;
+    variableStart: string;
+    variableEnd: string;
+    variableStep: string;
+    addVariable: string;
+    removeVariable: string;
+    delayMs: string;
+    delayMsUnit: string;
+    startCrawl: string;
+    crawling: string;
+    crawlSuccess: string;
+    crawlFailed: string;
+    crawlErrors: string;
+    noVariables: string;
   };
 }

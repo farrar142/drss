@@ -33,6 +33,8 @@ from .source import (
     RSSEverythingCreateRequest,
     RSSEverythingUpdateRequest,
     RefreshResponse,
+    PaginationCrawlRequest,
+    PaginationCrawlResponse,
 )
 from .item import (
     ItemSchema,
