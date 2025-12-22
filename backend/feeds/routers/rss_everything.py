@@ -22,6 +22,7 @@ from feeds.schemas import (
     PaginationCrawlRequest,
     PaginationCrawlResponse,
 )
+from feeds.services.crawler import CrawlerService
 
 router = Router(tags=["rss-everything"])
 
@@ -29,7 +30,7 @@ router = Router(tags=["rss-everything"])
 @router.post("/fetch-html", response=FetchHTMLResponse, auth=JWTAuth(), operation_id="fetchHtml")
 def fetch_html(request, data: FetchHTMLRequest):
     """사용자가 선택한 브라우저 서비스로 URL에서 HTML을 가져옴"""
-    result = SourceService.fetch_html(
+    result = CrawlerService.fetch_html(
         url=data.url,
         use_browser=data.use_browser,
         browser_service=data.browser_service,
@@ -56,33 +57,9 @@ def extract_elements(request, data: ExtractElementsRequest):
 @router.post("/preview-items", response=PreviewItemResponse, auth=JWTAuth(), operation_id="previewItems")
 def crawl(request, data: PreviewItemRequest):
     """설정된 셀렉터로 아이템들을 미리보기"""
-    result = SourceService.crawl(
-        url=data.url,
-        item_selector=data.item_selector,
-        title_selector=data.title_selector,
-        link_selector=data.link_selector,
-        description_selector=data.description_selector,
-        date_selector=data.date_selector,
-        image_selector=data.image_selector,
-        use_browser=data.use_browser,
-        browser_service=data.browser_service,
-        wait_selector=data.wait_selector,
-        custom_headers=data.custom_headers if data.custom_headers else None,
-        exclude_selectors=data.exclude_selectors,
-        follow_links=data.follow_links,
-        detail_title_selector=data.detail_title_selector,
-        detail_description_selector=data.detail_description_selector,
-        detail_content_selector=data.detail_content_selector,
-        detail_date_selector=data.detail_date_selector,
-        detail_image_selector=data.detail_image_selector,
+    result = SourceService.crawl(data
     )
-    if result.success:
-        return PreviewItemResponse(
-            success=True,
-            items=[PreviewItem(**item.dict()) for item in result.items],
-            count=result.count,
-        )
-    return PreviewItemResponse(success=False, error=result.error)
+    return dict(success=True,items=result,count=len(result))
 
 
 @router.get("", response=list[RSSEverythingSchema], auth=JWTAuth(), operation_id="listRssEverythingSources")

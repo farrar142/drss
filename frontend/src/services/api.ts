@@ -43,16 +43,6 @@ export interface FeedSchema {
   sources?: SourceSchema[];
 }
 
-export type SourceSchemaSourceType = typeof SourceSchemaSourceType[keyof typeof SourceSchemaSourceType];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceSchemaSourceType = {
-  rss: 'rss',
-  page_scraping: 'page_scraping',
-  detail_page_scraping: 'detail_page_scraping',
-} as const;
-
 export type SourceSchemaCustomHeaders = { [key: string]: unknown };
 
 export type SourceSchemaBrowserService = typeof SourceSchemaBrowserService[keyof typeof SourceSchemaBrowserService];
@@ -72,7 +62,7 @@ export type SourceSchemaLastCrawledAt = string | null;
 export interface SourceSchema {
   id: number;
   feed_id: number;
-  source_type: SourceSchemaSourceType;
+  source_type: SourceType;
   is_active: boolean;
   url: string;
   custom_headers?: SourceSchemaCustomHeaders;
@@ -98,6 +88,16 @@ export interface SourceSchema {
   last_error?: string;
 }
 
+export type SourceType = typeof SourceType[keyof typeof SourceType];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const SourceType = {
+  rss: 'rss',
+  page_scraping: 'page_scraping',
+  detail_page_scraping: 'detail_page_scraping',
+} as const;
+
 export type FeedCreateSchemaSource = SourceCreateSchema | null;
 
 /**
@@ -111,16 +111,6 @@ export interface FeedCreateSchema {
   refresh_interval?: number;
   source?: FeedCreateSchemaSource;
 }
-
-export type SourceCreateSchemaSourceType = typeof SourceCreateSchemaSourceType[keyof typeof SourceCreateSchemaSourceType];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceCreateSchemaSourceType = {
-  rss: 'rss',
-  page_scraping: 'page_scraping',
-  detail_page_scraping: 'detail_page_scraping',
-} as const;
 
 export type SourceCreateSchemaCustomHeaders = { [key: string]: unknown };
 
@@ -137,7 +127,7 @@ export const SourceCreateSchemaBrowserService = {
  * 소스 생성 스키마
  */
 export interface SourceCreateSchema {
-  source_type?: SourceCreateSchemaSourceType;
+  source_type?: SourceType;
   url: string;
   custom_headers?: SourceCreateSchemaCustomHeaders;
   item_selector?: string;
@@ -188,7 +178,7 @@ export interface FeedUpdateSchema {
   refresh_interval?: FeedUpdateSchemaRefreshInterval;
 }
 
-export type SourceUpdateSchemaSourceType = 'rss' | 'page_scraping' | 'detail_page_scraping' | null;
+export type SourceUpdateSchemaSourceType = SourceType | null;
 
 export type SourceUpdateSchemaIsActive = boolean | null;
 
@@ -579,6 +569,7 @@ export interface PreviewItemRequest {
   description_selector?: string;
   date_selector?: string;
   image_selector?: string;
+  author_selector?: string;
   use_browser?: boolean;
   browser_service?: PreviewItemRequestBrowserService;
   wait_selector?: string;
@@ -590,6 +581,11 @@ export interface PreviewItemRequest {
   detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
+  detail_author_selector?: string;
+  date_formats?: string[];
+  date_locale?: string;
+  source_type?: SourceType;
+  timeout?: number;
 }
 
 export type RSSEverythingSchemaBrowserService = typeof RSSEverythingSchemaBrowserService[keyof typeof RSSEverythingSchemaBrowserService];
@@ -688,6 +684,42 @@ export interface RSSEverythingCreateRequest {
   timeout?: number;
 }
 
+/**
+ * 페이지네이션 크롤링 응답 (비동기 task 스케줄링)
+ */
+export interface PaginationCrawlResponse {
+  success: boolean;
+  task_id?: string;
+  task_result_id?: number;
+  message?: string;
+}
+
+export type PaginationCrawlRequestVariablesItem = { [key: string]: unknown };
+
+/**
+ * 페이지네이션 크롤링 요청
+
+URL 템플릿에 {변수명} 형태로 변수를 지정하면
+해당 변수를 start부터 end까지 순회하며 크롤링합니다.
+
+예시:
+- url_template: "https://example.com/posts?page={page}"
+- variables: [{"name": "page", "start": 1, "end": 10}]
+
+여러 변수도 가능:
+- url_template: "https://example.com/posts?page={page}&category={cat}"
+- variables: [
+    {"name": "page", "start": 1, "end": 5},
+    {"name": "cat", "start": 1, "end": 3}
+  ]
+ */
+export interface PaginationCrawlRequest {
+  source_id: number;
+  url_template: string;
+  variables: PaginationCrawlRequestVariablesItem[];
+  delay_ms?: number;
+}
+
 export type RSSEverythingUpdateRequestUrl = string | null;
 
 export type RSSEverythingUpdateRequestSourceType = string | null;
@@ -784,42 +816,6 @@ export interface RefreshResponse {
   success: boolean;
   task_result_id: number;
   message: string;
-}
-
-/**
- * 페이지네이션 크롤링 응답 (비동기 task 스케줄링)
- */
-export interface PaginationCrawlResponse {
-  success: boolean;
-  task_id?: string;
-  task_result_id?: number;
-  message?: string;
-}
-
-export type PaginationCrawlRequestVariablesItem = { [key: string]: unknown };
-
-/**
- * 페이지네이션 크롤링 요청
-
-URL 템플릿에 {변수명} 형태로 변수를 지정하면
-해당 변수를 start부터 end까지 순회하며 크롤링합니다.
-
-예시:
-- url_template: "https://example.com/posts?page={page}"
-- variables: [{"name": "page", "start": 1, "end": 10}]
-
-여러 변수도 가능:
-- url_template: "https://example.com/posts?page={page}&category={cat}"
-- variables: [
-    {"name": "page", "start": 1, "end": 5},
-    {"name": "cat", "start": 1, "end": 3}
-  ]
- */
-export interface PaginationCrawlRequest {
-  source_id: number;
-  url_template: string;
-  variables: PaginationCrawlRequestVariablesItem[];
-  delay_ms?: number;
 }
 
 /**
@@ -1536,7 +1532,7 @@ export const extractElements = (
   
 /**
  * 설정된 셀렉터로 아이템들을 미리보기
- * @summary Preview Items
+ * @summary Crawl
  */
 export const previewItems = (
     previewItemRequest: PreviewItemRequest,
@@ -1573,6 +1569,34 @@ export const createRssEverythingSource = (
       {url: `/api/rss-everything`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
       data: rSSEverythingCreateRequest
+    },
+      );
+    }
+  
+/**
+ * 페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
+
+URL 템플릿에 {변수명} 형태로 변수를 지정합니다.
+
+예시:
+- url_template: "https://example.com/posts?page={page}"
+- variables: [{"name": "page", "start": 1, "end": 10, "step": 1}]
+
+여러 변수도 가능 (Cartesian product):
+- url_template: "https://example.com?page={page}&category={cat}"
+- variables: [
+    {"name": "page", "start": 1, "end": 5},
+    {"name": "cat", "start": 1, "end": 3}
+  ]
+ * @summary Crawl Paginated
+ */
+export const crawlPaginated = (
+    paginationCrawlRequest: PaginationCrawlRequest,
+ ) => {
+      return axiosInstance<PaginationCrawlResponse>(
+      {url: `/api/rss-everything/crawl-paginated`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: paginationCrawlRequest
     },
       );
     }
@@ -1628,34 +1652,6 @@ export const refreshRssEverythingSource = (
  ) => {
       return axiosInstance<RefreshResponse>(
       {url: `/api/rss-everything/${sourceId}/refresh`, method: 'POST'
-    },
-      );
-    }
-  
-/**
- * 페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
-
-URL 템플릿에 {변수명} 형태로 변수를 지정합니다.
-
-예시:
-- url_template: "https://example.com/posts?page={page}"
-- variables: [{"name": "page", "start": 1, "end": 10, "step": 1}]
-
-여러 변수도 가능 (Cartesian product):
-- url_template: "https://example.com?page={page}&category={cat}"
-- variables: [
-    {"name": "page", "start": 1, "end": 5},
-    {"name": "cat", "start": 1, "end": 3}
-  ]
- * @summary Crawl Paginated
- */
-export const crawlPaginated = (
-    paginationCrawlRequest: PaginationCrawlRequest,
- ) => {
-      return axiosInstance<PaginationCrawlResponse>(
-      {url: `/api/rss-everything/crawl-paginated`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: paginationCrawlRequest
     },
       );
     }
@@ -1851,11 +1847,11 @@ export type ExtractElementsResult = NonNullable<Awaited<ReturnType<typeof extrac
 export type PreviewItemsResult = NonNullable<Awaited<ReturnType<typeof previewItems>>>
 export type ListRssEverythingSourcesResult = NonNullable<Awaited<ReturnType<typeof listRssEverythingSources>>>
 export type CreateRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof createRssEverythingSource>>>
+export type CrawlPaginatedResult = NonNullable<Awaited<ReturnType<typeof crawlPaginated>>>
 export type GetRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof getRssEverythingSource>>>
 export type UpdateRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof updateRssEverythingSource>>>
 export type DeleteRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof deleteRssEverythingSource>>>
 export type RefreshRssEverythingSourceResult = NonNullable<Awaited<ReturnType<typeof refreshRssEverythingSource>>>
-export type CrawlPaginatedResult = NonNullable<Awaited<ReturnType<typeof crawlPaginated>>>
 export type ListTaskResultsResult = NonNullable<Awaited<ReturnType<typeof listTaskResults>>>
 export type ClearTaskResultsResult = NonNullable<Awaited<ReturnType<typeof clearTaskResults>>>
 export type GetTaskStatsResult = NonNullable<Awaited<ReturnType<typeof getTaskStats>>>

@@ -129,7 +129,6 @@ class CrawlerService:
                     published_at=published_at,
                     guid=item["guid"][:499],
                     author=item["author"],
-                    categories=item["categories"],
                     image=item["image"],
                 )
             )
@@ -199,7 +198,6 @@ class CrawlerService:
             "published_at": published_at,
             "guid": detail_url[:499],
             "author": "",
-            "categories": [],
             "image": image,
         }
 
@@ -266,14 +264,6 @@ class CrawlerService:
             elif hasattr(entry, "author_detail") and entry.author_detail:
                 author = str(getattr(entry.author_detail, "name", ""))[:255]
 
-            # 카테고리
-            categories = []
-            if hasattr(entry, "tags") and entry.tags:
-                for tag in entry.tags:
-                    term = getattr(tag, "term", None) or getattr(tag, "label", None)
-                    if term:
-                        categories.append(str(term))
-
             # 이미지
             image = ""
             if hasattr(entry, "enclosures") and entry.enclosures:
@@ -297,7 +287,6 @@ class CrawlerService:
                     description=description,
                     description_text=strip_html_tags(description), #type:ignore
                     author=author,
-                    categories=categories,
                     image=image,
                     published_at=published_at,
                     guid=guid,
@@ -449,7 +438,6 @@ class CrawlerService:
             published_at=parsed["published_at"],
             guid=parsed["guid"],
             author=parsed["author"],
-            categories=parsed["categories"],
             image=parsed["image"],
         )
     @staticmethod

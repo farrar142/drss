@@ -5,6 +5,7 @@ Celery Tasks - 피드 업데이트 및 이미지 처리 태스크
 
 from logging import getLogger
 import os
+from typing import Optional
 from base.celery_helper import shared_task
 from celery import chord, group
 from django.utils import timezone as django_timezone
@@ -23,24 +24,6 @@ ENABLE_IMAGE_UPLOAD = os.getenv("ENABLE_IMAGE_UPLOAD", "True") == "True"
 # ===========================================
 
 
-def _save_items_and_schedule_images(feed, new_items: list) -> int:
-    """
-    아이템들을 저장하고 이미지 캐시 태스크를 스케줄링
-
-    Returns:
-        생성된 아이템 수
-    """
-    from feeds.models import RSSItem
-
-    if not new_items:
-        return 0
-
-    created_items = RSSItem.objects.bulk_create(new_items)
-    feed.last_updated = django_timezone.now()
-    feed.save()
-
-
-    return len(created_items)
 
 
 def _update_source_status(source, error: str = ""):
@@ -76,7 +59,7 @@ def _get_or_create_task_result(task, feed, task_result_id=None):
     return task_result
 
 
-def _complete_task_result(task_result, items_found: int, items_created: int, errors: list = None):
+def _complete_task_result(task_result, items_found: int, items_created: int, errors: Optional[list] = None):
     """Task 결과 완료 처리"""
     from feeds.models import FeedTaskResult
 
@@ -146,7 +129,7 @@ def update_feed_items(self, feed_id, task_result_id=None):
         for source in active_sources:
             try:
                 option = PreviewItemRequest.from_orm(source)
-                items = SourceService.crawl(option, feed=feed, source=source)
+                items = SourceService.crawl(option, feed=feed, source=source,existing_guids=existing_guids)
 
             except Exception as e:
                 logger.exception(f"Failed to update from source {source.id}")
@@ -173,7 +156,7 @@ def crawl_paginated_task(
     url_template: str,
     variables: list,
     delay_ms: int = 1000,
-    task_result_id: int = None,
+    task_result_id: Optional[int] = None,
 ):
     """
     페이지네이션 크롤링 - 소스 타입에 따라 적절한 방식으로 처리
@@ -220,47 +203,10 @@ def crawl_paginated_task(
         for i, url in enumerate(urls):
             try:
                 logger.info(f"Crawling page {i + 1}/{total_pages}: {url}")
-
-                if source.source_type == RSSEverythingSource.SourceType.PAGE_SCRAPING:
-                    # 페이지 스크래핑
-                    found, new_items = CrawlerService.crawl_page_scraping_source(
-                        feed, source, existing_guids, url=url, use_cache=False
-                    )
-                    total_items_found += found
-
-                    # GUID 업데이트
-                    for item in new_items:
-                        existing_guids.add(item.guid)
-
-                    # 저장
-                    created = _save_items_and_schedule_images(feed, new_items)
-                    total_items_created += created
-                    logger.info(f"Page {i + 1}: created {created} items")
-
-                elif source.source_type == RSSEverythingSource.SourceType.DETAIL_PAGE_SCRAPING:
-                    # 상세 페이지 스크래핑 - URL을 임시로 변경하여 처리
-                    original_url = source.url
-                    source.url = url  # 임시 변경
-
-                    detail_tasks_data = CrawlerService.extract_detail_urls(source, existing_guids, max_items=50)
-                    total_items_found += len(detail_tasks_data)
-
-                    # 상세 페이지들 크롤링
-                    for data in detail_tasks_data:
-                        try:
-                            item = CrawlerService.crawl_detail_page(
-                                feed, source, data["detail_url"], data["list_data"]
-                            )
-                            item.save()
-                            existing_guids.add(item.guid)
-                            total_items_created += 1
-
-                        except Exception as e:
-                            logger.warning(f"Failed to crawl detail: {data['detail_url']}: {e}")
-
-                    source.url = original_url  # 복원
-                    logger.info(f"Page {i + 1}: created {len(detail_tasks_data)} items")
-
+                option = PreviewItemRequest.from_orm(source)
+                option.url = url
+                items = SourceService.crawl(option, feed=feed, source=source,existing_guids=existing_guids)
+                RSSItem.objects.bulk_create(items, ignore_conflicts=True)
                 # 딜레이
                 if i < len(urls) - 1 and delay_ms > 0:
                     time.sleep(delay_ms / 1000.0)

@@ -443,8 +443,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                         type="button"
                         onClick={() => setBrowserService('realbrowser')}
                         className={`p-3 rounded-lg border text-left transition-colors ${browserService === 'realbrowser'
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted/50'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:bg-muted/50'
                           }`}
                       >
                         <div className="font-medium text-sm">{t.rssEverything.browserServiceRealbrowser}</div>
@@ -454,8 +454,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                         type="button"
                         onClick={() => setBrowserService('browserless')}
                         className={`p-3 rounded-lg border text-left transition-colors ${browserService === 'browserless'
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-muted/50'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:bg-muted/50'
                           }`}
                       >
                         <div className="font-medium text-sm">{t.rssEverything.browserServiceBrowserless}</div>

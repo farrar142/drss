@@ -28,7 +28,6 @@ class ListCrawledItem(CrawledItem):
     """목록 페이지에서 크롤링된 아이템 타입"""
     guid: str
     author: str
-    categories: list[str]
 
 logger = logging.getLogger(__name__)
 
@@ -261,7 +260,6 @@ def crawl_list_page_items(
     date_selector: str = "",
     image_selector: str = "",
     author_selector: str = "",
-    categories_selector: str = "",
     existing_guids: Optional[set] = None,
     max_items: int = 20,
 ) -> list[ListCrawledItem]:
@@ -277,7 +275,6 @@ def crawl_list_page_items(
         date_selector: 날짜 선택자
         image_selector: 이미지 선택자
         author_selector: 작성자 선택자
-        categories_selector: 카테고리 선택자
         existing_guids: 기존 GUID 집합 (중복 방지)
         max_items: 최대 아이템 수
 
@@ -349,14 +346,6 @@ def crawl_list_page_items(
             if author_el:
                 author = author_el.get_text(strip=True)[:255]
 
-        # 카테고리 추출
-        categories = []
-        if categories_selector:
-            cat_els = item.select(categories_selector)
-            categories = [
-                el.get_text(strip=True) for el in cat_els if el.get_text(strip=True)
-            ][:10]
-
         # 이미지 추출
         image = ""
         if image_selector:
@@ -371,7 +360,6 @@ def crawl_list_page_items(
             "date": date,
             "guid": guid,
             "author": author,
-            "categories": categories,
             "image": image,
         })
 
