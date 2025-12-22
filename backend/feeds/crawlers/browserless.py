@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CDPResponse:
     """Response from CDP command"""
+
     id: int
     result: Optional[Dict[str, Any]] = None
     error: Optional[Dict[str, Any]] = None
@@ -77,7 +78,7 @@ class CDPSession:
                     ping_interval=20,
                     ping_timeout=10,
                 ),
-                timeout=self.timeout
+                timeout=self.timeout,
             )
             self._connected = True
             self._receive_task = asyncio.create_task(self._receive_loop())
@@ -141,15 +142,11 @@ class CDPSession:
                 future = self._pending_responses.pop(msg_id)
                 if not future.done():
                     if "error" in data:
-                        future.set_result(CDPResponse(
-                            id=msg_id,
-                            error=data["error"]
-                        ))
+                        future.set_result(CDPResponse(id=msg_id, error=data["error"]))
                     else:
-                        future.set_result(CDPResponse(
-                            id=msg_id,
-                            result=data.get("result", {})
-                        ))
+                        future.set_result(
+                            CDPResponse(id=msg_id, result=data.get("result", {}))
+                        )
         elif "method" in data:
             # Event
             method = data["method"]
@@ -167,7 +164,7 @@ class CDPSession:
         self,
         method: str,
         params: Optional[Dict] = None,
-        timeout: Optional[float] = None
+        timeout: Optional[float] = None,
     ) -> CDPResponse:
         """
         Send a CDP command and wait for response.
@@ -200,10 +197,7 @@ class CDPSession:
 
         try:
             await self._ws.send(json.dumps(message))
-            response = await asyncio.wait_for(
-                future,
-                timeout=timeout or self.timeout
-            )
+            response = await asyncio.wait_for(future, timeout=timeout or self.timeout)
             return response
         except asyncio.TimeoutError:
             self._pending_responses.pop(msg_id, None)
@@ -222,10 +216,9 @@ class CDPSession:
         Returns:
             Session ID for the attached target
         """
-        response = await self.send("Target.attachToTarget", {
-            "targetId": target_id,
-            "flatten": True
-        })
+        response = await self.send(
+            "Target.attachToTarget", {"targetId": target_id, "flatten": True}
+        )
 
         if response.error:
             raise RuntimeError(f"Failed to attach to target: {response.error}")
@@ -291,7 +284,7 @@ class BrowserlessPage:
         self,
         url: str,
         wait_until: WaitUntil = WaitUntil.NETWORKIDLE2,
-        timeout: float = 30.0
+        timeout: float = 30.0,
     ) -> None:
         """
         Navigate to a URL.
@@ -305,9 +298,9 @@ class BrowserlessPage:
         self._network_idle_event.clear()
 
         # Navigate
-        response = await self._session.send("Page.navigate", {
-            "url": url
-        }, timeout=timeout)
+        response = await self._session.send(
+            "Page.navigate", {"url": url}, timeout=timeout
+        )
 
         if response.error:
             raise RuntimeError(f"Navigation failed: {response.error}")
@@ -329,8 +322,7 @@ class BrowserlessPage:
                 # Wait for network idle (with additional timeout)
                 try:
                     await asyncio.wait_for(
-                        self._network_idle_event.wait(),
-                        timeout=min(timeout, 5.0)
+                        self._network_idle_event.wait(), timeout=min(timeout, 5.0)
                     )
                 except asyncio.TimeoutError:
                     # Network idle timeout is not fatal
@@ -338,11 +330,7 @@ class BrowserlessPage:
         except asyncio.TimeoutError:
             raise TimeoutError(f"Navigation timeout for {url}")
 
-    async def wait_for_selector(
-        self,
-        selector: str,
-        timeout: float = 30.0
-    ) -> bool:
+    async def wait_for_selector(self, selector: str, timeout: float = 30.0) -> bool:
         """
         Wait for a selector to appear in the page.
 
@@ -357,10 +345,13 @@ class BrowserlessPage:
 
         while (asyncio.get_event_loop().time() - start_time) < timeout:
             # Check if element exists
-            response = await self._session.send("Runtime.evaluate", {
-                "expression": f"document.querySelector('{selector}') !== null",
-                "returnByValue": True
-            })
+            response = await self._session.send(
+                "Runtime.evaluate",
+                {
+                    "expression": f"document.querySelector('{selector}') !== null",
+                    "returnByValue": True,
+                },
+            )
 
             if response.error:
                 logger.warning(f"Error checking selector: {response.error}")
@@ -381,11 +372,10 @@ class BrowserlessPage:
         Returns:
             Result of the evaluation
         """
-        response = await self._session.send("Runtime.evaluate", {
-            "expression": expression,
-            "returnByValue": True,
-            "awaitPromise": True
-        })
+        response = await self._session.send(
+            "Runtime.evaluate",
+            {"expression": expression, "returnByValue": True, "awaitPromise": True},
+        )
 
         if response.error:
             raise RuntimeError(f"Evaluation failed: {response.error}")
@@ -405,9 +395,7 @@ class BrowserlessPage:
             HTML content as string
         """
         # Get document root
-        doc_response = await self._session.send("DOM.getDocument", {
-            "depth": 0
-        })
+        doc_response = await self._session.send("DOM.getDocument", {"depth": 0})
 
         if doc_response.error:
             raise RuntimeError(f"Failed to get document: {doc_response.error}")
@@ -415,9 +403,9 @@ class BrowserlessPage:
         root_node_id = doc_response.result.get("root", {}).get("nodeId")
 
         # Get outer HTML
-        html_response = await self._session.send("DOM.getOuterHTML", {
-            "nodeId": root_node_id
-        })
+        html_response = await self._session.send(
+            "DOM.getOuterHTML", {"nodeId": root_node_id}
+        )
 
         if html_response.error:
             raise RuntimeError(f"Failed to get HTML: {html_response.error}")
@@ -435,12 +423,14 @@ class BrowserlessPage:
             HTML content of the element, or None if not found
         """
         # Use JavaScript to get the outer HTML of the selector
-        html = await self.evaluate(f"""
+        html = await self.evaluate(
+            f"""
             (() => {{
                 const el = document.querySelector('{selector}');
                 return el ? el.outerHTML : null;
             }})()
-        """)
+        """
+        )
         return html
 
 
@@ -498,9 +488,9 @@ class BrowserlessClient:
             raise RuntimeError("Not connected to browserless")
 
         # Create new target (page)
-        response = await self._session.send("Target.createTarget", {
-            "url": "about:blank"
-        })
+        response = await self._session.send(
+            "Target.createTarget", {"url": "about:blank"}
+        )
 
         if response.error:
             raise RuntimeError(f"Failed to create page: {response.error}")
@@ -597,10 +587,13 @@ class BrowserlessCrawler(BaseBrowserCrawler):
             if loop.is_running():
                 # If we're already in an async context, create a new thread
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(
                         asyncio.run,
-                        self._fetch_html_async(url, selector, wait_until, timeout, headers)
+                        self._fetch_html_async(
+                            url, selector, wait_until, timeout, headers
+                        ),
                     )
                     return future.result()
             else:
@@ -638,18 +631,55 @@ class BrowserlessCrawler(BaseBrowserCrawler):
         selector = selector or self.default_selector
         wait_until = wait_until or self.default_wait_until
 
+        # Extract cookies from headers if present
+        cookies_to_set = None
+        headers_without_cookie = None
+        if headers:
+            cookie_header = headers.get("Cookie") or headers.get("cookie")
+            if cookie_header:
+                cookies_to_set = self._parse_cookies(cookie_header, url)
+                # Remove cookie from headers (will be set via CDP)
+                headers_without_cookie = {
+                    k: v for k, v in headers.items() if k.lower() != "cookie"
+                }
+            else:
+                headers_without_cookie = headers
+
         client = BrowserlessClient(self.ws_url, timeout=timeout_sec)
 
         try:
             async with client:
                 page = await client.new_page()
 
-                # Set custom headers if provided
-                if headers:
-                    await self._set_extra_headers(page, headers)
+                # Set custom headers if provided (excluding cookies)
+                if headers_without_cookie:
+                    await self._set_extra_headers(page, headers_without_cookie)
 
-                # Navigate to URL
-                await page.goto(url, wait_until=wait_until, timeout=timeout_sec)
+                # If cookies need to be set, navigate first then set cookies and reload
+                if cookies_to_set:
+                    # First navigation to set domain context
+                    await page.goto(url, wait_until=WaitUntil.LOAD, timeout=timeout_sec)
+
+                    # Set cookies via CDP
+                    await self._set_cookies(page, cookies_to_set)
+                    logger.debug(f"Set {len(cookies_to_set)} cookies for {url}")
+
+                    # Reload page to apply cookies
+                    await page._session.send("Page.reload")
+                    await page._load_event.wait()
+                    # Wait for network idle after reload
+                    await asyncio.sleep(0.5)
+                    if wait_until in (WaitUntil.NETWORKIDLE0, WaitUntil.NETWORKIDLE2):
+                        try:
+                            await asyncio.wait_for(
+                                page._network_idle_event.wait(),
+                                timeout=min(timeout_sec, 5.0),
+                            )
+                        except asyncio.TimeoutError:
+                            logger.debug("Network idle timeout after cookie reload")
+                else:
+                    # Navigate to URL normally
+                    await page.goto(url, wait_until=wait_until, timeout=timeout_sec)
 
                 # Wait for selector if specified
                 if selector and selector != "body":
@@ -689,7 +719,9 @@ class BrowserlessCrawler(BaseBrowserCrawler):
                 url=url,
             )
 
-    async def _set_extra_headers(self, page: BrowserlessPage, headers: Dict[str, str]) -> None:
+    async def _set_extra_headers(
+        self, page: BrowserlessPage, headers: Dict[str, str]
+    ) -> None:
         """
         Set extra HTTP headers for requests.
 
@@ -698,9 +730,63 @@ class BrowserlessCrawler(BaseBrowserCrawler):
             headers: Headers to set
         """
         # Use Network.setExtraHTTPHeaders
-        await page._session.send("Network.setExtraHTTPHeaders", {
-            "headers": headers
-        })
+        await page._session.send("Network.setExtraHTTPHeaders", {"headers": headers})
+
+    def _parse_cookies(self, cookie_header: str, url: str) -> list[Dict[str, Any]]:
+        """
+        Parse Cookie header string into list of cookie dicts for CDP.
+
+        Args:
+            cookie_header: Cookie header value (e.g., "name1=value1; name2=value2")
+            url: URL to associate cookies with (for domain/path)
+
+        Returns:
+            List of cookie dicts for Network.setCookies
+        """
+        from urllib.parse import urlparse
+
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+        # Remove port if present
+        if ":" in domain:
+            domain = domain.split(":")[0]
+
+        cookies = []
+        for part in cookie_header.split(";"):
+            part = part.strip()
+            if not part or "=" not in part:
+                continue
+
+            name, _, value = part.partition("=")
+            name = name.strip()
+            value = value.strip()
+
+            if name and value:
+                cookies.append(
+                    {
+                        "name": name,
+                        "value": value,
+                        "domain": domain,
+                        "path": "/",
+                    }
+                )
+
+        return cookies
+
+    async def _set_cookies(
+        self, page: BrowserlessPage, cookies: list[Dict[str, Any]]
+    ) -> None:
+        """
+        Set cookies via CDP Network.setCookies.
+
+        Args:
+            page: Page to set cookies on
+            cookies: List of cookie dicts with name, value, domain, path
+        """
+        if not cookies:
+            return
+
+        await page._session.send("Network.setCookies", {"cookies": cookies})
 
     @property
     def ws_url(self) -> str:
