@@ -19,10 +19,13 @@ from feeds.utils.rss_generator import generate_rss_xml, generate_atom_xml
 router = Router(tags=["items"], auth=JWTAuth())
 
 
-@router.post("/{item_id}/refresh", response=ItemRefreshResponse, operation_id="refreshItem")
+@router.post(
+    "/{item_id}/refresh", response=ItemRefreshResponse, operation_id="refreshItem"
+)
 def refresh_item(request, item_id: int):
     """아이템 새로고침 (상세 페이지 다시 크롤링)"""
-    return ItemService.refresh_item(request.auth, item_id)
+    item, fields = ItemService.refresh_item(request.auth, item_id)
+    return dict(success=True, updated_fields=fields, item=item)
 
 
 @router.put("/{item_id}/favorite", operation_id="toggleItemFavorite")
@@ -49,7 +52,11 @@ def list_all_items(
     return ItemService.list_all_items(request.auth, is_read, is_favorite, search)
 
 
-@router.get("/category/{category_id}", response=list[ItemSchema], operation_id="listItemsByCategory")
+@router.get(
+    "/category/{category_id}",
+    response=list[ItemSchema],
+    operation_id="listItemsByCategory",
+)
 @paginate(CursorPagination[RSSItem], ordering_field="published_at")
 def list_items_by_category(
     request,
@@ -67,7 +74,10 @@ def list_items_by_category(
         search,
     )
 
-@router.get("/feed/{feed_id}", response=list[ItemSchema], operation_id="listItemsByFeed")
+
+@router.get(
+    "/feed/{feed_id}", response=list[ItemSchema], operation_id="listItemsByFeed"
+)
 @paginate(CursorPagination[RSSItem], ordering_field="published_at")
 def list_items_by_feed(
     request,
@@ -116,7 +126,9 @@ def export_all_items_rss(
     return HttpResponse(xml_content, content_type=content_type)
 
 
-@router.get("/category/{category_id}/rss", auth=None, operation_id="exportCategoryItemsRss")
+@router.get(
+    "/category/{category_id}/rss", auth=None, operation_id="exportCategoryItemsRss"
+)
 def export_category_items_rss(
     request,
     category_id: int,

@@ -24,7 +24,6 @@ function useListFieldLabels() {
     dateSelector: t.rssEverything.dateSelector,
     imageSelector: t.rssEverything.imageSelector,
     authorSelector: t.rssEverything.authorSelector,
-    categoriesSelector: t.rssEverything.categoriesSelector,
   };
 }
 

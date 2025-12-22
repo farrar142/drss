@@ -176,7 +176,7 @@ class BaseBrowserCrawler(AbstractBrowserCrawler):
 
         # Check cache first
         cache_key = _get_cache_key(
-            url,
+            f"{self.service_url}:{url}",
             selector or self.default_selector,
             (wait_until or self.default_wait_until).value,
             headers,

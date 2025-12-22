@@ -333,7 +333,6 @@ export interface Translations {
     imageSelector: string;
     contentSelector: string;
     authorSelector: string;
-    categoriesSelector: string;
     // Preview Step
     preview: string;
     previewItems: string;

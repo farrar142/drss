@@ -331,7 +331,6 @@ export const ko: Translations = {
     imageSelector: '이미지',
     contentSelector: '본문 내용',
     authorSelector: '작성자',
-    categoriesSelector: '카테고리',
     // Preview Step
     preview: '미리보기',
     previewItems: '추출된 아이템',

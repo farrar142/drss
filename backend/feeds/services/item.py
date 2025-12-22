@@ -10,7 +10,7 @@ from django.db.models import QuerySet, Q
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 
 from feeds.models import RSSItem
-from feeds.schemas.source import PreviewItemRequest
+from feeds.schemas.source import CrawlRequest
 from feeds.services.crawler import CrawlerService
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class ItemService:
         return {"success": True, "is_read": item.is_read}
 
     @staticmethod
-    def refresh_item(user, item_id: int) -> list[str]:
+    def refresh_item(user, item_id: int) -> tuple[RSSItem, list[str]]:
         """
         아이템을 새로고침 (상세 페이지 다시 크롤링)
 
@@ -51,18 +51,39 @@ class ItemService:
             source = item.feed.sources.first()
 
         if not source:
-            return []
+            return item, []
 
         if source.source_type != source.SourceType.DETAIL_PAGE_SCRAPING:
-            return []
+            return item, []
 
-        new_item = CrawlerService.crawl_detail_page(PreviewItemRequest.from_orm(item),item.link)
-        new_item.id = item.id  # 기존 아이템 ID 유지
-        new_item.feed = item.feed
-        new_item.source = source
-        new_item.save()
-        return []
+        new_item = CrawlerService.crawl_detail_page(
+            CrawlRequest.from_orm(source), item.link
+        )
 
+        if not new_item:
+            return item, []
+
+        # 비교할 필드 목록 (업데이트 가능한 콘텐츠 필드만)
+        comparable_fields = [
+            "title",
+            "description",
+            "description_text",
+            "author",
+            "image",
+        ]
+
+        updated_fields = []
+        for field in comparable_fields:
+            old_value = getattr(item, field)
+            new_value = getattr(new_item, field)
+            if old_value != new_value:
+                setattr(item, field, new_value)
+                updated_fields.append(field)
+
+        if updated_fields:
+            item.save(update_fields=updated_fields)
+
+        return item, updated_fields
 
     @staticmethod
     def list_all_items(
@@ -72,8 +93,10 @@ class ItemService:
         search: str = "",
     ) -> QuerySet[RSSItem]:
         """메인 화면 아이템 목록"""
-        items = RSSItem.objects.search(search).filter(feed__user=user).filter(
-            feed__visible=True, feed__category__visible=True
+        items = (
+            RSSItem.objects.search(search)
+            .filter(feed__user=user)
+            .filter(feed__visible=True, feed__category__visible=True)
         )
 
         if is_read is not None:

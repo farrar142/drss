@@ -243,14 +243,14 @@ class RSSEverythingSource(BaseModel):
     )
 
     # 제외할 셀렉터 설정
-    exclude_selectors = models.JSONField(
+    exclude_selectors: "models.JSONField[list[str]]" = models.JSONField(
         default=list,
         blank=True,
         help_text='제외할 CSS 셀렉터 목록 (예: [".ads", ".sidebar", "script"])',
     )
 
     # 날짜 파싱 설정 - 스크래핑용
-    date_formats = models.JSONField(
+    date_formats: "models.JSONField[list[str]]" = models.JSONField(
         default=list,
         blank=True,
         help_text='날짜 포맷 목록 (예: ["%Y-%m-%d", "%Y.%m.%d %H:%M"])',

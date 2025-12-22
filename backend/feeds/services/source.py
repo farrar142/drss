@@ -23,13 +23,15 @@ from feeds.utils.html_parser import (
     extract_src,
 )
 from feeds.services.crawler import CrawlerService
-from feeds.schemas import SourceCreateSchema, SourceUpdateSchema,PreviewItemRequest
+from feeds.schemas import SourceCreateSchema, SourceUpdateSchema, CrawlRequest
 
 logger = logging.getLogger(__name__)
+
 
 # API 응답 스키마 정의
 class ExtractedElementSchema(Schema):
     """추출된 요소 정보"""
+
     tag: str
     text: str
     html: str
@@ -37,40 +39,51 @@ class ExtractedElementSchema(Schema):
     src: Optional[str] = None
     selector: str
 
+
 class ExtractElementsResponse(Schema):
     """extract_elements 함수 응답 타입"""
+
     success: bool
     elements: list[ExtractedElementSchema]
     count: int
     error: Optional[str] = None
 
+
 class PreviewItemSchema(Schema):
     """미리보기 아이템 정보"""
+
     title: str
     link: str
     description: str
     date: str
     image: str
 
+
 class PreviewItemsResponse(Schema):
     """crawl 함수 응답 타입"""
+
     success: bool
     items: list[PreviewItemSchema]
     count: int
     error: Optional[str] = None
 
+
 class FetchHtmlResponse(Schema):
     """fetch_html 함수 응답 타입"""
+
     success: bool
     html: Optional[str] = None
     url: str
     error: Optional[str] = None
 
+
 class SourceService:
     """RSS Everything 소스 관련 비즈니스 로직"""
 
     @staticmethod
-    def extract_elements(html: str, selector: str, base_url: str) -> ExtractElementsResponse:
+    def extract_elements(
+        html: str, selector: str, base_url: str
+    ) -> ExtractElementsResponse:
         """HTML에서 CSS 셀렉터로 요소들을 추출"""
         try:
             soup = BeautifulSoup(html, "html.parser")
@@ -108,40 +121,45 @@ class SourceService:
 
     @staticmethod
     def crawl(
-        option:PreviewItemRequest,
-        feed:Optional[RSSFeed]=None,
-        source:Optional[RSSEverythingSource]=None,
-        existing_guids: set[str]=set()
-    ) -> list[RSSItem]:
+        option: CrawlRequest,
+        feed: Optional[RSSFeed] = None,
+        source: Optional[RSSEverythingSource] = None,
+        existing_guids: set[str] = set(),
+        max_items: int = 30,
+    ) -> tuple[int, list[RSSItem]]:
         result = CrawlerService.fetch_html(
-            url=option.url,use_browser=option.use_browser,
+            url=option.url,
+            use_browser=option.use_browser,
             browser_service=option.browser_service,
             wait_selector=option.wait_selector,
-            custom_headers=option.custom_headers)
+            custom_headers=option.custom_headers,
+        )
         if not result.success:
-            raise   Exception(f"Failed to fetch HTML: {result.error}")
+            raise Exception(f"Failed to fetch HTML: {result.error}")
         if not result.html:
-            raise   Exception("Fetched HTML is empty")
+            raise Exception("Fetched HTML is empty")
         html = result.html
-        soup = BeautifulSoup(html,"html.parser")
+        soup = BeautifulSoup(html, "html.parser")
         if option.source_type == "rss":
-            entries,result = CrawlerService.crawl_rss_source(html,None,existing_guids)
+            entries, result = CrawlerService.crawl_rss_source(
+                html, None, existing_guids, max_items
+            )
         elif option.source_type == "detail_page_scraping":
-            entries,result = CrawlerService.crawl_detail_scraping_source(
-                option,soup,existing_guids,
+            entries, result = CrawlerService.crawl_detail_scraping_source(
+                option, soup, existing_guids, max_items=max_items
             )
         elif option.source_type == "page_scraping":
-            entries,result = CrawlerService.crawl_page_scraping_source(
-                option,soup,existing_guids
+            entries, result = CrawlerService.crawl_page_scraping_source(
+                option, soup, existing_guids, max_items=max_items
             )
         else:
-            raise   Exception(f"Unknown source type: {option.source_type}")
+            raise Exception(f"Unknown source type: {option.source_type}")
         for entry in result:
             if feed:
                 entry.feed = feed
             if source:
                 entry.source = source
-        return result
+        return entries, result
 
     @staticmethod
     def get_user_sources(user) -> list[RSSEverythingSource]:

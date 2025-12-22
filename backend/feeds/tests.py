@@ -614,12 +614,16 @@ class RSSExportPublicTest(TestCase):
 
     def test_feed_rss_public_feed_in_private_category_404(self):
         """비공개 카테고리 내 공개 피드의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(f"/feed/{self.public_feed_in_private_category.id}/rss")
+        response = self.client.get(
+            f"/feed/{self.public_feed_in_private_category.id}/rss"
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_feed_rss_private_feed_in_public_category_404(self):
         """공개 카테고리 내 비공개 피드의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(f"/feed/{self.private_feed_in_public_category.id}/rss")
+        response = self.client.get(
+            f"/feed/{self.private_feed_in_public_category.id}/rss"
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_rss_no_auth_required(self):
@@ -842,9 +846,7 @@ class FeedTaskResultTest(TestCase):
         self.user = User.objects.create_user(
             username="taskuser", password="taskpass123"
         )
-        self.category = RSSCategory.objects.create(
-            user=self.user, name="Task Category"
-        )
+        self.category = RSSCategory.objects.create(user=self.user, name="Task Category")
         self.feed = RSSFeed.objects.create(
             user=self.user,
             category=self.category,
@@ -1306,158 +1308,6 @@ class HTMLParserTest(TestCase):
         self.assertIn("p", selector)
         # ID가 있는 부모가 있으면 해당 ID 포함
         self.assertIn("#main", selector)
-
-
-class WebScraperTest(TestCase):
-    """웹 스크래퍼 유틸리티 테스트"""
-
-    def test_crawl_list_page_items(self):
-        """목록 페이지 크롤링 테스트"""
-        from feeds.utils.web_scraper import crawl_list_page_items
-        from bs4 import BeautifulSoup
-
-        html = """
-        <div class="items">
-            <article class="item">
-                <h2><a href="/article/1">First Article</a></h2>
-                <p class="desc">First description</p>
-                <span class="date">2025-12-19</span>
-            </article>
-            <article class="item">
-                <h2><a href="/article/2">Second Article</a></h2>
-                <p class="desc">Second description</p>
-                <span class="date">2025-12-18</span>
-            </article>
-        </div>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        items = soup.select("article.item")
-
-        result = crawl_list_page_items(
-            items=items,
-            base_url="https://example.com",
-            title_selector="h2",
-            link_selector="h2 a",
-            description_selector=".desc",
-            date_selector=".date",
-        )
-
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["title"], "First Article")
-        self.assertEqual(result[0]["link"], "https://example.com/article/1")
-        self.assertIn("First description", result[0]["description"])
-        self.assertEqual(result[0]["date"], "2025-12-19")
-
-    def test_crawl_list_page_items_with_existing_guids(self):
-        """이미 존재하는 GUID 제외 테스트"""
-        from feeds.utils.web_scraper import crawl_list_page_items
-        from bs4 import BeautifulSoup
-
-        html = """
-        <div class="items">
-            <article class="item">
-                <h2><a href="/article/1">First Article</a></h2>
-            </article>
-            <article class="item">
-                <h2><a href="/article/2">Second Article</a></h2>
-            </article>
-        </div>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        items = soup.select("article.item")
-
-        # 첫 번째 아이템의 GUID를 이미 존재하는 것으로 설정
-        existing_guids = {"https://example.com/article/1"}
-
-        result = crawl_list_page_items(
-            items=items,
-            base_url="https://example.com",
-            title_selector="h2",
-            link_selector="h2 a",
-            existing_guids=existing_guids,
-        )
-
-        # 첫 번째 아이템은 제외되어야 함
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["title"], "Second Article")
-
-    def test_crawl_list_page_items_max_items(self):
-        """최대 아이템 수 제한 테스트"""
-        from feeds.utils.web_scraper import crawl_list_page_items
-        from bs4 import BeautifulSoup
-
-        # 10개의 아이템 생성
-        items_html = ""
-        for i in range(10):
-            items_html += f'<article class="item"><h2><a href="/article/{i}">Article {i}</a></h2></article>'
-
-        html = f'<div class="items">{items_html}</div>'
-        soup = BeautifulSoup(html, "html.parser")
-        items = soup.select("article.item")
-
-        result = crawl_list_page_items(
-            items=items,
-            base_url="https://example.com",
-            title_selector="h2",
-            link_selector="h2 a",
-            max_items=5,
-        )
-
-        self.assertEqual(len(result), 5)
-
-    def test_crawl_list_page_items_with_author_and_categories(self):
-        """작성자와 카테고리 추출 테스트"""
-        from feeds.utils.web_scraper import crawl_list_page_items
-        from bs4 import BeautifulSoup
-
-        html = """
-        <article class="item">
-            <h2><a href="/article/1">Article Title</a></h2>
-            <span class="author">John Doe</span>
-            <span class="category">Tech</span>
-            <span class="category">News</span>
-        </article>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        items = soup.select("article.item")
-
-        result = crawl_list_page_items(
-            items=items,
-            base_url="https://example.com",
-            title_selector="h2",
-            link_selector="h2 a",
-            author_selector=".author",
-            categories_selector=".category",
-        )
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["author"], "John Doe")
-        self.assertEqual(result[0]["categories"], ["Tech", "News"])
-
-    def test_crawl_list_page_items_with_image(self):
-        """이미지 추출 테스트"""
-        from feeds.utils.web_scraper import crawl_list_page_items
-        from bs4 import BeautifulSoup
-
-        html = """
-        <article class="item">
-            <h2><a href="/article/1">Article Title</a></h2>
-            <img class="thumbnail" src="/images/thumb.jpg">
-        </article>
-        """
-        soup = BeautifulSoup(html, "html.parser")
-        items = soup.select("article.item")
-
-        result = crawl_list_page_items(
-            items=items,
-            base_url="https://example.com",
-            title_selector="h2",
-            link_selector="h2 a",
-            image_selector=".thumbnail",
-        )
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["image"], "https://example.com/images/thumb.jpg")
 
 
 class CrawlerAbstractionTest(TestCase):

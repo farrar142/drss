@@ -13,7 +13,7 @@ from feeds.schemas import (
     ExtractElementsRequest,
     ExtractElementsResponse,
     PreviewItem,
-    PreviewItemRequest,
+    CrawlRequest,
     PreviewItemResponse,
     RSSEverythingSchema,
     RSSEverythingCreateRequest,
@@ -27,7 +27,9 @@ from feeds.services.crawler import CrawlerService
 router = Router(tags=["rss-everything"])
 
 
-@router.post("/fetch-html", response=FetchHTMLResponse, auth=JWTAuth(), operation_id="fetchHtml")
+@router.post(
+    "/fetch-html", response=FetchHTMLResponse, auth=JWTAuth(), operation_id="fetchHtml"
+)
 def fetch_html(request, data: FetchHTMLRequest):
     """사용자가 선택한 브라우저 서비스로 URL에서 HTML을 가져옴"""
     result = CrawlerService.fetch_html(
@@ -41,7 +43,12 @@ def fetch_html(request, data: FetchHTMLRequest):
     return result
 
 
-@router.post("/extract-elements", response=ExtractElementsResponse, auth=JWTAuth(), operation_id="extractElements")
+@router.post(
+    "/extract-elements",
+    response=ExtractElementsResponse,
+    auth=JWTAuth(),
+    operation_id="extractElements",
+)
 def extract_elements(request, data: ExtractElementsRequest):
     """HTML에서 CSS 셀렉터로 요소들을 추출"""
     result = SourceService.extract_elements(data.html, data.selector, data.base_url)
@@ -54,22 +61,36 @@ def extract_elements(request, data: ExtractElementsRequest):
     return ExtractElementsResponse(success=False, error=result.error)
 
 
-@router.post("/preview-items", response=PreviewItemResponse, auth=JWTAuth(), operation_id="previewItems")
-def crawl(request, data: PreviewItemRequest):
+@router.post(
+    "/preview-items",
+    response=PreviewItemResponse,
+    auth=JWTAuth(),
+    operation_id="previewItems",
+)
+def crawl(request, data: CrawlRequest):
     """설정된 셀렉터로 아이템들을 미리보기"""
-    result = SourceService.crawl(data
-    )
-    return dict(success=True,items=result,count=len(result))
+    entries, result = SourceService.crawl(data, max_items=5)
+    return dict(success=True, items=result, count=len(result))
 
 
-@router.get("", response=list[RSSEverythingSchema], auth=JWTAuth(), operation_id="listRssEverythingSources")
+@router.get(
+    "",
+    response=list[RSSEverythingSchema],
+    auth=JWTAuth(),
+    operation_id="listRssEverythingSources",
+)
 def list_sources(request):
     """사용자의 RSSEverything 소스 목록 조회"""
     sources = SourceService.get_user_sources(request.auth)
-    return [RSSEverythingSchema.from_orm(s) for s in sources]
+    return sources
 
 
-@router.post("/crawl-paginated", response=PaginationCrawlResponse, auth=JWTAuth(), operation_id="crawlPaginated")
+@router.post(
+    "/crawl-paginated",
+    response=PaginationCrawlResponse,
+    auth=JWTAuth(),
+    operation_id="crawlPaginated",
+)
 def crawl_paginated(request, data: PaginationCrawlRequest):
     """
     페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
@@ -97,27 +118,42 @@ def crawl_paginated(request, data: PaginationCrawlRequest):
     return PaginationCrawlResponse(**result)
 
 
-@router.get("/{source_id}", response=RSSEverythingSchema, auth=JWTAuth(), operation_id="getRssEverythingSource")
+@router.get(
+    "/{source_id}",
+    response=RSSEverythingSchema,
+    auth=JWTAuth(),
+    operation_id="getRssEverythingSource",
+)
 def get_source(request, source_id: int):
     """RSSEverything 소스 상세 조회"""
     source = SourceService.get_source(request.auth, source_id)
-    return RSSEverythingSchema.from_orm(source)
+    return source
 
 
-@router.post("", response=RSSEverythingSchema, auth=JWTAuth(), operation_id="createRssEverythingSource")
+@router.post(
+    "",
+    response=RSSEverythingSchema,
+    auth=JWTAuth(),
+    operation_id="createRssEverythingSource",
+)
 def create_source(request, data: RSSEverythingCreateRequest):
     """기존 피드에 새 RSSEverything 소스 추가"""
-    source = SourceService.create_source(request.auth, data.feed_id, data.dict())
-    return RSSEverythingSchema.from_orm(source)
+    source = SourceService.create_source(request.auth, data.feed, data.dict())
+    return source
 
 
-@router.put("/{source_id}", response=RSSEverythingSchema, auth=JWTAuth(), operation_id="updateRssEverythingSource")
+@router.put(
+    "/{source_id}",
+    response=RSSEverythingSchema,
+    auth=JWTAuth(),
+    operation_id="updateRssEverythingSource",
+)
 def update_source_rss(request, source_id: int, data: RSSEverythingUpdateRequest):
     """RSSEverything 소스 수정"""
     source = SourceService.update_source(
         request.auth, source_id, data.dict(exclude_unset=True)
     )
-    return RSSEverythingSchema.from_orm(source)
+    return source
 
 
 @router.delete("/{source_id}", auth=JWTAuth(), operation_id="deleteRssEverythingSource")
@@ -127,7 +163,12 @@ def delete_source_rss(request, source_id: int):
     return {"success": True}
 
 
-@router.post("/{source_id}/refresh", response=RefreshResponse, auth=JWTAuth(), operation_id="refreshRssEverythingSource")
+@router.post(
+    "/{source_id}/refresh",
+    response=RefreshResponse,
+    auth=JWTAuth(),
+    operation_id="refreshRssEverythingSource",
+)
 def refresh_source(request, source_id: int):
     """RSSEverything 소스를 새로고침"""
     result = SourceService.refresh_source(request.auth, source_id)

@@ -137,14 +137,12 @@ export interface SourceCreateSchema {
   date_selector?: string;
   image_selector?: string;
   author_selector?: string;
-  categories_selector?: string;
   detail_title_selector?: string;
   detail_description_selector?: string;
   detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
   detail_author_selector?: string;
-  detail_categories_selector?: string;
   exclude_selectors?: string[];
   date_formats?: string[];
   date_locale?: string;
@@ -202,8 +200,6 @@ export type SourceUpdateSchemaImageSelector = string | null;
 
 export type SourceUpdateSchemaAuthorSelector = string | null;
 
-export type SourceUpdateSchemaCategoriesSelector = string | null;
-
 export type SourceUpdateSchemaDetailTitleSelector = string | null;
 
 export type SourceUpdateSchemaDetailDescriptionSelector = string | null;
@@ -215,8 +211,6 @@ export type SourceUpdateSchemaDetailDateSelector = string | null;
 export type SourceUpdateSchemaDetailImageSelector = string | null;
 
 export type SourceUpdateSchemaDetailAuthorSelector = string | null;
-
-export type SourceUpdateSchemaDetailCategoriesSelector = string | null;
 
 export type SourceUpdateSchemaExcludeSelectors = string[] | null;
 
@@ -247,14 +241,12 @@ export interface SourceUpdateSchema {
   date_selector?: SourceUpdateSchemaDateSelector;
   image_selector?: SourceUpdateSchemaImageSelector;
   author_selector?: SourceUpdateSchemaAuthorSelector;
-  categories_selector?: SourceUpdateSchemaCategoriesSelector;
   detail_title_selector?: SourceUpdateSchemaDetailTitleSelector;
   detail_description_selector?: SourceUpdateSchemaDetailDescriptionSelector;
   detail_content_selector?: SourceUpdateSchemaDetailContentSelector;
   detail_date_selector?: SourceUpdateSchemaDetailDateSelector;
   detail_image_selector?: SourceUpdateSchemaDetailImageSelector;
   detail_author_selector?: SourceUpdateSchemaDetailAuthorSelector;
-  detail_categories_selector?: SourceUpdateSchemaDetailCategoriesSelector;
   exclude_selectors?: SourceUpdateSchemaExcludeSelectors;
   date_formats?: SourceUpdateSchemaDateFormats;
   date_locale?: SourceUpdateSchemaDateLocale;
@@ -547,21 +539,21 @@ export interface PreviewItemResponse {
   error?: PreviewItemResponseError;
 }
 
-export type PreviewItemRequestBrowserService = typeof PreviewItemRequestBrowserService[keyof typeof PreviewItemRequestBrowserService];
+export type CrawlRequestBrowserService = typeof CrawlRequestBrowserService[keyof typeof CrawlRequestBrowserService];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const PreviewItemRequestBrowserService = {
+export const CrawlRequestBrowserService = {
   realbrowser: 'realbrowser',
   browserless: 'browserless',
 } as const;
 
-export type PreviewItemRequestCustomHeaders = { [key: string]: unknown };
+export type CrawlRequestCustomHeaders = { [key: string]: unknown };
 
 /**
  * 아이템 미리보기 요청
  */
-export interface PreviewItemRequest {
+export interface CrawlRequest {
   url: string;
   item_selector: string;
   title_selector?: string;
@@ -571,9 +563,9 @@ export interface PreviewItemRequest {
   image_selector?: string;
   author_selector?: string;
   use_browser?: boolean;
-  browser_service?: PreviewItemRequestBrowserService;
+  browser_service?: CrawlRequestBrowserService;
   wait_selector?: string;
-  custom_headers?: PreviewItemRequestCustomHeaders;
+  custom_headers?: CrawlRequestCustomHeaders;
   exclude_selectors?: string[];
   follow_links?: boolean;
   detail_title_selector?: string;
@@ -588,99 +580,312 @@ export interface PreviewItemRequest {
   timeout?: number;
 }
 
-export type RSSEverythingSchemaBrowserService = typeof RSSEverythingSchemaBrowserService[keyof typeof RSSEverythingSchemaBrowserService];
+export type RSSEverythingSchemaId = number | null;
 
+export type RSSEverythingSchemaCustomHeadersAnyOf = { [key: string]: unknown };
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const RSSEverythingSchemaBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
+export type RSSEverythingSchemaCustomHeaders = RSSEverythingSchemaCustomHeadersAnyOf | null;
 
-export type RSSEverythingSchemaCustomHeaders = { [key: string]: unknown };
+/**
+ * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
+ */
+export type RSSEverythingSchemaItemSelector = string | null;
+
+/**
+ * 제목 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingSchemaTitleSelector = string | null;
+
+/**
+ * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
+ */
+export type RSSEverythingSchemaLinkSelector = string | null;
+
+/**
+ * 설명 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingSchemaDescriptionSelector = string | null;
+
+/**
+ * 날짜 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingSchemaDateSelector = string | null;
+
+/**
+ * 이미지 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingSchemaImageSelector = string | null;
+
+/**
+ * 작성자 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingSchemaAuthorSelector = string | null;
+
+/**
+ * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
+ */
+export type RSSEverythingSchemaCategoriesSelector = string | null;
+
+/**
+ * 상세 페이지에서 제목 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailTitleSelector = string | null;
+
+/**
+ * 상세 페이지에서 설명/요약 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailDescriptionSelector = string | null;
+
+/**
+ * 상세 페이지에서 본문 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailContentSelector = string | null;
+
+/**
+ * 상세 페이지에서 날짜 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailDateSelector = string | null;
+
+/**
+ * 상세 페이지에서 이미지 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailImageSelector = string | null;
+
+/**
+ * 상세 페이지에서 작성자 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailAuthorSelector = string | null;
+
+/**
+ * 상세 페이지에서 카테고리 CSS 셀렉터
+ */
+export type RSSEverythingSchemaDetailCategoriesSelector = string | null;
+
+/**
+ * 페이지 로드 완료 확인용 셀렉터
+ */
+export type RSSEverythingSchemaWaitSelector = string | null;
 
 export type RSSEverythingSchemaLastCrawledAt = string | null;
+
+export type RSSEverythingSchemaLastError = string | null;
 
 /**
  * RSSEverything 소스 스키마
  */
 export interface RSSEverythingSchema {
-  id: number;
-  feed_id: number;
+  date_formats?: string[];
+  exclude_selectors?: string[];
+  id?: RSSEverythingSchemaId;
+  /** 연결된 RSS 피드 */
+  feed: number;
+  /**
+   * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
+   * @maxLength 30
+   */
+  source_type?: string;
+  /** 이 소스의 활성화 여부 */
+  is_active?: boolean;
+  /** RSS URL 또는 크롤링할 페이지 URL */
   url: string;
-  source_type: string;
-  is_active: boolean;
-  item_selector: string;
-  title_selector: string;
-  link_selector: string;
-  description_selector: string;
-  date_selector: string;
-  image_selector: string;
-  author_selector: string;
-  categories_selector: string;
-  follow_links: boolean;
-  detail_title_selector: string;
-  detail_description_selector: string;
-  detail_content_selector: string;
-  detail_date_selector: string;
-  detail_image_selector: string;
-  detail_author_selector: string;
-  detail_categories_selector: string;
-  exclude_selectors: string[];
-  date_formats: string[];
-  date_locale: string;
-  use_browser: boolean;
-  browser_service: RSSEverythingSchemaBrowserService;
-  wait_selector: string;
-  timeout: number;
-  custom_headers: RSSEverythingSchemaCustomHeaders;
-  last_crawled_at: RSSEverythingSchemaLastCrawledAt;
-  last_error: string;
+  custom_headers?: RSSEverythingSchemaCustomHeaders;
+  /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
+  item_selector?: RSSEverythingSchemaItemSelector;
+  /** 제목 CSS 셀렉터 (아이템 내부) */
+  title_selector?: RSSEverythingSchemaTitleSelector;
+  /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
+  link_selector?: RSSEverythingSchemaLinkSelector;
+  /** 설명 CSS 셀렉터 (아이템 내부) */
+  description_selector?: RSSEverythingSchemaDescriptionSelector;
+  /** 날짜 CSS 셀렉터 (아이템 내부) */
+  date_selector?: RSSEverythingSchemaDateSelector;
+  /** 이미지 CSS 셀렉터 (아이템 내부) */
+  image_selector?: RSSEverythingSchemaImageSelector;
+  /** 작성자 CSS 셀렉터 (아이템 내부) */
+  author_selector?: RSSEverythingSchemaAuthorSelector;
+  /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
+  categories_selector?: RSSEverythingSchemaCategoriesSelector;
+  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  detail_title_selector?: RSSEverythingSchemaDetailTitleSelector;
+  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
+  detail_description_selector?: RSSEverythingSchemaDetailDescriptionSelector;
+  /** 상세 페이지에서 본문 CSS 셀렉터 */
+  detail_content_selector?: RSSEverythingSchemaDetailContentSelector;
+  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  detail_date_selector?: RSSEverythingSchemaDetailDateSelector;
+  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  detail_image_selector?: RSSEverythingSchemaDetailImageSelector;
+  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  detail_author_selector?: RSSEverythingSchemaDetailAuthorSelector;
+  /** 상세 페이지에서 카테고리 CSS 셀렉터 */
+  detail_categories_selector?: RSSEverythingSchemaDetailCategoriesSelector;
+  /**
+   * 날짜 로케일 (예: ko_KR, en_US)
+   * @maxLength 20
+   */
+  date_locale?: string;
+  /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
+  use_browser?: boolean;
+  /**
+   * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
+   * @maxLength 20
+   */
+  browser_service?: string;
+  /** 페이지 로드 완료 확인용 셀렉터 */
+  wait_selector?: RSSEverythingSchemaWaitSelector;
+  /** 타임아웃 (밀리초) */
+  timeout?: number;
+  last_crawled_at?: RSSEverythingSchemaLastCrawledAt;
+  last_error?: RSSEverythingSchemaLastError;
   created_at: string;
   updated_at: string;
 }
 
-export type RSSEverythingCreateRequestCustomHeaders = { [key: string]: unknown };
+export type RSSEverythingCreateRequestCustomHeadersAnyOf = { [key: string]: unknown };
 
-export type RSSEverythingCreateRequestBrowserService = typeof RSSEverythingCreateRequestBrowserService[keyof typeof RSSEverythingCreateRequestBrowserService];
+export type RSSEverythingCreateRequestCustomHeaders = RSSEverythingCreateRequestCustomHeadersAnyOf | null;
 
+/**
+ * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
+ */
+export type RSSEverythingCreateRequestItemSelector = string | null;
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const RSSEverythingCreateRequestBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
+/**
+ * 제목 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingCreateRequestTitleSelector = string | null;
+
+/**
+ * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
+ */
+export type RSSEverythingCreateRequestLinkSelector = string | null;
+
+/**
+ * 설명 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingCreateRequestDescriptionSelector = string | null;
+
+/**
+ * 날짜 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingCreateRequestDateSelector = string | null;
+
+/**
+ * 이미지 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingCreateRequestImageSelector = string | null;
+
+/**
+ * 작성자 CSS 셀렉터 (아이템 내부)
+ */
+export type RSSEverythingCreateRequestAuthorSelector = string | null;
+
+/**
+ * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
+ */
+export type RSSEverythingCreateRequestCategoriesSelector = string | null;
+
+/**
+ * 상세 페이지에서 제목 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailTitleSelector = string | null;
+
+/**
+ * 상세 페이지에서 설명/요약 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailDescriptionSelector = string | null;
+
+/**
+ * 상세 페이지에서 본문 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailContentSelector = string | null;
+
+/**
+ * 상세 페이지에서 날짜 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailDateSelector = string | null;
+
+/**
+ * 상세 페이지에서 이미지 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailImageSelector = string | null;
+
+/**
+ * 상세 페이지에서 작성자 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailAuthorSelector = string | null;
+
+/**
+ * 상세 페이지에서 카테고리 CSS 셀렉터
+ */
+export type RSSEverythingCreateRequestDetailCategoriesSelector = string | null;
+
+/**
+ * 페이지 로드 완료 확인용 셀렉터
+ */
+export type RSSEverythingCreateRequestWaitSelector = string | null;
 
 /**
  * RSSEverything 소스 생성 요청
  */
 export interface RSSEverythingCreateRequest {
-  feed_id: number;
-  url: string;
-  source_type?: string;
-  custom_headers?: RSSEverythingCreateRequestCustomHeaders;
-  item_selector?: string;
-  title_selector?: string;
-  link_selector?: string;
-  description_selector?: string;
-  date_selector?: string;
-  image_selector?: string;
-  author_selector?: string;
-  categories_selector?: string;
-  follow_links?: boolean;
-  detail_title_selector?: string;
-  detail_description_selector?: string;
-  detail_content_selector?: string;
-  detail_date_selector?: string;
-  detail_image_selector?: string;
-  detail_author_selector?: string;
-  detail_categories_selector?: string;
-  exclude_selectors?: string[];
   date_formats?: string[];
+  exclude_selectors?: string[];
+  /** 연결된 RSS 피드 */
+  feed_id: number;
+  /**
+   * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
+   * @maxLength 30
+   */
+  source_type?: string;
+  /** RSS URL 또는 크롤링할 페이지 URL */
+  url: string;
+  custom_headers?: RSSEverythingCreateRequestCustomHeaders;
+  /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
+  item_selector?: RSSEverythingCreateRequestItemSelector;
+  /** 제목 CSS 셀렉터 (아이템 내부) */
+  title_selector?: RSSEverythingCreateRequestTitleSelector;
+  /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
+  link_selector?: RSSEverythingCreateRequestLinkSelector;
+  /** 설명 CSS 셀렉터 (아이템 내부) */
+  description_selector?: RSSEverythingCreateRequestDescriptionSelector;
+  /** 날짜 CSS 셀렉터 (아이템 내부) */
+  date_selector?: RSSEverythingCreateRequestDateSelector;
+  /** 이미지 CSS 셀렉터 (아이템 내부) */
+  image_selector?: RSSEverythingCreateRequestImageSelector;
+  /** 작성자 CSS 셀렉터 (아이템 내부) */
+  author_selector?: RSSEverythingCreateRequestAuthorSelector;
+  /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
+  categories_selector?: RSSEverythingCreateRequestCategoriesSelector;
+  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  detail_title_selector?: RSSEverythingCreateRequestDetailTitleSelector;
+  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
+  detail_description_selector?: RSSEverythingCreateRequestDetailDescriptionSelector;
+  /** 상세 페이지에서 본문 CSS 셀렉터 */
+  detail_content_selector?: RSSEverythingCreateRequestDetailContentSelector;
+  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  detail_date_selector?: RSSEverythingCreateRequestDetailDateSelector;
+  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  detail_image_selector?: RSSEverythingCreateRequestDetailImageSelector;
+  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  detail_author_selector?: RSSEverythingCreateRequestDetailAuthorSelector;
+  /** 상세 페이지에서 카테고리 CSS 셀렉터 */
+  detail_categories_selector?: RSSEverythingCreateRequestDetailCategoriesSelector;
+  /**
+   * 날짜 로케일 (예: ko_KR, en_US)
+   * @maxLength 20
+   */
   date_locale?: string;
+  /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
   use_browser?: boolean;
-  browser_service?: RSSEverythingCreateRequestBrowserService;
-  wait_selector?: string;
+  /**
+   * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
+   * @maxLength 20
+   */
+  browser_service?: string;
+  /** 페이지 로드 완료 확인용 셀렉터 */
+  wait_selector?: RSSEverythingCreateRequestWaitSelector;
+  /** 타임아웃 (밀리초) */
   timeout?: number;
 }
 
@@ -720,92 +925,177 @@ export interface PaginationCrawlRequest {
   delay_ms?: number;
 }
 
-export type RSSEverythingUpdateRequestUrl = string | null;
+/**
+ * 연결된 RSS 피드
+ */
+export type RSSEverythingUpdateRequestFeedId = number | null;
 
+/**
+ * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
+ */
 export type RSSEverythingUpdateRequestSourceType = string | null;
+
+/**
+ * RSS URL 또는 크롤링할 페이지 URL
+ */
+export type RSSEverythingUpdateRequestUrl = string | null;
 
 export type RSSEverythingUpdateRequestCustomHeadersAnyOf = { [key: string]: unknown };
 
 export type RSSEverythingUpdateRequestCustomHeaders = RSSEverythingUpdateRequestCustomHeadersAnyOf | null;
 
-export type RSSEverythingUpdateRequestIsActive = boolean | null;
-
+/**
+ * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
+ */
 export type RSSEverythingUpdateRequestItemSelector = string | null;
 
+/**
+ * 제목 CSS 셀렉터 (아이템 내부)
+ */
 export type RSSEverythingUpdateRequestTitleSelector = string | null;
 
+/**
+ * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
+ */
 export type RSSEverythingUpdateRequestLinkSelector = string | null;
 
+/**
+ * 설명 CSS 셀렉터 (아이템 내부)
+ */
 export type RSSEverythingUpdateRequestDescriptionSelector = string | null;
 
+/**
+ * 날짜 CSS 셀렉터 (아이템 내부)
+ */
 export type RSSEverythingUpdateRequestDateSelector = string | null;
 
+/**
+ * 이미지 CSS 셀렉터 (아이템 내부)
+ */
 export type RSSEverythingUpdateRequestImageSelector = string | null;
 
+/**
+ * 작성자 CSS 셀렉터 (아이템 내부)
+ */
 export type RSSEverythingUpdateRequestAuthorSelector = string | null;
 
+/**
+ * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
+ */
 export type RSSEverythingUpdateRequestCategoriesSelector = string | null;
 
-export type RSSEverythingUpdateRequestFollowLinks = boolean | null;
-
+/**
+ * 상세 페이지에서 제목 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailTitleSelector = string | null;
 
+/**
+ * 상세 페이지에서 설명/요약 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailDescriptionSelector = string | null;
 
+/**
+ * 상세 페이지에서 본문 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailContentSelector = string | null;
 
+/**
+ * 상세 페이지에서 날짜 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailDateSelector = string | null;
 
+/**
+ * 상세 페이지에서 이미지 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailImageSelector = string | null;
 
+/**
+ * 상세 페이지에서 작성자 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailAuthorSelector = string | null;
 
+/**
+ * 상세 페이지에서 카테고리 CSS 셀렉터
+ */
 export type RSSEverythingUpdateRequestDetailCategoriesSelector = string | null;
 
-export type RSSEverythingUpdateRequestExcludeSelectors = string[] | null;
-
-export type RSSEverythingUpdateRequestDateFormats = string[] | null;
-
+/**
+ * 날짜 로케일 (예: ko_KR, en_US)
+ */
 export type RSSEverythingUpdateRequestDateLocale = string | null;
 
+/**
+ * 브라우저 렌더링 사용 여부 (JavaScript 필요 시)
+ */
 export type RSSEverythingUpdateRequestUseBrowser = boolean | null;
 
-export type RSSEverythingUpdateRequestBrowserService = 'realbrowser' | 'browserless' | null;
+/**
+ * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
+ */
+export type RSSEverythingUpdateRequestBrowserService = string | null;
 
+/**
+ * 페이지 로드 완료 확인용 셀렉터
+ */
 export type RSSEverythingUpdateRequestWaitSelector = string | null;
 
+/**
+ * 타임아웃 (밀리초)
+ */
 export type RSSEverythingUpdateRequestTimeout = number | null;
 
 /**
  * RSSEverything 소스 수정 요청
  */
 export interface RSSEverythingUpdateRequest {
-  url?: RSSEverythingUpdateRequestUrl;
+  date_formats?: string[];
+  exclude_selectors?: string[];
+  /** 연결된 RSS 피드 */
+  feed_id?: RSSEverythingUpdateRequestFeedId;
+  /** 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑) */
   source_type?: RSSEverythingUpdateRequestSourceType;
+  /** RSS URL 또는 크롤링할 페이지 URL */
+  url?: RSSEverythingUpdateRequestUrl;
   custom_headers?: RSSEverythingUpdateRequestCustomHeaders;
-  is_active?: RSSEverythingUpdateRequestIsActive;
+  /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
   item_selector?: RSSEverythingUpdateRequestItemSelector;
+  /** 제목 CSS 셀렉터 (아이템 내부) */
   title_selector?: RSSEverythingUpdateRequestTitleSelector;
+  /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
   link_selector?: RSSEverythingUpdateRequestLinkSelector;
+  /** 설명 CSS 셀렉터 (아이템 내부) */
   description_selector?: RSSEverythingUpdateRequestDescriptionSelector;
+  /** 날짜 CSS 셀렉터 (아이템 내부) */
   date_selector?: RSSEverythingUpdateRequestDateSelector;
+  /** 이미지 CSS 셀렉터 (아이템 내부) */
   image_selector?: RSSEverythingUpdateRequestImageSelector;
+  /** 작성자 CSS 셀렉터 (아이템 내부) */
   author_selector?: RSSEverythingUpdateRequestAuthorSelector;
+  /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
   categories_selector?: RSSEverythingUpdateRequestCategoriesSelector;
-  follow_links?: RSSEverythingUpdateRequestFollowLinks;
+  /** 상세 페이지에서 제목 CSS 셀렉터 */
   detail_title_selector?: RSSEverythingUpdateRequestDetailTitleSelector;
+  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
   detail_description_selector?: RSSEverythingUpdateRequestDetailDescriptionSelector;
+  /** 상세 페이지에서 본문 CSS 셀렉터 */
   detail_content_selector?: RSSEverythingUpdateRequestDetailContentSelector;
+  /** 상세 페이지에서 날짜 CSS 셀렉터 */
   detail_date_selector?: RSSEverythingUpdateRequestDetailDateSelector;
+  /** 상세 페이지에서 이미지 CSS 셀렉터 */
   detail_image_selector?: RSSEverythingUpdateRequestDetailImageSelector;
+  /** 상세 페이지에서 작성자 CSS 셀렉터 */
   detail_author_selector?: RSSEverythingUpdateRequestDetailAuthorSelector;
+  /** 상세 페이지에서 카테고리 CSS 셀렉터 */
   detail_categories_selector?: RSSEverythingUpdateRequestDetailCategoriesSelector;
-  exclude_selectors?: RSSEverythingUpdateRequestExcludeSelectors;
-  date_formats?: RSSEverythingUpdateRequestDateFormats;
+  /** 날짜 로케일 (예: ko_KR, en_US) */
   date_locale?: RSSEverythingUpdateRequestDateLocale;
+  /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
   use_browser?: RSSEverythingUpdateRequestUseBrowser;
+  /** 사용할 브라우저 서비스 (RealBrowser 또는 Browserless) */
   browser_service?: RSSEverythingUpdateRequestBrowserService;
+  /** 페이지 로드 완료 확인용 셀렉터 */
   wait_selector?: RSSEverythingUpdateRequestWaitSelector;
+  /** 타임아웃 (밀리초) */
   timeout?: RSSEverythingUpdateRequestTimeout;
 }
 
@@ -927,652 +1217,693 @@ export interface PeriodicTaskUpdateSchema {
 }
 
 export type ListAllItemsParams = {
-is_read?: boolean | null;
-is_favorite?: boolean | null;
-search?: string;
-cursor?: string | null;
-limit?: number;
-direction?: string;
-ordering_field?: string | null;
+  is_read?: boolean | null;
+  is_favorite?: boolean | null;
+  search?: string;
+  cursor?: string | null;
+  limit?: number;
+  direction?: string;
+  ordering_field?: string | null;
 };
 
 export type ListItemsByCategoryParams = {
-is_read?: boolean | null;
-is_favorite?: boolean | null;
-search?: string;
-cursor?: string | null;
-limit?: number;
-direction?: string;
-ordering_field?: string | null;
+  is_read?: boolean | null;
+  is_favorite?: boolean | null;
+  search?: string;
+  cursor?: string | null;
+  limit?: number;
+  direction?: string;
+  ordering_field?: string | null;
 };
 
 export type ListItemsByFeedParams = {
-is_read?: boolean | null;
-is_favorite?: boolean | null;
-search?: string;
-cursor?: string | null;
-limit?: number;
-direction?: string;
-ordering_field?: string | null;
+  is_read?: boolean | null;
+  is_favorite?: boolean | null;
+  search?: string;
+  cursor?: string | null;
+  limit?: number;
+  direction?: string;
+  ordering_field?: string | null;
 };
 
 export type ExportAllItemsRssParams = {
-page?: number;
-page_size?: number;
-format?: string;
+  page?: number;
+  page_size?: number;
+  format?: string;
 };
 
 export type ExportCategoryItemsRssParams = {
-page?: number;
-page_size?: number;
-format?: string;
+  page?: number;
+  page_size?: number;
+  format?: string;
 };
 
 export type ExportFeedItemsRssParams = {
-page?: number;
-page_size?: number;
-format?: string;
+  page?: number;
+  page_size?: number;
+  format?: string;
 };
 
 export type ListTaskResultsParams = {
-feed_id?: number | null;
-status?: string | null;
-cursor?: string | null;
-limit?: number;
-direction?: string;
-ordering_field?: string | null;
+  feed_id?: number | null;
+  status?: string | null;
+  cursor?: string | null;
+  limit?: number;
+  direction?: string;
+  ordering_field?: string | null;
 };
 
 export type ClearTaskResultsParams = {
-feed_id?: number | null;
-status?: string | null;
+  feed_id?: number | null;
+  status?: string | null;
 };
 
 export type GetTaskStatsParams = {
-feed_id?: number | null;
+  feed_id?: number | null;
 };
 
 export type ListPeriodicTasksParams = {
-feed_id?: number | null;
-enabled?: boolean | null;
-limit?: number;
-offset?: number;
+  feed_id?: number | null;
+  enabled?: boolean | null;
+  limit?: number;
+  offset?: number;
 };
 
 /**
  * @summary Health Check
  */
 export const baseApiHealthCheck = (
-    
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/health`, method: 'GET'
+
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/health`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * RSS 피드 URL 검증
  * @summary Validate Feed
  */
 export const validateFeed = (
-    feedValidationRequest: FeedValidationRequest,
- ) => {
-      return axiosInstance<FeedValidationResponse>(
-      {url: `/api/feeds/validate`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  feedValidationRequest: FeedValidationRequest,
+) => {
+  return axiosInstance<FeedValidationResponse>(
+    {
+      url: `/api/feeds/validate`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: feedValidationRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드 목록 조회
  * @summary List Feeds
  */
 export const listFeeds = (
-    
- ) => {
-      return axiosInstance<FeedSchema[]>(
-      {url: `/api/feeds`, method: 'GET'
+
+) => {
+  return axiosInstance<FeedSchema[]>(
+    {
+      url: `/api/feeds`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드 생성
  * @summary Create Feed
  */
 export const createFeed = (
-    feedCreateSchema: FeedCreateSchema,
- ) => {
-      return axiosInstance<FeedSchema>(
-      {url: `/api/feeds`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  feedCreateSchema: FeedCreateSchema,
+) => {
+  return axiosInstance<FeedSchema>(
+    {
+      url: `/api/feeds`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: feedCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드 수정
  * @summary Update Feed
  */
 export const updateFeed = (
-    feedId: number,
-    feedUpdateSchema: FeedUpdateSchema,
- ) => {
-      return axiosInstance<FeedSchema>(
-      {url: `/api/feeds/${feedId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  feedId: number,
+  feedUpdateSchema: FeedUpdateSchema,
+) => {
+  return axiosInstance<FeedSchema>(
+    {
+      url: `/api/feeds/${feedId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: feedUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드 삭제
  * @summary Delete Feed
  */
 export const deleteFeed = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}`, method: 'DELETE'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/${feedId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드 새로고침
  * @summary Refresh Feed
  */
 export const refreshFeed = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/refresh`, method: 'POST'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/${feedId}/refresh`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드의 모든 아이템을 읽음 처리
  * @summary Mark All Feed Items Read
  */
 export const markAllFeedItemsRead = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/mark-all-read`, method: 'PUT'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/${feedId}/mark-all-read`, method: 'PUT'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드의 모든 아이템 삭제
  * @summary Delete All Feed Items
  */
 export const deleteAllFeedItems = (
-    feedId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/items`, method: 'DELETE'
+  feedId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/${feedId}/items`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드에 새 소스 추가
  * @summary Add Source
  */
 export const addFeedSource = (
-    feedId: number,
-    sourceCreateSchema: SourceCreateSchema,
- ) => {
-      return axiosInstance<SourceSchema>(
-      {url: `/api/feeds/${feedId}/sources`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  feedId: number,
+  sourceCreateSchema: SourceCreateSchema,
+) => {
+  return axiosInstance<SourceSchema>(
+    {
+      url: `/api/feeds/${feedId}/sources`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: sourceCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 소스 업데이트
  * @summary Update Source
  */
 export const updateFeedSource = (
-    feedId: number,
-    sourceId: number,
-    sourceUpdateSchema: SourceUpdateSchema,
- ) => {
-      return axiosInstance<SourceSchema>(
-      {url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  feedId: number,
+  sourceId: number,
+  sourceUpdateSchema: SourceUpdateSchema,
+) => {
+  return axiosInstance<SourceSchema>(
+    {
+      url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: sourceUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 소스 삭제
  * @summary Delete Source
  */
 export const deleteFeedSource = (
-    feedId: number,
-    sourceId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'DELETE'
+  feedId: number,
+  sourceId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 목록 + 피드 목록 조회 (초기 로딩 최적화)
  * @summary List Categories With Feeds
  */
 export const listCategoriesWithFeeds = (
-    
- ) => {
-      return axiosInstance<CategoryWithFeedsSchema[]>(
-      {url: `/api/categories/with-feeds`, method: 'GET'
+
+) => {
+  return axiosInstance<CategoryWithFeedsSchema[]>(
+    {
+      url: `/api/categories/with-feeds`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 목록 조회
  * @summary List Categories
  */
 export const listCategories = (
-    
- ) => {
-      return axiosInstance<CategorySchema[]>(
-      {url: `/api/categories`, method: 'GET'
+
+) => {
+  return axiosInstance<CategorySchema[]>(
+    {
+      url: `/api/categories`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 생성
  * @summary Create Category
  */
 export const createCategory = (
-    categoryCreateSchema: CategoryCreateSchema,
- ) => {
-      return axiosInstance<CategorySchema>(
-      {url: `/api/categories`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  categoryCreateSchema: CategoryCreateSchema,
+) => {
+  return axiosInstance<CategorySchema>(
+    {
+      url: `/api/categories`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: categoryCreateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 수정
  * @summary Update Category
  */
 export const updateCategory = (
-    categoryId: number,
-    categoryUpdateSchema: CategoryUpdateSchema,
- ) => {
-      return axiosInstance<CategorySchema>(
-      {url: `/api/categories/${categoryId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  categoryId: number,
+  categoryUpdateSchema: CategoryUpdateSchema,
+) => {
+  return axiosInstance<CategorySchema>(
+    {
+      url: `/api/categories/${categoryId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: categoryUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 삭제
  * @summary Delete Category
  */
 export const deleteCategory = (
-    categoryId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/categories/${categoryId}`, method: 'DELETE'
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/categories/${categoryId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 순서 일괄 변경
  * @summary Reorder Categories
  */
 export const reorderCategories = (
-    categoryReorderSchema: CategoryReorderSchema,
- ) => {
-      return axiosInstance<CategorySchema[]>(
-      {url: `/api/categories/reorder`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  categoryReorderSchema: CategoryReorderSchema,
+) => {
+  return axiosInstance<CategorySchema[]>(
+    {
+      url: `/api/categories/reorder`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: categoryReorderSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리의 모든 피드 새로고침
  * @summary Refresh Category Feeds
  */
 export const refreshCategoryFeeds = (
-    categoryId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/categories/${categoryId}/refresh`, method: 'POST'
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/categories/${categoryId}/refresh`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리 통계 조회
  * @summary Get Category Stats
  */
 export const getCategoryStats = (
-    categoryId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/categories/${categoryId}/stats`, method: 'GET'
+  categoryId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/categories/${categoryId}/stats`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 아이템 새로고침 (상세 페이지 다시 크롤링)
  * @summary Refresh Item
  */
 export const refreshItem = (
-    itemId: number,
- ) => {
-      return axiosInstance<ItemRefreshResponse>(
-      {url: `/api/items/${itemId}/refresh`, method: 'POST'
+  itemId: number,
+) => {
+  return axiosInstance<ItemRefreshResponse>(
+    {
+      url: `/api/items/${itemId}/refresh`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 아이템 즐겨찾기 토글
  * @summary Toggle Item Favorite
  */
 export const toggleItemFavorite = (
-    itemId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/${itemId}/favorite`, method: 'PUT'
+  itemId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/items/${itemId}/favorite`, method: 'PUT'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 아이템 읽음 상태 토글
  * @summary Toggle Item Read
  */
 export const toggleItemRead = (
-    itemId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/${itemId}/read`, method: 'PUT'
+  itemId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/items/${itemId}/read`, method: 'PUT'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 메인 화면 아이템 목록
  * @summary List All Items
  */
 export const listAllItems = (
-    params?: ListAllItemsParams,
- ) => {
-      return axiosInstance<PagedItemSchema>(
-      {url: `/api/items`, method: 'GET',
-        params
+  params?: ListAllItemsParams,
+) => {
+  return axiosInstance<PagedItemSchema>(
+    {
+      url: `/api/items`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 카테고리별 아이템 목록
  * @summary List Items By Category
  */
 export const listItemsByCategory = (
-    categoryId: number,
-    params?: ListItemsByCategoryParams,
- ) => {
-      return axiosInstance<PagedItemSchema>(
-      {url: `/api/items/category/${categoryId}`, method: 'GET',
-        params
+  categoryId: number,
+  params?: ListItemsByCategoryParams,
+) => {
+  return axiosInstance<PagedItemSchema>(
+    {
+      url: `/api/items/category/${categoryId}`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 피드별 아이템 목록
  * @summary List Items By Feed
  */
 export const listItemsByFeed = (
-    feedId: number,
-    params?: ListItemsByFeedParams,
- ) => {
-      return axiosInstance<PagedItemSchema>(
-      {url: `/api/items/feed/${feedId}`, method: 'GET',
-        params
+  feedId: number,
+  params?: ListItemsByFeedParams,
+) => {
+  return axiosInstance<PagedItemSchema>(
+    {
+      url: `/api/items/feed/${feedId}`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 공개된 카테고리/피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)
  * @summary Export All Items Rss
  */
 export const exportAllItemsRss = (
-    params?: ExportAllItemsRssParams,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/rss`, method: 'GET',
-        params
+  params?: ExportAllItemsRssParams,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/items/rss`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 공개된 카테고리의 공개 피드 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)
  * @summary Export Category Items Rss
  */
 export const exportCategoryItemsRss = (
-    categoryId: number,
-    params?: ExportCategoryItemsRssParams,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/category/${categoryId}/rss`, method: 'GET',
-        params
+  categoryId: number,
+  params?: ExportCategoryItemsRssParams,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/items/category/${categoryId}/rss`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 공개된 피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)
  * @summary Export Feed Items Rss
  */
 export const exportFeedItemsRss = (
-    feedId: number,
-    params?: ExportFeedItemsRssParams,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/feed/${feedId}/rss`, method: 'GET',
-        params
+  feedId: number,
+  params?: ExportFeedItemsRssParams,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/items/feed/${feedId}/rss`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Login
  */
 export const usersRouterLogin = (
-    loginRequest: LoginRequest,
- ) => {
-      return axiosInstance<LoginResponse>(
-      {url: `/api/auth/login`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  loginRequest: LoginRequest,
+) => {
+  return axiosInstance<LoginResponse>(
+    {
+      url: `/api/auth/login`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: loginRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Signup
  */
 export const usersRouterSignup = (
-    signupRequest: SignupRequest,
- ) => {
-      return axiosInstance<SignupResponse>(
-      {url: `/api/auth/signup`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  signupRequest: SignupRequest,
+) => {
+  return axiosInstance<SignupResponse>(
+    {
+      url: `/api/auth/signup`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: signupRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Protected
  */
 export const usersRouterProtected = (
-    
- ) => {
-      return axiosInstance<ProtectedResponse>(
-      {url: `/api/auth/protected`, method: 'GET'
+
+) => {
+  return axiosInstance<ProtectedResponse>(
+    {
+      url: `/api/auth/protected`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * @summary Me
  */
 export const usersRouterMe = (
-    
- ) => {
-      return axiosInstance<UserResponse>(
-      {url: `/api/auth/me`, method: 'GET'
+
+) => {
+  return axiosInstance<UserResponse>(
+    {
+      url: `/api/auth/me`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 글로벌 설정 조회 (관리자 전용)
  * @summary Get Global Settings
  */
 export const usersRouterGetGlobalSettings = (
-    
- ) => {
-      return axiosInstance<GlobalSettingSchema>(
-      {url: `/api/auth/admin/settings`, method: 'GET'
+
+) => {
+  return axiosInstance<GlobalSettingSchema>(
+    {
+      url: `/api/auth/admin/settings`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 글로벌 설정 업데이트 (관리자 전용)
  * @summary Update Global Settings
  */
 export const usersRouterUpdateGlobalSettings = (
-    globalSettingUpdateSchema: GlobalSettingUpdateSchema,
- ) => {
-      return axiosInstance<GlobalSettingSchema>(
-      {url: `/api/auth/admin/settings`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
+  globalSettingUpdateSchema: GlobalSettingUpdateSchema,
+) => {
+  return axiosInstance<GlobalSettingSchema>(
+    {
+      url: `/api/auth/admin/settings`, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', },
       data: globalSettingUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 회원가입 허용 여부 및 사이트 정보 확인 (공개 API)
  * @summary Get Signup Status
  */
 export const usersRouterGetSignupStatus = (
-    
- ) => {
-      return axiosInstance<SignupStatusSchema>(
-      {url: `/api/auth/signup-status`, method: 'GET'
+
+) => {
+  return axiosInstance<SignupStatusSchema>(
+    {
+      url: `/api/auth/signup-status`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 사용자가 선택한 브라우저 서비스로 URL에서 HTML을 가져옴
  * @summary Fetch Html
  */
 export const fetchHtml = (
-    fetchHTMLRequest: FetchHTMLRequest,
- ) => {
-      return axiosInstance<FetchHTMLResponse>(
-      {url: `/api/rss-everything/fetch-html`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  fetchHTMLRequest: FetchHTMLRequest,
+) => {
+  return axiosInstance<FetchHTMLResponse>(
+    {
+      url: `/api/rss-everything/fetch-html`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: fetchHTMLRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * HTML에서 CSS 셀렉터로 요소들을 추출
  * @summary Extract Elements
  */
 export const extractElements = (
-    extractElementsRequest: ExtractElementsRequest,
- ) => {
-      return axiosInstance<ExtractElementsResponse>(
-      {url: `/api/rss-everything/extract-elements`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  extractElementsRequest: ExtractElementsRequest,
+) => {
+  return axiosInstance<ExtractElementsResponse>(
+    {
+      url: `/api/rss-everything/extract-elements`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: extractElementsRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 설정된 셀렉터로 아이템들을 미리보기
  * @summary Crawl
  */
 export const previewItems = (
-    previewItemRequest: PreviewItemRequest,
- ) => {
-      return axiosInstance<PreviewItemResponse>(
-      {url: `/api/rss-everything/preview-items`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: previewItemRequest
+  CrawlRequest: CrawlRequest,
+) => {
+  return axiosInstance<PreviewItemResponse>(
+    {
+      url: `/api/rss-everything/preview-items`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
+      data: CrawlRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 사용자의 RSSEverything 소스 목록 조회
  * @summary List Sources
  */
 export const listRssEverythingSources = (
-    
- ) => {
-      return axiosInstance<RSSEverythingSchema[]>(
-      {url: `/api/rss-everything`, method: 'GET'
+
+) => {
+  return axiosInstance<RSSEverythingSchema[]>(
+    {
+      url: `/api/rss-everything`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 기존 피드에 새 RSSEverything 소스 추가
  * @summary Create Source
  */
 export const createRssEverythingSource = (
-    rSSEverythingCreateRequest: RSSEverythingCreateRequest,
- ) => {
-      return axiosInstance<RSSEverythingSchema>(
-      {url: `/api/rss-everything`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  rSSEverythingCreateRequest: RSSEverythingCreateRequest,
+) => {
+  return axiosInstance<RSSEverythingSchema>(
+    {
+      url: `/api/rss-everything`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: rSSEverythingCreateRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링
 
@@ -1591,221 +1922,237 @@ URL 템플릿에 {변수명} 형태로 변수를 지정합니다.
  * @summary Crawl Paginated
  */
 export const crawlPaginated = (
-    paginationCrawlRequest: PaginationCrawlRequest,
- ) => {
-      return axiosInstance<PaginationCrawlResponse>(
-      {url: `/api/rss-everything/crawl-paginated`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
+  paginationCrawlRequest: PaginationCrawlRequest,
+) => {
+  return axiosInstance<PaginationCrawlResponse>(
+    {
+      url: `/api/rss-everything/crawl-paginated`, method: 'POST',
+      headers: { 'Content-Type': 'application/json', },
       data: paginationCrawlRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * RSSEverything 소스 상세 조회
  * @summary Get Source
  */
 export const getRssEverythingSource = (
-    sourceId: number,
- ) => {
-      return axiosInstance<RSSEverythingSchema>(
-      {url: `/api/rss-everything/${sourceId}`, method: 'GET'
+  sourceId: number,
+) => {
+  return axiosInstance<RSSEverythingSchema>(
+    {
+      url: `/api/rss-everything/${sourceId}`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * RSSEverything 소스 수정
  * @summary Update Source Rss
  */
 export const updateRssEverythingSource = (
-    sourceId: number,
-    rSSEverythingUpdateRequest: RSSEverythingUpdateRequest,
- ) => {
-      return axiosInstance<RSSEverythingSchema>(
-      {url: `/api/rss-everything/${sourceId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  sourceId: number,
+  rSSEverythingUpdateRequest: RSSEverythingUpdateRequest,
+) => {
+  return axiosInstance<RSSEverythingSchema>(
+    {
+      url: `/api/rss-everything/${sourceId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: rSSEverythingUpdateRequest
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * RSSEverything 소스 삭제 - 연결된 RSSFeed도 함께 삭제
  * @summary Delete Source Rss
  */
 export const deleteRssEverythingSource = (
-    sourceId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/rss-everything/${sourceId}`, method: 'DELETE'
+  sourceId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/rss-everything/${sourceId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * RSSEverything 소스를 새로고침
  * @summary Refresh Source
  */
 export const refreshRssEverythingSource = (
-    sourceId: number,
- ) => {
-      return axiosInstance<RefreshResponse>(
-      {url: `/api/rss-everything/${sourceId}/refresh`, method: 'POST'
+  sourceId: number,
+) => {
+  return axiosInstance<RefreshResponse>(
+    {
+      url: `/api/rss-everything/${sourceId}/refresh`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * Task 결과 목록 조회
  * @summary List Task Results
  */
 export const listTaskResults = (
-    params?: ListTaskResultsParams,
- ) => {
-      return axiosInstance<PagedTaskResultSchema>(
-      {url: `/api/task-results`, method: 'GET',
-        params
+  params?: ListTaskResultsParams,
+) => {
+  return axiosInstance<PagedTaskResultSchema>(
+    {
+      url: `/api/task-results`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * Task 결과 일괄 삭제
  * @summary Clear Task Results
  */
 export const clearTaskResults = (
-    params?: ClearTaskResultsParams,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/task-results`, method: 'DELETE',
-        params
+  params?: ClearTaskResultsParams,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/task-results`, method: 'DELETE',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * Task 통계 조회
  * @summary Get Task Stats
  */
 export const getTaskStats = (
-    params?: GetTaskStatsParams,
- ) => {
-      return axiosInstance<TaskStatsSchema>(
-      {url: `/api/task-results/stats`, method: 'GET',
-        params
+  params?: GetTaskStatsParams,
+) => {
+  return axiosInstance<TaskStatsSchema>(
+    {
+      url: `/api/task-results/stats`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 특정 Task 결과 상세 조회
  * @summary Get Task Result
  */
 export const getTaskResult = (
-    resultId: number,
- ) => {
-      return axiosInstance<TaskResultSchema>(
-      {url: `/api/task-results/${resultId}`, method: 'GET'
+  resultId: number,
+) => {
+  return axiosInstance<TaskResultSchema>(
+    {
+      url: `/api/task-results/${resultId}`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 특정 Task 결과 삭제
  * @summary Delete Task Result
  */
 export const deleteTaskResult = (
-    resultId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/task-results/${resultId}`, method: 'DELETE'
+  resultId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/task-results/${resultId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 주기적 태스크 목록 조회
  * @summary List Periodic Tasks
  */
 export const listPeriodicTasks = (
-    params?: ListPeriodicTasksParams,
- ) => {
-      return axiosInstance<PeriodicTaskListResponse>(
-      {url: `/api/periodic-tasks`, method: 'GET',
-        params
+  params?: ListPeriodicTasksParams,
+) => {
+  return axiosInstance<PeriodicTaskListResponse>(
+    {
+      url: `/api/periodic-tasks`, method: 'GET',
+      params
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 주기적 태스크 통계 조회
  * @summary Get Periodic Task Stats
  */
 export const getPeriodicTaskStats = (
-    
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/periodic-tasks/stats`, method: 'GET'
+
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/periodic-tasks/stats`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 특정 주기적 태스크 상세 조회
  * @summary Get Periodic Task
  */
 export const getPeriodicTask = (
-    taskId: number,
- ) => {
-      return axiosInstance<PeriodicTaskSchema>(
-      {url: `/api/periodic-tasks/${taskId}`, method: 'GET'
+  taskId: number,
+) => {
+  return axiosInstance<PeriodicTaskSchema>(
+    {
+      url: `/api/periodic-tasks/${taskId}`, method: 'GET'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 주기적 태스크 업데이트
  * @summary Update Periodic Task
  */
 export const updatePeriodicTask = (
-    taskId: number,
-    periodicTaskUpdateSchema: PeriodicTaskUpdateSchema,
- ) => {
-      return axiosInstance<PeriodicTaskSchema>(
-      {url: `/api/periodic-tasks/${taskId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
+  taskId: number,
+  periodicTaskUpdateSchema: PeriodicTaskUpdateSchema,
+) => {
+  return axiosInstance<PeriodicTaskSchema>(
+    {
+      url: `/api/periodic-tasks/${taskId}`, method: 'PUT',
+      headers: { 'Content-Type': 'application/json', },
       data: periodicTaskUpdateSchema
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 주기적 태스크 삭제
  * @summary Delete Periodic Task
  */
 export const deletePeriodicTask = (
-    taskId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/periodic-tasks/${taskId}`, method: 'DELETE'
+  taskId: number,
+) => {
+  return axiosInstance<void>(
+    {
+      url: `/api/periodic-tasks/${taskId}`, method: 'DELETE'
     },
-      );
-    }
-  
+  );
+}
+
 /**
  * 주기적 태스크 활성화/비활성화 토글
  * @summary Toggle Periodic Task
  */
 export const togglePeriodicTask = (
-    taskId: number,
- ) => {
-      return axiosInstance<PeriodicTaskSchema>(
-      {url: `/api/periodic-tasks/${taskId}/toggle`, method: 'POST'
+  taskId: number,
+) => {
+  return axiosInstance<PeriodicTaskSchema>(
+    {
+      url: `/api/periodic-tasks/${taskId}/toggle`, method: 'POST'
     },
-      );
-    }
-  
+  );
+}
+
 export type BaseApiHealthCheckResult = NonNullable<Awaited<ReturnType<typeof baseApiHealthCheck>>>
 export type ValidateFeedResult = NonNullable<Awaited<ReturnType<typeof validateFeed>>>
 export type ListFeedsResult = NonNullable<Awaited<ReturnType<typeof listFeeds>>>

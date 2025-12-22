@@ -11,7 +11,7 @@ import {
   updateRssEverythingSource,
   listCategories,
   FetchHTMLRequest,
-  PreviewItemRequest,
+  CrawlRequest,
   RSSEverythingCreateRequest,
   RSSEverythingUpdateRequest,
   PreviewItem,
@@ -38,7 +38,6 @@ const initialListSelectors: ListSelectors = {
   dateSelector: '',
   imageSelector: '',
   authorSelector: '',
-  categoriesSelector: '',
 };
 
 const initialDetailSelectors: DetailSelectors = {
@@ -48,7 +47,6 @@ const initialDetailSelectors: DetailSelectors = {
   detailDateSelector: '',
   detailImageSelector: '',
   detailAuthorSelector: '',
-  detailCategoriesSelector: '',
 };
 
 // 셀렉터 검증 결과 타입
@@ -170,7 +168,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               dateSelector: source.date_selector || '',
               imageSelector: source.image_selector || '',
               authorSelector: source.author_selector || '',
-              categoriesSelector: source.categories_selector || '',
             });
             // 상세 셀렉터
             setDetailSelectors({
@@ -180,7 +177,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               detailDateSelector: source.detail_date_selector || '',
               detailImageSelector: source.detail_image_selector || '',
               detailAuthorSelector: source.detail_author_selector || '',
-              detailCategoriesSelector: source.detail_categories_selector || '',
             });
             setCurrentStep('url');
           } else {
@@ -194,7 +190,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
               dateSelector: source.date_selector || '',
               imageSelector: source.image_selector || '',
               authorSelector: source.author_selector || '',
-              categoriesSelector: source.categories_selector || '',
             });
             setCurrentStep('url');
           }
@@ -238,7 +233,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         dateSelector: config.date_selector || '',
         imageSelector: config.image_selector || '',
         authorSelector: config.author_selector || '',
-        categoriesSelector: config.categories_selector || '',
       });
 
       // 상세 셀렉터
@@ -249,7 +243,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detailDateSelector: config.detail_date_selector || '',
         detailImageSelector: config.detail_image_selector || '',
         detailAuthorSelector: config.detail_author_selector || '',
-        detailCategoriesSelector: config.detail_categories_selector || '',
       });
     }
 
@@ -569,7 +562,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     setError(null);
 
     try {
-      const request: PreviewItemRequest = {
+      const request: CrawlRequest = {
         url,
         item_selector: listSelectors.itemSelector,
         title_selector: listSelectors.titleSelector,
@@ -582,12 +575,12 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         wait_selector: waitSelector,
         custom_headers: customHeaders,
         exclude_selectors: excludeSelectors,
-        follow_links: parseMode === 'detail',
         detail_title_selector: detailSelectors.detailTitleSelector,
         detail_description_selector: detailSelectors.detailDescriptionSelector,
         detail_content_selector: detailSelectors.detailContentSelector,
         detail_date_selector: detailSelectors.detailDateSelector,
         detail_image_selector: detailSelectors.detailImageSelector,
+        source_type: sourceType
       };
 
       const response = await previewItemsApi(request);
@@ -630,7 +623,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           description_selector: listSelectors.descriptionSelector,
           date_selector: listSelectors.dateSelector,
           image_selector: listSelectors.imageSelector,
-          follow_links: parseMode === 'detail',
           detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
           detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
           detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
@@ -657,7 +649,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           description_selector: listSelectors.descriptionSelector,
           date_selector: listSelectors.dateSelector,
           image_selector: listSelectors.imageSelector,
-          follow_links: parseMode === 'detail',
           detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
           detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
           detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',

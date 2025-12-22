@@ -331,7 +331,6 @@ export const en: Translations = {
     imageSelector: 'Image',
     contentSelector: 'Content',
     authorSelector: 'Author',
-    categoriesSelector: 'Categories',
     // Preview Step
     preview: 'Preview',
     previewItems: 'Extracted Items',

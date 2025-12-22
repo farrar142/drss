@@ -22,7 +22,6 @@ function useDetailFieldLabels() {
     detailDateSelector: t.rssEverything.dateSelector,
     detailImageSelector: t.rssEverything.imageSelector,
     detailAuthorSelector: t.rssEverything.authorSelector,
-    detailCategoriesSelector: t.rssEverything.categoriesSelector,
   };
 }
 

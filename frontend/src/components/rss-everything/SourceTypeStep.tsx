@@ -23,14 +23,12 @@ export interface SourceConfig {
   date_selector?: string;
   image_selector?: string;
   author_selector?: string;
-  categories_selector?: string;
   detail_title_selector?: string;
   detail_description_selector?: string;
   detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
   detail_author_selector?: string;
-  detail_categories_selector?: string;
   exclude_selectors?: string[];
   date_formats?: string[];
   date_locale?: string;

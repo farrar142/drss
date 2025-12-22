@@ -179,6 +179,7 @@ def fetch_html_smart(
 
     logger.debug(f"Cache key: {cache_key}")
     logger.debug(f"Using cache: {use_cache}")
+    print("Using cache:", use_cache)
     if use_cache:
         cached_html = cache.get(cache_key)
         logger.debug(f"Cache hit for {url}" if cached_html else f"No cache for {url}")

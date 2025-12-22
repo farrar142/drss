@@ -74,22 +74,6 @@ services:
           cpus: '1'
           memory: 512M
 
-  # 큐 2: detail_worker - 개별 디테일 페이지 크롤링 (높은 동시성)
-  celery-detail-worker:
-    <<: *backend
-    image: drss-backend:production
-    container_name: drss-celery-detail-worker
-    entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=4", "-Q", "detail_worker"]
-    depends_on:
-      - django
-      - browserless
-      - real-browser
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 1G
 
   # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
   # 큐 5: image_upload - MinIO 이미지 업로드도 함께 처리
@@ -98,7 +82,7 @@ services:
     image: drss-backend:production
     container_name: drss-celery-image-aggregate
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "image_aggregate,image_upload"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
     depends_on:
       - django
     deploy:
@@ -106,22 +90,6 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
-
-  # 큐 4: image_worker - Next.js 이미지 캐시 (높은 동시성, I/O bound)
-  celery-image-worker:
-    <<: *backend
-    image: drss-backend:production
-    container_name: drss-celery-image-worker
-    entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=8", "-Q", "image_worker"]
-    depends_on:
-      - django
-      - node
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
 
   # ===================
   # Celery Beat Scheduler

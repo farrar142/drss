@@ -5,9 +5,11 @@ Source Schemas - RSS Everything 소스 관련 스키마
 from datetime import datetime
 from typing import Optional, Literal
 from ninja import Schema
+
 # from pydantic import BaseModel, Field
-from ninja import Schema as BaseModel, Field
+from ninja import Schema as BaseModel, Field, ModelSchema
 from feeds.models import RSSEverythingSource
+
 # Source 타입 정의
 
 # Browser 서비스 타입 정의
@@ -181,7 +183,7 @@ class PreviewItem(BaseModel):
     image: str = ""
 
 
-class PreviewItemRequest(BaseModel):
+class CrawlRequest(BaseModel):
     """아이템 미리보기 요청"""
 
     url: str
@@ -191,7 +193,7 @@ class PreviewItemRequest(BaseModel):
     description_selector: str = ""
     date_selector: str = ""
     image_selector: str = ""
-    author_selector:str=""
+    author_selector: str = ""
     use_browser: bool = True
     browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = "body"
@@ -203,10 +205,10 @@ class PreviewItemRequest(BaseModel):
     detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
-    detail_author_selector:str = ""
-    date_formats:list[str] = Field(default_factory=list)
-    date_locale:str = "ko_KR"
-    source_type:RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
+    detail_author_selector: str = ""
+    date_formats: list[str] = Field(default_factory=list)
+    date_locale: str = "ko_KR"
+    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
     timeout: int = 30000
 
 
@@ -219,30 +221,58 @@ class PreviewItemResponse(BaseModel):
     error: Optional[str] = None
 
 
-class RSSEverythingCreateRequest(BaseModel):
+class RSSEverythingCreateRequest(ModelSchema):
     """RSSEverything 소스 생성 요청"""
+
+    date_formats: list[str] = Field(default_factory=list)
+    exclude_selectors: list[str] = Field(default_factory=list)
+
     class Meta:
         model = RSSEverythingSource
-        exclude = ['id', 'is_active',
-                   'last_crawled_at',"last_error",
-                   "created_at","updated_at"]
+        exclude = [
+            "id",
+            "is_active",
+            "last_crawled_at",
+            "last_error",
+            "created_at",
+            "updated_at",
+            "date_formats",
+            "exclude_selectors",
+        ]
 
-class RSSEverythingUpdateRequest(BaseModel):
+
+class RSSEverythingUpdateRequest(ModelSchema):
     """RSSEverything 소스 수정 요청"""
 
+    date_formats: list[str] = Field(default_factory=list)
+    exclude_selectors: list[str] = Field(default_factory=list)
+
     class Meta:
         model = RSSEverythingSource
-        exclude = ['id', 'is_active',
-                   'last_crawled_at',"last_error",
-                   "created_at","updated_at"]
+        exclude = [
+            "id",
+            "is_active",
+            "last_crawled_at",
+            "last_error",
+            "created_at",
+            "updated_at",
+            "date_formats",
+            "exclude_selectors",
+        ]
         fields_optional = "__all__"
 
-class RSSEverythingSchema(BaseModel):
+
+class RSSEverythingSchema(ModelSchema):
     """RSSEverything 소스 스키마"""
+
+    date_formats: list[str] = Field(default_factory=list)
+    exclude_selectors: list[str] = Field(default_factory=list)
 
     class Meta:
         model = RSSEverythingSource
         fields = "__all__"
+        exclude = ["date_formats", "exclude_selectors"]
+
 
 class RefreshResponse(BaseModel):
     """새로고침 응답"""

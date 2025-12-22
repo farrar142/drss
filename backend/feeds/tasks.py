@@ -10,7 +10,7 @@ from base.celery_helper import shared_task
 from celery import chord, group
 from django.utils import timezone as django_timezone
 
-from feeds.schemas.source import PreviewItemRequest
+from feeds.schemas.source import CrawlRequest
 from feeds.services.source import SourceService
 
 logger = getLogger(__name__)
@@ -22,8 +22,6 @@ ENABLE_IMAGE_UPLOAD = os.getenv("ENABLE_IMAGE_UPLOAD", "True") == "True"
 # ===========================================
 # 헬퍼 함수
 # ===========================================
-
-
 
 
 def _update_source_status(source, error: str = ""):
@@ -59,7 +57,9 @@ def _get_or_create_task_result(task, feed, task_result_id=None):
     return task_result
 
 
-def _complete_task_result(task_result, items_found: int, items_created: int, errors: Optional[list] = None):
+def _complete_task_result(
+    task_result, items_found: int, items_created: int, errors: Optional[list] = None
+):
     """Task 결과 완료 처리"""
     from feeds.models import FeedTaskResult
 
@@ -73,7 +73,13 @@ def _complete_task_result(task_result, items_found: int, items_created: int, err
     task_result.items_created = items_created
     task_result.completed_at = django_timezone.now()
     task_result.save(
-        update_fields=["status", "items_found", "items_created", "error_message", "completed_at"]
+        update_fields=[
+            "status",
+            "items_found",
+            "items_created",
+            "error_message",
+            "completed_at",
+        ]
     )
 
 
@@ -124,25 +130,34 @@ def update_feed_items(self, feed_id, task_result_id=None):
 
         # 활성화된 소스 처리
         active_sources = feed.sources.filter(is_active=True)
-        existing_guids = set(RSSItem.objects.filter(feed=feed).values_list("guid", flat=True))
+        existing_guids = set(
+            RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
+        )
 
         for source in active_sources:
             try:
-                option = PreviewItemRequest.from_orm(source)
-                items = SourceService.crawl(option, feed=feed, source=source,existing_guids=existing_guids)
-
+                option = CrawlRequest.from_orm(source)
+                entries, items = SourceService.crawl(
+                    option, feed=feed, source=source, existing_guids=existing_guids
+                )
+                RSSItem.objects.bulk_create(items, ignore_conflicts=True)
+                total_found += entries
+                total_created += len(items)
             except Exception as e:
                 logger.exception(f"Failed to update from source {source.id}")
                 errors.append(f"Source {source.id}: {str(e)}")
                 _update_source_status(source, str(e))
 
-        _complete_task_result(task_result, total_found, total_created, errors if errors else None)
+        _complete_task_result(
+            task_result, total_found, total_created, errors if errors else None
+        )
         return f"Updated feed {feed.title}: {total_created} new items"
 
     except Exception as e:
         logger.exception(f"Failed to update feed {feed_id}")
         _fail_task_result(task_result, str(e))
         return f"Failed: {str(e)}"
+
 
 # ===========================================
 # 페이지네이션 크롤링 Task
@@ -185,8 +200,13 @@ def crawl_paginated_task(
     try:
         # 소스 타입 확인
         if source.source_type == RSSEverythingSource.SourceType.RSS:
-            _fail_task_result(task_result, "RSS source does not support pagination crawling")
-            return {"success": False, "error": "RSS source does not support pagination crawling"}
+            _fail_task_result(
+                task_result, "RSS source does not support pagination crawling"
+            )
+            return {
+                "success": False,
+                "error": "RSS source does not support pagination crawling",
+            }
 
         # URL 목록 생성
         urls = CrawlerService.generate_pagination_urls(url_template, variables)
@@ -196,17 +216,25 @@ def crawl_paginated_task(
         errors = []
 
         # 기존 GUID
-        existing_guids = set(RSSItem.objects.filter(feed=feed).values_list("guid", flat=True))
+        existing_guids = set(
+            RSSItem.objects.filter(feed=feed).values_list("guid", flat=True)
+        )
 
-        logger.info(f"Starting pagination crawl for source {source_id}: {total_pages} pages, type={source.source_type}")
+        logger.info(
+            f"Starting pagination crawl for source {source_id}: {total_pages} pages, type={source.source_type}"
+        )
 
         for i, url in enumerate(urls):
             try:
                 logger.info(f"Crawling page {i + 1}/{total_pages}: {url}")
-                option = PreviewItemRequest.from_orm(source)
+                option = CrawlRequest.from_orm(source)
                 option.url = url
-                items = SourceService.crawl(option, feed=feed, source=source,existing_guids=existing_guids)
+                entries, items = SourceService.crawl(
+                    option, feed=feed, source=source, existing_guids=existing_guids
+                )
                 RSSItem.objects.bulk_create(items, ignore_conflicts=True)
+                total_items_found += entries
+                total_items_created += len(items)
                 # 딜레이
                 if i < len(urls) - 1 and delay_ms > 0:
                     time.sleep(delay_ms / 1000.0)
@@ -220,7 +248,12 @@ def crawl_paginated_task(
             feed.last_updated = django_timezone.now()
             feed.save()
 
-        _complete_task_result(task_result, total_items_found, total_items_created, errors if errors else None)
+        _complete_task_result(
+            task_result,
+            total_items_found,
+            total_items_created,
+            errors if errors else None,
+        )
 
         message = f"Crawled {total_pages} pages, found {total_items_found}, created {total_items_created}"
         if errors:
