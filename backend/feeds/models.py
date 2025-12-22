@@ -94,7 +94,7 @@ class RSSFeed(BaseModel):
 class RSSItem(BaseModel):
     objects: RSSItemManager = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
-    source = models.ForeignKey(
+    source:models.ForeignKey["RSSEverythingSource|None"] = models.ForeignKey(
         "RSSEverythingSource",
         on_delete=models.SET_NULL,
         null=True,

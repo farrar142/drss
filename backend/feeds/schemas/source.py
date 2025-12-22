@@ -7,9 +7,8 @@ from typing import Optional, Literal
 from ninja import Schema
 # from pydantic import BaseModel, Field
 from ninja import Schema as BaseModel, Field
-
+from feeds.models import RSSEverythingSource
 # Source 타입 정의
-SourceType = Literal["rss", "page_scraping", "detail_page_scraping"]
 
 # Browser 서비스 타입 정의
 BrowserServiceType = Literal["realbrowser", "browserless"]
@@ -20,7 +19,7 @@ class SourceSchema(Schema):
 
     id: int
     feed_id: int
-    source_type: SourceType
+    source_type: RSSEverythingSource.SourceType
     is_active: bool
     url: str
     custom_headers: dict = {}
@@ -56,7 +55,7 @@ class SourceSchema(Schema):
 class SourceCreateSchema(Schema):
     """소스 생성 스키마"""
 
-    source_type: SourceType = "rss"
+    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
     url: str
     custom_headers: dict = {}
 
@@ -92,7 +91,7 @@ class SourceCreateSchema(Schema):
 class SourceUpdateSchema(Schema):
     """소스 업데이트 스키마"""
 
-    source_type: Optional[SourceType] = None
+    source_type: Optional[RSSEverythingSource.SourceType] = None
     is_active: Optional[bool] = None
     url: Optional[str] = None
     custom_headers: Optional[dict] = None
@@ -197,6 +196,7 @@ class PreviewItemRequest(BaseModel):
     description_selector: str = ""
     date_selector: str = ""
     image_selector: str = ""
+    author_selector:str=""
     use_browser: bool = True
     browser_service: BrowserServiceType = "realbrowser"
     wait_selector: str = "body"
@@ -208,6 +208,11 @@ class PreviewItemRequest(BaseModel):
     detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
+    detail_author_selector:str = ""
+    date_formats:list[str] = Field(default_factory=list)
+    date_locale:str = "ko_KR"
+    source_type:RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
+    timeout: int = 30000
 
 
 class PreviewItemResponse(BaseModel):

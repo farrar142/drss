@@ -5,16 +5,20 @@ Crawler Service - 소스 타입별 크롤링 로직을 통합 관리
 from logging import getLogger
 from time import struct_time
 from datetime import datetime, timezone
-from typing import Optional, Tuple, List, Set
+from typing import Any, Callable, Optional, Tuple, List, Set
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from django.utils import timezone as django_timezone
 
+from feeds.schemas.source import PreviewItemRequest
 from feeds.utils.feed_fetcher import fetch_feed_data
 from feeds.utils.date_parser import parse_date
 from feeds.utils.html_utils import strip_html_tags
 from feeds.utils.web_scraper import crawl_list_page_items
 from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
+
+
+from feeds.models import RSSEverythingSource,RSSFeed, RSSItem
 
 logger = getLogger(__name__)
 
@@ -56,16 +60,16 @@ class CrawlerService:
             )
 
     @staticmethod
-    def fetch_html_for_source(source, url: Optional[str] = None, use_cache: bool = True):
+    def fetch_html_for_source(option:PreviewItemRequest, url: Optional[str] = None, use_cache: bool = True):
         """소스 설정을 사용하여 HTML 가져오기"""
-        target_url = url or source.url
+        target_url = url or option.url
         return CrawlerService.fetch_html(
             url=target_url,
-            use_browser=source.use_browser,
-            browser_service=source.browser_service or "realbrowser",
-            wait_selector=source.wait_selector or "body",
-            timeout=source.timeout or 30000,
-            custom_headers=source.custom_headers,
+            use_browser=option.use_browser,
+            browser_service=option.browser_service or "realbrowser",
+            wait_selector=option.wait_selector or "body",
+            timeout=option.timeout or 30000,
+            custom_headers=option.custom_headers,
             use_cache=use_cache,
         )
 
@@ -74,7 +78,9 @@ class CrawlerService:
     # ==========================================
 
     @staticmethod
-    def parse_list_page_items(source, soup: BeautifulSoup, existing_guids: Set[str]) -> list:
+    def parse_list_page_items(option:PreviewItemRequest,
+                              soup: BeautifulSoup,
+                              existing_guids: Set[str]) -> list[RSSItem]:
         """
         목록 페이지에서 아이템을 파싱하여 RSSItem 객체 리스트 반환
         PAGE_SCRAPING과 페이지네이션 크롤링에서 공통으로 사용
@@ -82,25 +88,24 @@ class CrawlerService:
         from feeds.models import RSSItem
 
         # exclude_selectors 적용
-        if source.exclude_selectors:
-            for exclude_selector in source.exclude_selectors:
+        if option.exclude_selectors:
+            for exclude_selector in option.exclude_selectors:
                 for el in soup.select(exclude_selector):
                     el.decompose()
 
         # 아이템 선택
-        items = soup.select(source.item_selector) if source.item_selector else []
+        items = soup.select(option.item_selector) if option.item_selector else []
 
         # web_scraper 모듈 사용하여 아이템 추출
         crawled_items = crawl_list_page_items(
             items=items,
-            base_url=source.url,
-            title_selector=source.title_selector,
-            link_selector=source.link_selector,
-            description_selector=source.description_selector,
-            date_selector=source.date_selector,
-            image_selector=source.image_selector,
-            author_selector=getattr(source, "author_selector", ""),
-            categories_selector=getattr(source, "categories_selector", ""),
+            base_url=option.url,
+            title_selector=option.title_selector,
+            link_selector=option.link_selector,
+            description_selector=option.description_selector,
+            date_selector=option.date_selector,
+            image_selector=option.image_selector,
+            author_selector=option.author_selector,
             existing_guids=existing_guids,
             max_items=50,
         )
@@ -110,14 +115,13 @@ class CrawlerService:
         for item in crawled_items:
             # 날짜 파싱
             published_at = django_timezone.now()
-            if item["date"] and source.date_formats:
-                parsed_date = parse_date(item["date"], source.date_formats)
+            if item["date"] and option.date_formats:
+                parsed_date = parse_date(item["date"], option.date_formats)
                 if parsed_date:
                     published_at = parsed_date
 
             new_items.append(
                 RSSItem(
-                    source=source,
                     title=item["title"][:199],
                     link=item["link"],
                     description=item["description"],
@@ -133,55 +137,57 @@ class CrawlerService:
         return new_items
 
     @staticmethod
-    def parse_detail_page(source, soup: BeautifulSoup, detail_url: str, list_data: dict) -> dict:
+    def parse_detail_page(option:PreviewItemRequest,soup: BeautifulSoup,
+                          detail_url: str,
+                          list_data: dict=dict()) -> dict:
         """
         상세 페이지에서 정보를 파싱하여 딕셔너리 반환
         """
         # 제목
         title = list_data.get("title", "")
-        if source.detail_title_selector:
-            title_el = soup.select_one(source.detail_title_selector)
+        if option.detail_title_selector:
+            title_el = soup.select_one(option.detail_title_selector)
             if title_el:
                 title = title_el.get_text(strip=True)[:199]
 
         # 설명/컨텐츠
         description = ""
-        if source.detail_content_selector:
-            content_el = soup.select_one(source.detail_content_selector)
+        if option.detail_content_selector:
+            content_el = soup.select_one(option.detail_content_selector)
             if content_el:
                 description = str(content_el)
-        elif source.detail_description_selector:
-            desc_el = soup.select_one(source.detail_description_selector)
+        elif option.detail_description_selector:
+            desc_el = soup.select_one(option.detail_description_selector)
             if desc_el:
                 description = str(desc_el)
 
         # 날짜
         date_str = list_data.get("date", "")
-        if source.detail_date_selector:
-            date_el = soup.select_one(source.detail_date_selector)
+        if option.detail_date_selector:
+            date_el = soup.select_one(option.detail_date_selector)
             if date_el:
                 date_str = date_el.get_text(strip=True)
 
         # 이미지
         image = list_data.get("image", "")
-        if source.detail_image_selector:
-            img_el = soup.select_one(source.detail_image_selector)
+        if option.detail_image_selector:
+            img_el = soup.select_one(option.detail_image_selector)
             if img_el:
                 image = img_el.get("src") or img_el.get("data-src") or ""
                 if image:
-                    image = urljoin(detail_url, image)
+                    image = urljoin(detail_url, image)#type:ignore
 
         # 이미지가 없으면 description에서 추출
         if not image and description:
             desc_soup = BeautifulSoup(description, "html.parser")
             img_tag = desc_soup.find("img")
             if img_tag and img_tag.get("src"):
-                image = urljoin(detail_url, img_tag.get("src"))
+                image = urljoin(detail_url, img_tag.get("src")) #type:ignore
 
         # 날짜 파싱
         published_at = django_timezone.now()
-        if date_str and source.date_formats:
-            parsed_date = parse_date(date_str, source.date_formats)
+        if date_str and option.date_formats:
+            parsed_date = parse_date(date_str, option.date_formats)
             if parsed_date:
                 published_at = parsed_date
 
@@ -202,7 +208,7 @@ class CrawlerService:
     # ==========================================
 
     @staticmethod
-    def crawl_rss_source(feed, source, existing_guids: Set[str]) -> Tuple[int, list]:
+    def crawl_rss_source(html,source:Optional[Any]=None,existing_guids: Set[str]=set()) -> Tuple[int, list[RSSItem]]:
         """
         RSS/Atom 소스에서 아이템 크롤링
 
@@ -210,12 +216,10 @@ class CrawlerService:
             (items_found, new_items): 발견된 아이템 수와 새 RSSItem 객체 리스트
         """
         from feeds.models import RSSItem
+        import feedparser
         from feedparser import FeedParserDict
 
-        feed_data = fetch_feed_data(source.url, source.custom_headers)
-
-        if feed_data.bozo:
-            raise Exception(f"Failed to parse feed {source.url}: {feed_data.bozo_exception}")
+        feed_data = feedparser.parse(html)
 
         new_items = []
         for entry in feed_data.entries:
@@ -287,12 +291,11 @@ class CrawlerService:
 
             new_items.append(
                 RSSItem(
-                    feed=feed,
                     source=source,
                     title=title,
                     link=link,
                     description=description,
-                    description_text=strip_html_tags(description),
+                    description_text=strip_html_tags(description), #type:ignore
                     author=author,
                     categories=categories,
                     image=image,
@@ -309,8 +312,11 @@ class CrawlerService:
 
     @staticmethod
     def crawl_page_scraping_source(
-        feed, source, existing_guids: Set[str], url: Optional[str] = None, use_cache: bool = True
-    ) -> Tuple[int, list]:
+        option:PreviewItemRequest,
+        soup:BeautifulSoup,
+        existing_guids: Set[str]=set(),
+        callback:Callable[[RSSItem],None]=lambda x:None
+    ) -> Tuple[int, list[RSSItem]]:
         """
         페이지 스크래핑 소스에서 아이템 크롤링
 
@@ -324,24 +330,14 @@ class CrawlerService:
         Returns:
             (items_found, new_items): 발견된 아이템 수와 새 RSSItem 객체 리스트
         """
-        target_url = url or source.url
-
-        # HTML 가져오기
-        result = CrawlerService.fetch_html_for_source(source, url=target_url, use_cache=use_cache)
-
-        if not result.success or not result.html:
-            raise Exception(result.error or "Failed to fetch HTML")
-
-        soup = BeautifulSoup(result.html, "html.parser")
-
         # 아이템 파싱
-        new_items = CrawlerService.parse_list_page_items(source, soup, existing_guids)
+        new_items = CrawlerService.parse_list_page_items(option, soup, existing_guids)
 
         # feed 설정
         for item in new_items:
-            item.feed = feed
+            callback(item)
 
-        items_found = len(soup.select(source.item_selector)) if source.item_selector else 0
+        items_found = len(soup.select(option.item_selector)) if option.item_selector else 0
 
         return items_found, new_items
 
@@ -350,7 +346,7 @@ class CrawlerService:
     # ==========================================
 
     @staticmethod
-    def extract_detail_urls(source, existing_guids: Set[str], max_items: int = 30) -> list:
+    def extract_detail_urls(option:PreviewItemRequest,soup:BeautifulSoup, existing_guids: Set[str], max_items: int = 30) -> list:
         """
         메인 페이지에서 상세 페이지 URL들을 추출
 
@@ -358,27 +354,21 @@ class CrawlerService:
             [{"detail_url": str, "list_data": dict}, ...]
         """
         # HTML 가져오기
-        result = CrawlerService.fetch_html_for_source(source)
-
-        if not result.success or not result.html:
-            raise Exception(result.error or "Failed to fetch HTML")
-
-        soup = BeautifulSoup(result.html, "html.parser")
 
         # exclude_selectors 적용
-        if source.exclude_selectors:
-            for exclude_selector in source.exclude_selectors:
+        if option.exclude_selectors:
+            for exclude_selector in option.exclude_selectors:
                 for el in soup.select(exclude_selector):
                     el.decompose()
 
-        items = soup.select(source.item_selector) if source.item_selector else []
+        items = soup.select(option.item_selector) if option.item_selector else []
 
         detail_tasks_data = []
         for item in items[:max_items]:
             # 링크 추출
             link = None
-            if source.link_selector:
-                link_el = item.select_one(source.link_selector)
+            if option.link_selector:
+                link_el = item.select_one(option.link_selector)
                 if link_el:
                     link = link_el.get("href")
             else:
@@ -389,7 +379,7 @@ class CrawlerService:
             if not link:
                 continue
 
-            link = urljoin(source.url, link)
+            link = urljoin(option.url, link) #type:ignore
 
             # 이미 존재하면 스킵
             if link[:499] in existing_guids:
@@ -398,22 +388,22 @@ class CrawlerService:
             # 목록에서 추출 가능한 정보
             list_data = {"title": "", "date": "", "image": ""}
 
-            if source.title_selector:
-                title_el = item.select_one(source.title_selector)
+            if option.title_selector:
+                title_el = item.select_one(option.title_selector)
                 if title_el:
                     list_data["title"] = title_el.get_text(strip=True)[:199]
 
-            if source.date_selector:
-                date_el = item.select_one(source.date_selector)
+            if option.date_selector:
+                date_el = item.select_one(option.date_selector)
                 if date_el:
                     list_data["date"] = date_el.get_text(strip=True)
 
-            if source.image_selector:
-                img_el = item.select_one(source.image_selector)
+            if option.image_selector:
+                img_el = item.select_one(option.image_selector)
                 if img_el:
-                    list_data["image"] = img_el.get("src") or img_el.get("data-src") or ""
+                    list_data["image"] = img_el.get("src") or img_el.get("data-src") or "" #type:ignore
                     if list_data["image"]:
-                        list_data["image"] = urljoin(source.url, list_data["image"])
+                        list_data["image"] = urljoin(option.url, list_data["image"])#type:ignore
 
             detail_tasks_data.append({
                 "detail_url": link,
@@ -423,7 +413,8 @@ class CrawlerService:
         return detail_tasks_data
 
     @staticmethod
-    def crawl_detail_page(feed, source, detail_url: str, list_data: dict):
+    def crawl_detail_page(option:PreviewItemRequest,
+                          detail_url: str, list_data: dict=dict()):
         """
         단일 상세 페이지 크롤링하여 RSSItem 생성
 
@@ -433,7 +424,7 @@ class CrawlerService:
         from feeds.models import RSSItem
 
         # HTML 가져오기
-        result = CrawlerService.fetch_html_for_source(source, url=detail_url)
+        result = CrawlerService.fetch_html_for_source(option, url=detail_url)
 
         if not result.success or not result.html:
             raise Exception(result.error or "Failed to fetch HTML")
@@ -441,18 +432,16 @@ class CrawlerService:
         soup = BeautifulSoup(result.html, "html.parser")
 
         # exclude_selectors 적용
-        if source.exclude_selectors:
-            for exclude_selector in source.exclude_selectors:
+        if option.exclude_selectors:
+            for exclude_selector in option.exclude_selectors:
                 for el in soup.select(exclude_selector):
                     el.decompose()
 
         # 상세 페이지 파싱
-        parsed = CrawlerService.parse_detail_page(source, soup, detail_url, list_data)
+        parsed = CrawlerService.parse_detail_page(option, soup, detail_url, list_data)
 
         # RSSItem 생성
         return RSSItem(
-            feed=feed,
-            source=source,
             title=parsed["title"],
             link=parsed["link"],
             description=parsed["description"],
@@ -463,40 +452,28 @@ class CrawlerService:
             categories=parsed["categories"],
             image=parsed["image"],
         )
-
-    # ==========================================
-    # 소스 타입별 크롤링 디스패처
-    # ==========================================
-
     @staticmethod
-    def crawl_source(feed, source, existing_guids: Set[str], url: Optional[str] = None, use_cache: bool = True) -> Tuple[int, list]:
-        """
-        소스 타입에 따라 적절한 크롤링 메서드 호출
-
-        Args:
-            feed: RSSFeed 객체
-            source: RSSEverythingSource 객체
-            existing_guids: 기존 GUID 집합
-            url: 크롤링할 URL (페이지네이션 등에서 사용)
-            use_cache: 캐시 사용 여부
-
-        Returns:
-            (items_found, new_items): 발견된 아이템 수와 새 RSSItem 객체 리스트
-        """
-        from feeds.models import RSSEverythingSource
-
-        if source.source_type == RSSEverythingSource.SourceType.RSS:
-            return CrawlerService.crawl_rss_source(feed, source, existing_guids)
-        elif source.source_type == RSSEverythingSource.SourceType.PAGE_SCRAPING:
-            return CrawlerService.crawl_page_scraping_source(
-                feed, source, existing_guids, url=url, use_cache=use_cache
-            )
-        elif source.source_type == RSSEverythingSource.SourceType.DETAIL_PAGE_SCRAPING:
-            # 상세 페이지 스크래핑은 별도 처리 필요 (비동기)
-            raise ValueError("DETAIL_PAGE_SCRAPING requires async handling, use crawl_detail_source_async")
-        else:
-            raise ValueError(f"Unknown source type: {source.source_type}")
-
+    def crawl_detail_scraping_source(option:PreviewItemRequest,
+                           soup:BeautifulSoup,
+                            existing_guids: Set[str]=set(),
+                            callback:Callable[[RSSItem],None]=lambda x:None
+                           ):
+        detail_item_urls = CrawlerService.extract_detail_urls(
+            option,soup, existing_guids, max_items=30)
+        new_items: list[RSSItem] = []
+        for detail_task in detail_item_urls:
+            detail_url = detail_task["detail_url"]
+            list_data = detail_task["list_data"]
+            try:
+                item = CrawlerService.crawl_detail_page(
+                    option, detail_url, list_data)
+                if item:
+                    callback(item)
+                    new_items.append(item)
+            except Exception as e:
+                logger.error(f"Failed to crawl detail page {detail_url}: {e}")
+            callback(item)
+        return len(detail_item_urls), new_items
     # ==========================================
     # 페이지네이션 크롤링
     # ==========================================

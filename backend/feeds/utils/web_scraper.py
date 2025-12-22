@@ -59,7 +59,7 @@ def crawl_detail_page_items(
 ) -> list[CrawledItem]:
     """
     상세 페이지 크롤링 공통 로직
-    _crawl_detail_pages와 preview_items에서 공통으로 사용하는 로직을 추출
+    _crawl_detail_pages와 crawl에서 공통으로 사용하는 로직을 추출
 
     Args:
         items: 목록 페이지의 아이템 요소들

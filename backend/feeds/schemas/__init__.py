@@ -17,7 +17,6 @@ from .feed import (
     FeedValidationResponse,
 )
 from .source import (
-    SourceType,
     SourceSchema,
     SourceCreateSchema,
     SourceUpdateSchema,
@@ -69,7 +68,6 @@ __all__ = [
     "FeedValidationRequest",
     "FeedValidationResponse",
     # Source
-    "SourceType",
     "SourceSchema",
     "SourceCreateSchema",
     "SourceUpdateSchema",

@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING, Callable, Concatenate, overload
-from celery import shared_task as _st
+from celery import shared_task as _st, Task
 
 class TaskResult[**P, R]:
+    id:str
     def get(self,timeout:int|None=None) -> R: ...
 
-class SharedTask[**P, R]:
+class SharedTask[**P, R](Task):
     def __init__(self, func: Callable[P, R]) -> None: ...
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R: ...
     def delay(self, *args: P.args, **kwargs: P.kwargs) -> TaskResult[P, R]: ...

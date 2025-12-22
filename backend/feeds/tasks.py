@@ -9,6 +9,9 @@ from base.celery_helper import shared_task
 from celery import chord, group
 from django.utils import timezone as django_timezone
 
+from feeds.schemas.source import PreviewItemRequest
+from feeds.services.source import SourceService
+
 logger = getLogger(__name__)
 
 # MinIO 이미지 업로드 활성화 여부
@@ -36,10 +39,6 @@ def _save_items_and_schedule_images(feed, new_items: list) -> int:
     feed.last_updated = django_timezone.now()
     feed.save()
 
-    # 이미지 캐시 스케줄링
-    for item in created_items:
-        if item.id:
-            precache_images_for_item.delay(item.id)
 
     return len(created_items)
 
@@ -146,22 +145,8 @@ def update_feed_items(self, feed_id, task_result_id=None):
 
         for source in active_sources:
             try:
-                if source.source_type == RSSEverythingSource.SourceType.DETAIL_PAGE_SCRAPING:
-                    # 상세 페이지 스크래핑: chord로 비동기 처리
-                    found, created = _update_from_detail_source_async(feed, source, existing_guids)
-                else:
-                    # RSS 또는 페이지 스크래핑: CrawlerService 사용
-                    found, new_items = CrawlerService.crawl_source(feed, source, existing_guids)
-                    created = _save_items_and_schedule_images(feed, new_items)
-
-                    # existing_guids 업데이트
-                    for item in new_items:
-                        existing_guids.add(item.guid)
-
-                    _update_source_status(source)
-
-                total_found += found
-                total_created += created
+                option = PreviewItemRequest.from_orm(source)
+                items = SourceService.crawl(option, feed=feed, source=source)
 
             except Exception as e:
                 logger.exception(f"Failed to update from source {source.id}")
@@ -175,103 +160,6 @@ def update_feed_items(self, feed_id, task_result_id=None):
         logger.exception(f"Failed to update feed {feed_id}")
         _fail_task_result(task_result, str(e))
         return f"Failed: {str(e)}"
-
-
-def _update_from_detail_source_async(feed, source, existing_guids):
-    """
-    상세 페이지 스크래핑 - chord로 병렬 처리
-    """
-    from feeds.services.crawler import CrawlerService
-
-    logger.info(f"Updating from detail source (async): {feed.title} ({source.url})")
-
-    # 상세 URL 추출
-    detail_tasks_data = CrawlerService.extract_detail_urls(source, existing_guids, max_items=30)
-
-    if not detail_tasks_data:
-        logger.info(f"No new detail pages for {feed.title}")
-        _update_source_status(source)
-        return 0, 0
-
-    # chord로 병렬 처리
-    detail_tasks = group([
-        crawl_detail_page.s(
-            feed_id=feed.id,
-            source_id=source.id,
-            detail_url=data["detail_url"],
-            list_data=data["list_data"],
-        )
-        for data in detail_tasks_data
-    ])
-
-    callback = collect_detail_results.s(feed_id=feed.id, source_id=source.id)
-    result = chord(detail_tasks)(callback)
-
-    try:
-        items_created = result.get(timeout=300)
-    except Exception as e:
-        logger.exception(f"Chord failed for source {source.id}")
-        items_created = 0
-
-    return len(detail_tasks_data), items_created
-
-
-# ===========================================
-# 큐 2: detail_worker - 상세 페이지 크롤링
-# ===========================================
-
-
-@shared_task
-def crawl_detail_page(feed_id: int, source_id: int, detail_url: str, list_data: dict):
-    """개별 상세 페이지 크롤링"""
-    from feeds.models import RSSFeed, RSSItem, RSSEverythingSource
-    from feeds.services.crawler import CrawlerService
-
-    try:
-        source = RSSEverythingSource.objects.get(id=source_id)
-        feed = RSSFeed.objects.get(id=feed_id)
-    except (RSSEverythingSource.DoesNotExist, RSSFeed.DoesNotExist) as e:
-        return {"success": False, "error": str(e)}
-
-    try:
-        item = CrawlerService.crawl_detail_page(feed, source, detail_url, list_data)
-        item.save()
-
-        # 이미지 캐시
-        if item.id:
-            precache_images_for_item.delay(item.id)
-
-        return {"success": True, "item_id": item.id}
-
-    except Exception as e:
-        logger.exception(f"Failed to crawl detail page: {detail_url}")
-        return {"success": False, "error": str(e)}
-
-
-@shared_task
-def collect_detail_results(results: list, feed_id: int, source_id: int):
-    """chord callback: 상세 크롤링 결과 수집"""
-    from feeds.models import RSSFeed, RSSEverythingSource
-
-    try:
-        feed = RSSFeed.objects.get(id=feed_id)
-        source = RSSEverythingSource.objects.get(id=source_id)
-    except (RSSFeed.DoesNotExist, RSSEverythingSource.DoesNotExist):
-        return 0
-
-    success_count = sum(1 for r in results if r.get("success"))
-    error_count = len(results) - success_count
-
-    if success_count > 0:
-        feed.last_updated = django_timezone.now()
-        feed.save()
-
-    error_msg = f"{error_count} detail pages failed" if error_count > 0 else ""
-    _update_source_status(source, error_msg)
-
-    logger.info(f"Detail crawling: {feed.title} - {success_count} success, {error_count} errors")
-    return success_count
-
 
 # ===========================================
 # 페이지네이션 크롤링 Task
@@ -367,8 +255,6 @@ def crawl_paginated_task(
                             existing_guids.add(item.guid)
                             total_items_created += 1
 
-                            if item.id:
-                                precache_images_for_item.delay(item.id)
                         except Exception as e:
                             logger.warning(f"Failed to crawl detail: {data['detail_url']}: {e}")
 
@@ -406,111 +292,6 @@ def crawl_paginated_task(
     except Exception as e:
         logger.exception(f"Failed pagination crawl for source {source_id}")
         _fail_task_result(task_result, str(e))
-        return {"success": False, "error": str(e)}
-
-
-# ===========================================
-# 큐 3: image_aggregate - 이미지 처리
-# ===========================================
-
-
-@shared_task
-def precache_images_for_item(item_id: int):
-    """RSSItem의 이미지 업로드 스케줄링"""
-    from feeds.models import RSSItem
-    if ENABLE_IMAGE_UPLOAD is False:
-        return f"Image upload disabled for RSSItem {item_id}"
-    try:
-        item = RSSItem.objects.get(id=item_id)
-    except RSSItem.DoesNotExist:
-        return f"RSSItem {item_id} does not exist"
-
-    if not item.description:
-        return f"RSSItem {item_id} has no description"
-
-    upload_images_for_item.delay(item_id)
-    return f"Scheduled image upload for RSSItem {item_id}"
-
-
-# ===========================================
-# 큐 5: image_upload - MinIO 이미지 업로드
-# ===========================================
-
-
-@shared_task
-def upload_images_for_item(item_id: int):
-    """RSSItem의 이미지를 MinIO에 업로드"""
-    from feeds.models import RSSItem
-    from feeds.services.image_storage import get_image_storage_service
-
-    try:
-        item = RSSItem.objects.select_related("feed").get(id=item_id)
-    except RSSItem.DoesNotExist:
-        return f"RSSItem {item_id} does not exist"
-
-    description = item.description
-    if not description or "<" not in description or ">" not in description:
-        return f"RSSItem {item_id} has no HTML description"
-
-    try:
-        storage_service = get_image_storage_service()
-        feed_id = item.feed_id
-        item_id = item.id
-
-        new_description, replaced_count = storage_service.upload_images_and_replace_html(
-            description, base_url=item.link, feed_id=feed_id, item_id=item_id
-        )
-
-        if replaced_count > 0:
-            item.description = new_description
-            item.save(update_fields=["description"])
-
-            # 대표 이미지도 업로드
-            if item.image and item.image.startswith(("http://", "https://")):
-                new_image_path = storage_service.upload_image_from_url(
-                    item.image, base_url=item.link, feed_id=feed_id, item_id=item_id
-                )
-                if new_image_path:
-                    item.image = new_image_path
-                    item.save(update_fields=["image"])
-
-            logger.info(f"Uploaded {replaced_count} images for RSSItem {item_id}")
-            return f"Uploaded {replaced_count} images for RSSItem {item_id}"
-
-        return f"No images to upload for RSSItem {item_id}"
-
-    except Exception as e:
-        logger.exception(f"Failed to upload images for RSSItem {item_id}: {e}")
-        return f"Failed: {str(e)}"
-
-
-@shared_task
-def upload_single_image(image_url: str, item_id: int, field: str = "description"):
-    """단일 이미지를 MinIO에 업로드"""
-    from feeds.models import RSSItem
-    from feeds.services.image_storage import get_image_storage_service
-
-    try:
-        item = RSSItem.objects.select_related("feed").get(id=item_id)
-    except RSSItem.DoesNotExist:
-        return {"success": False, "error": f"RSSItem {item_id} does not exist"}
-
-    try:
-        storage_service = get_image_storage_service()
-        new_path = storage_service.upload_image_from_url(
-            image_url, base_url=item.link, feed_id=item.feed_id, item_id=item.id
-        )
-
-        if new_path:
-            if field == "image":
-                item.image = new_path
-                item.save(update_fields=["image"])
-            return {"success": True, "original_url": image_url, "new_path": new_path}
-
-        return {"success": False, "error": "Failed to upload image"}
-
-    except Exception as e:
-        logger.exception(f"Failed to upload image {image_url}: {e}")
         return {"success": False, "error": str(e)}
 
 

@@ -36,8 +36,8 @@ class FeedService:
         """RSS 피드 URL 검증"""
         feed = fetch_feed_data(data.url, data.custom_headers)
 
-        title = feed.feed.get("title", "Unknown Title")
-        description = feed.feed.get("description", "")
+        title = feed.feed.get("title", "Unknown Title") #type:ignore
+        description = feed.feed.get("description", "") #type:ignore
         items_count = len(feed.entries)
         latest_item_date = None
 

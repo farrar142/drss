@@ -54,9 +54,9 @@ def extract_elements(request, data: ExtractElementsRequest):
 
 
 @router.post("/preview-items", response=PreviewItemResponse, auth=JWTAuth(), operation_id="previewItems")
-def preview_items(request, data: PreviewItemRequest):
+def crawl(request, data: PreviewItemRequest):
     """설정된 셀렉터로 아이템들을 미리보기"""
-    result = SourceService.preview_items(
+    result = SourceService.crawl(
         url=data.url,
         item_selector=data.item_selector,
         title_selector=data.title_selector,

@@ -2,7 +2,7 @@
 Source Service - RSS Everything 소스 관련 비즈니스 로직
 """
 
-from typing import Optional
+from typing import Callable, Optional
 import logging
 
 from django.shortcuts import get_object_or_404
@@ -11,8 +11,8 @@ from urllib.parse import urljoin
 import re
 from ninja import Schema
 
-from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult
-from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
+from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult, RSSItem
+from feeds.schemas.source import PreviewItemResponse
 from feeds.utils.html_parser import (
     generate_selector,
     extract_text,
@@ -22,8 +22,8 @@ from feeds.utils.html_parser import (
     extract_href,
     extract_src,
 )
-from feeds.utils.web_scraper import crawl_detail_page_items, CrawledItem, ListCrawledItem
-from feeds.schemas import SourceCreateSchema, SourceUpdateSchema
+from feeds.services.crawler import CrawlerService
+from feeds.schemas import SourceCreateSchema, SourceUpdateSchema,PreviewItemRequest
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ class PreviewItemSchema(Schema):
     image: str
 
 class PreviewItemsResponse(Schema):
-    """preview_items 함수 응답 타입"""
+    """crawl 함수 응답 타입"""
     success: bool
     items: list[PreviewItemSchema]
     count: int
@@ -68,63 +68,6 @@ class FetchHtmlResponse(Schema):
 
 class SourceService:
     """RSS Everything 소스 관련 비즈니스 로직"""
-
-    # ============== Helper Functions ==============
-
-    # HTML 파싱 관련 함수들은 feeds.utils.html_parser로 이동됨
-    # 아래 메서드들은 호환성을 위해 유지되지만, 새로운 코드에서는 직접 html_parser를 사용하세요
-
-    # ============== Service Methods ==============
-
-    @staticmethod
-    def fetch_html(
-        url: str,
-        use_browser: bool = True,
-        browser_service: str = "realbrowser",
-        wait_selector: str = "body",
-        timeout: int = 30000,
-        custom_headers: Optional[dict] = None,
-        use_cache: bool = True,
-    ) -> FetchHtmlResponse:
-        """URL에서 HTML을 가져옴"""
-        try:
-            if use_browser:
-                result = fetch_html_with_browser(
-                    url=url,
-                    selector=wait_selector,
-                    timeout=timeout,
-                    custom_headers=custom_headers,
-                    service=browser_service,
-                    use_cache=use_cache,
-                )
-            else:
-                result = fetch_html_smart(
-                    url=url,
-                    use_browser_on_fail=True,
-                    browser_selector=wait_selector,
-                    custom_headers=custom_headers,
-                    use_cache=use_cache,
-                )
-
-            if result.success:
-                return FetchHtmlResponse(
-                    success=True,
-                    html=result.html,
-                    url=result.url or url,
-                )
-            else:
-                return FetchHtmlResponse(
-                    success=False,
-                    url=url,
-                    error=result.error,
-                )
-        except Exception as e:
-            logger.exception(f"Failed to fetch HTML from {url}")
-            return FetchHtmlResponse(
-                success=False,
-                url=url,
-                error=str(e),
-            )
 
     @staticmethod
     def extract_elements(html: str, selector: str, base_url: str) -> ExtractElementsResponse:
@@ -164,205 +107,41 @@ class SourceService:
             )
 
     @staticmethod
-    def crawl_detail_page_items(
-        items: list,
-        base_url: str,
-        item_selector: str = "",
-        title_selector: str = "",
-        link_selector: str = "",
-        description_selector: str = "",
-        date_selector: str = "",
-        image_selector: str = "",
-        detail_title_selector: str = "",
-        detail_description_selector: str = "",
-        detail_content_selector: str = "",
-        detail_date_selector: str = "",
-        detail_image_selector: str = "",
-        use_browser: bool = True,
-        browser_service: str = "realbrowser",
-        wait_selector: str = "body",
-        custom_headers: Optional[dict] = None,
-        exclude_selectors: Optional[list] = None,
-        follow_links: bool = True,
-        existing_guids: Optional[set] = None,
-        max_items: int = 20,
-        use_html_with_css: bool = True,
-    ) -> list[CrawledItem]:
-        """
-        상세 페이지 크롤링 공통 로직
-        web_scraper.crawl_detail_page_items를 사용하도록 리팩토링
-        """
-        # web_scraper 모듈 사용
-        return crawl_detail_page_items(
-            items=items,
-            base_url=base_url,
-            item_selector=item_selector,
-            title_selector=title_selector,
-            link_selector=link_selector,
-            description_selector=description_selector,
-            date_selector=date_selector,
-            image_selector=image_selector,
-            detail_title_selector=detail_title_selector,
-            detail_description_selector=detail_description_selector,
-            detail_content_selector=detail_content_selector,
-            detail_date_selector=detail_date_selector,
-            detail_image_selector=detail_image_selector,
-            use_browser=use_browser,
-            browser_service=browser_service,
-            wait_selector=wait_selector,
-            custom_headers=custom_headers,
-            exclude_selectors=exclude_selectors,
-            follow_links=follow_links,
-            existing_guids=existing_guids,
-            max_items=max_items,
-            use_html_with_css=use_html_with_css,
-            fetch_html_func=SourceService.fetch_html,
-        )
-
-    @staticmethod
-    def preview_items(
-        url: str,
-        item_selector: str,
-        title_selector: str = "",
-        link_selector: str = "",
-        description_selector: str = "",
-        date_selector: str = "",
-        image_selector: str = "",
-        use_browser: bool = True,
-        browser_service: str = "realbrowser",
-        wait_selector: str = "body",
-        custom_headers: Optional[dict] = None,
-        exclude_selectors: Optional[list] = None,
-        follow_links: bool = False,
-        detail_title_selector: str = "",
-        detail_description_selector: str = "",
-        detail_content_selector: str = "",
-        detail_date_selector: str = "",
-        detail_image_selector: str = "",
-    ) -> PreviewItemsResponse:
-        """설정된 셀렉터로 아이템들을 미리보기"""
-        try:
-            # HTML 가져오기
-            fetch_result = SourceService.fetch_html(
-                url=url,
-                use_browser=use_browser,
-                browser_service=browser_service,
-                wait_selector=wait_selector,
-                timeout=30000,
-                custom_headers=custom_headers,
+    def crawl(
+        option:PreviewItemRequest,
+        feed:Optional[RSSFeed]=None,
+        source:Optional[RSSEverythingSource]=None,
+        existing_guids: set[str]=set()
+    ) -> list[RSSItem]:
+        result = CrawlerService.fetch_html(
+            url=option.url,use_browser=option.use_browser,
+            browser_service=option.browser_service,
+            wait_selector=option.wait_selector,
+            custom_headers=option.custom_headers)
+        if not result.success:
+            raise   Exception(f"Failed to fetch HTML: {result.error}")
+        if not result.html:
+            raise   Exception("Fetched HTML is empty")
+        html = result.html
+        soup = BeautifulSoup(html,"html.parser")
+        if option.source_type == "rss":
+            entries,result = CrawlerService.crawl_rss_source(html,None,existing_guids)
+        elif option.source_type == "detail_page_scraping":
+            entries,result = CrawlerService.crawl_detail_scraping_source(
+                option,soup,existing_guids,
             )
-
-            if not fetch_result.success or not fetch_result.html:
-                return PreviewItemsResponse(
-                    success=False,
-                    items=[],
-                    count=0,
-                    error=fetch_result.error or "Failed to fetch HTML",
-                )
-
-            soup = BeautifulSoup(fetch_result.html, "html.parser")
-
-            # exclude_selectors 적용
-            if exclude_selectors:
-                for exclude_selector in exclude_selectors:
-                    for el in soup.select(exclude_selector):
-                        el.decompose()
-
-            items = soup.select(item_selector)
-            preview_items = []
-
-            if follow_links:
-                # 상세 페이지 파싱 모드 - 공통 함수 사용
-                crawled_items = SourceService.crawl_detail_page_items(
-                    items=items[:5],
-                    base_url=url,
-                    item_selector=item_selector,
-                    title_selector=title_selector,
-                    link_selector=link_selector,
-                    description_selector=description_selector,
-                    date_selector=date_selector,
-                    image_selector=image_selector,
-                    detail_title_selector=detail_title_selector,
-                    detail_description_selector=detail_description_selector,
-                    detail_content_selector=detail_content_selector,
-                    detail_date_selector=detail_date_selector,
-                    detail_image_selector=detail_image_selector,
-                    use_browser=use_browser,
-                    browser_service=browser_service,
-                    wait_selector=wait_selector,
-                    custom_headers=custom_headers,
-                    exclude_selectors=exclude_selectors,
-                    follow_links=True,
-                    existing_guids=None,
-                    max_items=10,
-                    use_html_with_css=True,
-                )
-
-                # 결과 변환
-                for item in crawled_items:
-                    if item["title"]:
-                        preview_items.append(
-                            PreviewItemSchema(
-                                title=item["title"],
-                                link=item["link"],
-                                description=item["description"],
-                                date=item["date"],
-                                image=item["image"],
-                            )
-                        )
-            else:
-                # 목록 페이지 직접 파싱 모드
-                for item in items[:20]:
-                    title_el = (
-                        item.select_one(title_selector) if title_selector else None
-                    )
-                    title = extract_text(title_el) if title_el else ""
-
-                    if link_selector:
-                        link_el = item.select_one(link_selector)
-                    else:
-                        link_el = title_el
-                    link = extract_href(link_el, url) if link_el else ""
-
-                    desc_el = (
-                        item.select_one(description_selector)
-                        if description_selector
-                        else None
-                    )
-                    description = (
-                        extract_html(desc_el, url) if desc_el else ""
-                    )
-
-                    date_el = item.select_one(date_selector) if date_selector else None
-                    date = extract_text(date_el) if date_el else ""
-
-                    img_el = item.select_one(image_selector) if image_selector else None
-                    image = extract_src(img_el, url) if img_el else ""
-
-                    if title:
-                        preview_items.append(
-                            PreviewItemSchema(
-                                title=title,
-                                link=link,
-                                description=description,
-                                date=date,
-                                image=image,
-                            )
-                        )
-
-            return PreviewItemsResponse(
-                success=True,
-                items=preview_items,
-                count=len(items),
+        elif option.source_type == "page_scraping":
+            entries,result = CrawlerService.crawl_page_scraping_source(
+                option,soup,existing_guids
             )
-        except Exception as e:
-            logger.exception(f"Failed to preview items from {url}")
-            return PreviewItemsResponse(
-                success=False,
-                items=[],
-                count=0,
-                error=str(e),
-            )
+        else:
+            raise   Exception(f"Unknown source type: {option.source_type}")
+        for entry in result:
+            if feed:
+                entry.feed = feed
+            if source:
+                entry.source = source
+        return result
 
     @staticmethod
     def get_user_sources(user) -> list[RSSEverythingSource]:
