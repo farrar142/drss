@@ -4,7 +4,7 @@ Crawler Service - 소스 타입별 크롤링 로직을 통합 관리
 
 from logging import getLogger
 from time import struct_time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Callable, Optional, Tuple, List, Set
 from urllib.parse import urljoin
 from bs4 import BeautifulSoup
@@ -244,7 +244,8 @@ class CrawlerService:
             date_el = soup.select_one(option.detail_date_selector)
             if date_el:
                 date_str = date_el.get_text(strip=True)
-
+            print(f"Extracted date string: {date_str}")
+            print(f"Using date formats: {option.date_formats}")
         # 이미지
         image = list_data.get("image", "")
         if option.detail_image_selector:
@@ -267,7 +268,7 @@ class CrawlerService:
             parsed_date = parse_date(date_str, option.date_formats)
             if parsed_date:
                 published_at = parsed_date
-
+        print("Parsed published_at:", published_at)
         return {
             "title": title or "No Title",
             "link": detail_url,
@@ -471,8 +472,8 @@ class CrawlerService:
             if not link:
                 continue
 
-            link = urljoin(option.url, link)  # type:ignore
-
+            link = urljoin(option.url, Maybe.of(link).instanceof(str).split("?")[:1][0])
+            print("Extracted detail link:", link)
             # 이미 존재하면 스킵
             if link[:499] in existing_guids:
                 continue

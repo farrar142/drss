@@ -102,9 +102,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
                   onItemRefreshed={onItemRefreshed}
                 />
               ))}
-              {hasNext && (
-                <div ref={setSentinelRef(0)} className="h-4 w-full" />
-              )}
+              <div ref={setSentinelRef(0)} className="flex-grow min-h-[100px]" />
             </div>
           ) : (
             // Feed 모드: 멀티 컬럼 그리드

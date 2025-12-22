@@ -179,7 +179,7 @@ class PreviewItem(BaseModel):
     title: str
     link: str
     description: str = ""
-    date: str = ""
+    published_at: datetime = Field(default_factory=datetime.now)
     image: str = ""
 
 

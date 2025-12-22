@@ -70,6 +70,7 @@ class ItemService:
             "description_text",
             "author",
             "image",
+            "published_at",
         ]
 
         updated_fields = []

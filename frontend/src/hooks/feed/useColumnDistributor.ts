@@ -351,12 +351,9 @@ export function useColumnDistributor<T extends { id: number }>({
   // IntersectionObserver로 sentinel 감지
   useEffect(() => {
     // 비활성 탭이면 observer 설정 안함
-    if (!enabled) return;
-    // 초기 배분 중이면 observer 설정 안함
-    if (isInitialDistributingRef.current) return;
-
+    if (!enabled) return console.log("비활성 탭, observer 설정 안함");
+    if (isInitialDistributingRef.current) return console.log("초기 배분 중, observer 설정 안함");
     const observers: IntersectionObserver[] = [];
-
     for (let columnIndex = 0; columnIndex < columns; columnIndex++) {
       const sentinel = sentinelRefs.current[columnIndex];
       if (!sentinel) continue;
@@ -394,7 +391,6 @@ export function useColumnDistributor<T extends { id: number }>({
       observers.forEach(obs => obs.disconnect());
     };
   }, [enabled, addItemToColumn, columns, fillVisibleSentinels]);
-
   // sentinel ref setter
   const setSentinelRef = useCallback((columnIndex: number) => (el: HTMLDivElement | null) => {
     sentinelRefs.current[columnIndex] = el;

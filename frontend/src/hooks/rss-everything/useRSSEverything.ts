@@ -569,6 +569,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         link_selector: listSelectors.linkSelector,
         description_selector: listSelectors.descriptionSelector,
         date_selector: listSelectors.dateSelector,
+        date_formats: dateFormats,
         image_selector: listSelectors.imageSelector,
         use_browser: useBrowser,
         browser_service: browserService,
@@ -582,6 +583,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detail_image_selector: detailSelectors.detailImageSelector,
         source_type: sourceType
       };
+      console.log('Preview request:', request);
 
       const response = await previewItemsApi(request);
 
@@ -596,7 +598,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     } finally {
       setPreviewLoading(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, customHeaders, excludeSelectors]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, customHeaders, excludeSelectors, dateFormats, sourceType]);
 
   // Save RSS Everything source (page_scraping / detail_page_scraping)
   const handleSave = useCallback(async () => {

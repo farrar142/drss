@@ -18,7 +18,7 @@ function convertToRSSItem(item: PreviewItem, index: number): RSSItem {
     link: item.link,
     description: item.description || '',
     image: item.image,
-    published_at: item.date || new Date().toISOString(),
+    published_at: item.published_at || new Date().toISOString(),
     is_read: false,
     is_favorite: false,
   };
