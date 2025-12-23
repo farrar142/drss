@@ -30,6 +30,7 @@ class RSSCategory(BaseModel):
             models.Index(fields=["user"]),
             models.Index(fields=["user", "visible"]),
             models.Index(fields=["user", "order"]),
+            models.Index(fields=["is_public"]),
         ]
         ordering = ["order", "id"]
 
@@ -63,6 +64,7 @@ class RSSFeed(BaseModel):
             models.Index(fields=["category"]),
             models.Index(fields=["user", "visible"]),
             models.Index(fields=["category", "visible"]),
+            models.Index(fields=["is_public"])
         ]
 
     def __str__(self):
