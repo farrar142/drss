@@ -97,6 +97,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
           name,
           description,
           visible,
+          is_public: isPublic,
           // is_public은 백엔드 스키마가 업데이트되면 추가
           // is_public: isPublic,
         } as any);
@@ -117,7 +118,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
           name,
           description,
           visible,
-          // is_public: isPublic,
+          is_public: isPublic,
         } as any);
 
         addCategory({ ...newCategory, visible: newCategory.visible ?? true } as any);
