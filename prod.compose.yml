@@ -58,12 +58,12 @@ services:
   # 큐 4: image_worker - Next.js 이미지 캐시 수행
 
   # 큐 1: feed_main - 메인 URL 크롤링 및 디테일 분배
-  celery-feed-main:
+  celery-worker:
     <<: *backend
     image: drss-backend:production
-    container_name: drss-celery-feed-main
+    container_name: drss-celery-worker
     entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2", "-Q", "feed_main"]
+    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
     depends_on:
       - django
       - browserless
@@ -73,23 +73,6 @@ services:
         limits:
           cpus: '1'
           memory: 512M
-
-
-  # 큐 3: image_aggregate - 이미지 URL 추출 및 사이즈별 분배
-  # 큐 5: image_upload - MinIO 이미지 업로드도 함께 처리
-  celery-image-aggregate:
-    <<: *backend
-    image: drss-backend:production
-    container_name: drss-celery-image-aggregate
-    entrypoint: celery
-    command: ["-A", "base", "worker", "--loglevel=info", "--concurrency=2"]
-    depends_on:
-      - django
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
 
   # ===================
   # Celery Beat Scheduler
