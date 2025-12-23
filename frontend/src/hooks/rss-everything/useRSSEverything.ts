@@ -43,7 +43,6 @@ const initialListSelectors: ListSelectors = {
 const initialDetailSelectors: DetailSelectors = {
   detailTitleSelector: '',
   detailDescriptionSelector: '',
-  detailContentSelector: '',
   detailDateSelector: '',
   detailImageSelector: '',
   detailAuthorSelector: '',
@@ -127,7 +126,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
   // HTMLViewer에서 선택된 셀렉터를 받을 현재 타겟
   const [activeListField, setActiveListField] = useState<keyof ListSelectors | 'exclude'>('itemSelector');
-  const [activeDetailField, setActiveDetailField] = useState<keyof DetailSelectors | 'exclude'>('detailContentSelector');
+  const [activeDetailField, setActiveDetailField] = useState<keyof DetailSelectors | 'exclude'>('detailDescriptionSelector');
 
   // 편집 중인 소스 ID (수정 모드에서)
   const [editingSourceId, setEditingSourceId] = useState<number | null>(context?.sourceId || null);
@@ -173,7 +172,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
             setDetailSelectors({
               detailTitleSelector: source.detail_title_selector || '',
               detailDescriptionSelector: source.detail_description_selector || '',
-              detailContentSelector: source.detail_content_selector || '',
               detailDateSelector: source.detail_date_selector || '',
               detailImageSelector: source.detail_image_selector || '',
               detailAuthorSelector: source.detail_author_selector || '',
@@ -239,7 +237,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       setDetailSelectors({
         detailTitleSelector: config.detail_title_selector || '',
         detailDescriptionSelector: config.detail_description_selector || '',
-        detailContentSelector: config.detail_content_selector || '',
         detailDateSelector: config.detail_date_selector || '',
         detailImageSelector: config.detail_image_selector || '',
         detailAuthorSelector: config.detail_author_selector || '',
@@ -578,7 +575,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         exclude_selectors: excludeSelectors,
         detail_title_selector: detailSelectors.detailTitleSelector,
         detail_description_selector: detailSelectors.detailDescriptionSelector,
-        detail_content_selector: detailSelectors.detailContentSelector,
         detail_date_selector: detailSelectors.detailDateSelector,
         detail_image_selector: detailSelectors.detailImageSelector,
         source_type: sourceType
@@ -627,7 +623,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           image_selector: listSelectors.imageSelector,
           detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
           detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
           detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
           detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
           use_browser: useBrowser,
@@ -653,7 +648,6 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           image_selector: listSelectors.imageSelector,
           detail_title_selector: parseMode === 'detail' ? detailSelectors.detailTitleSelector : '',
           detail_description_selector: parseMode === 'detail' ? detailSelectors.detailDescriptionSelector : '',
-          detail_content_selector: parseMode === 'detail' ? detailSelectors.detailContentSelector : '',
           detail_date_selector: parseMode === 'detail' ? detailSelectors.detailDateSelector : '',
           detail_image_selector: parseMode === 'detail' ? detailSelectors.detailImageSelector : '',
           use_browser: useBrowser,
@@ -700,7 +694,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     setDetailHtml(null);
     setDetailUrl('');
     setDetailSelectors(initialDetailSelectors);
-    setActiveDetailField('detailContentSelector');
+    setActiveDetailField('detailDescriptionSelector');
     setPreviewItems([]);
     setName('');
     setDescription('');

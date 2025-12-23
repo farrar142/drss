@@ -24,7 +24,6 @@ export interface ListSelectors {
 export interface DetailSelectors {
   detailTitleSelector: string;
   detailDescriptionSelector: string;
-  detailContentSelector: string;
   detailDateSelector: string;
   detailImageSelector: string;
   detailAuthorSelector: string;
@@ -104,12 +103,6 @@ const DETAIL_SELECTOR_FIELDS: SelectorFieldConfig[] = [
     key: 'detailDescriptionSelector',
     labelKey: 'detailDescriptionSelector',
     descKey: 'detailDescriptionSelectorDesc',
-    placeholder: '.summary, .excerpt, meta[name="description"]',
-  },
-  {
-    key: 'detailContentSelector',
-    labelKey: 'contentSelector',
-    descKey: 'contentSelectorDesc',
     placeholder: '.article-content, .post-body, #content',
     required: true,
   },

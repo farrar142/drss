@@ -531,22 +531,6 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             {item.author}
           </span>
         )}
-        {item.categories && item.categories.length > 0 && (
-          <span className="flex items-center gap-1 flex-wrap">
-            <Tag className="w-3 h-3 shrink-0" />
-            {item.categories.slice(0, 5).map((cat, idx) => (
-              <span
-                key={idx}
-                className="px-1.5 py-0.5 bg-muted rounded text-xs"
-              >
-                {cat}
-              </span>
-            ))}
-            {item.categories.length > 5 && (
-              <span className="text-xs">+{item.categories.length - 5}</span>
-            )}
-          </span>
-        )}
       </div>
 
       {/* Thumbnail Image (shown when collapsed in board mode) */}

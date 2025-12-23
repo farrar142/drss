@@ -227,13 +227,9 @@ class CrawlerService:
             if title_el:
                 title = title_el.get_text(strip=True)[:199]
 
-        # 설명/컨텐츠
+        # 설명/본문
         description = ""
-        if option.detail_content_selector:
-            content_el = soup.select_one(option.detail_content_selector)
-            if content_el:
-                description = str(content_el)
-        elif option.detail_description_selector:
+        if option.detail_description_selector:
             desc_el = soup.select_one(option.detail_description_selector)
             if desc_el:
                 description = str(desc_el)

@@ -14,12 +14,13 @@ const Tooltip: React.FC<TooltipProps> = ({
   content,
   children,
   side = "top",
-  delayDuration = 300,
+  delayDuration = 200,
 }) => {
   const [isVisible, setIsVisible] = React.useState(false);
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const showTooltip = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setIsVisible(true), delayDuration);
   };
 
@@ -36,14 +37,22 @@ const Tooltip: React.FC<TooltipProps> = ({
   };
 
   return (
-    <div className="relative inline-block" onMouseEnter={showTooltip} onMouseLeave={hideTooltip}>
+    <div
+      className="relative inline-flex items-center"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      onFocus={showTooltip}
+      onBlur={hideTooltip}
+    >
       {children}
       {isVisible && (
         <div
           className={cn(
-            "absolute z-50 whitespace-nowrap rounded-md bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-md animate-fade-in",
+            "absolute z-50 w-max max-w-sm rounded-md bg-popover px-3 py-2 text-xs text-popover-foreground shadow-md border",
             positionClasses[side]
           )}
+          onMouseEnter={showTooltip}
+          onMouseLeave={hideTooltip}
         >
           {content}
         </div>

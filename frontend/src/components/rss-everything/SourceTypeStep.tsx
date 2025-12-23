@@ -25,7 +25,6 @@ export interface SourceConfig {
   author_selector?: string;
   detail_title_selector?: string;
   detail_description_selector?: string;
-  detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
   detail_author_selector?: string;

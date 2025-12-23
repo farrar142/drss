@@ -133,7 +133,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
 
   // 상세 페이지 설정
   const [detailTitleSelector, setDetailTitleSelector] = useState(initial.source?.detail_title_selector ?? '');
-  const [detailContentSelector, setDetailContentSelector] = useState(initial.source?.detail_content_selector ?? '');
+  const [detailDescriptionSelector, setDetailDescriptionSelector] = useState(initial.source?.detail_description_selector ?? '');
   const [detailDateSelector, setDetailDateSelector] = useState(initial.source?.detail_date_selector ?? '');
 
   // 상태
@@ -160,7 +160,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
       setBrowserService(initial.source?.browser_service ?? 'realbrowser');
       setWaitSelector(initial.source?.wait_selector ?? '');
       setDetailTitleSelector(initial.source?.detail_title_selector ?? '');
-      setDetailContentSelector(initial.source?.detail_content_selector ?? '');
+      setDetailDescriptionSelector(initial.source?.detail_description_selector ?? '');
       setDetailDateSelector(initial.source?.detail_date_selector ?? '');
       setValidationResult(null);
     }
@@ -226,7 +226,7 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
 
           if (sourceType === 'detail_page_scraping') {
             source.detail_title_selector = detailTitleSelector;
-            source.detail_content_selector = detailContentSelector;
+            source.detail_description_selector = detailDescriptionSelector;
             source.detail_date_selector = detailDateSelector;
           }
         }
@@ -501,8 +501,8 @@ export const FeedDialog: React.FC<FeedDialogProps> = ({
                 <div className="col-span-2 space-y-1">
                   <Label className="text-xs">본문 셀렉터</Label>
                   <Input
-                    value={detailContentSelector}
-                    onChange={(e) => setDetailContentSelector(e.target.value)}
+                    value={detailDescriptionSelector}
+                    onChange={(e) => setDetailDescriptionSelector(e.target.value)}
                     placeholder="article.content, .post-body"
                   />
                 </div>

@@ -139,7 +139,6 @@ export interface SourceCreateSchema {
   author_selector?: string;
   detail_title_selector?: string;
   detail_description_selector?: string;
-  detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
   detail_author_selector?: string;
@@ -204,8 +203,6 @@ export type SourceUpdateSchemaDetailTitleSelector = string | null;
 
 export type SourceUpdateSchemaDetailDescriptionSelector = string | null;
 
-export type SourceUpdateSchemaDetailContentSelector = string | null;
-
 export type SourceUpdateSchemaDetailDateSelector = string | null;
 
 export type SourceUpdateSchemaDetailImageSelector = string | null;
@@ -243,7 +240,6 @@ export interface SourceUpdateSchema {
   author_selector?: SourceUpdateSchemaAuthorSelector;
   detail_title_selector?: SourceUpdateSchemaDetailTitleSelector;
   detail_description_selector?: SourceUpdateSchemaDetailDescriptionSelector;
-  detail_content_selector?: SourceUpdateSchemaDetailContentSelector;
   detail_date_selector?: SourceUpdateSchemaDetailDateSelector;
   detail_image_selector?: SourceUpdateSchemaDetailImageSelector;
   detail_author_selector?: SourceUpdateSchemaDetailAuthorSelector;
@@ -570,7 +566,6 @@ export interface CrawlRequest {
   follow_links?: boolean;
   detail_title_selector?: string;
   detail_description_selector?: string;
-  detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
   detail_author_selector?: string;
@@ -632,14 +627,9 @@ export type RSSEverythingSchemaCategoriesSelector = string | null;
 export type RSSEverythingSchemaDetailTitleSelector = string | null;
 
 /**
- * 상세 페이지에서 설명/요약 CSS 셀렉터
- */
-export type RSSEverythingSchemaDetailDescriptionSelector = string | null;
-
-/**
  * 상세 페이지에서 본문 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailContentSelector = string | null;
+export type RSSEverythingSchemaDetailDescriptionSelector = string | null;
 
 /**
  * 상세 페이지에서 날짜 CSS 셀렉터
@@ -707,10 +697,8 @@ export interface RSSEverythingSchema {
   categories_selector?: RSSEverythingSchemaCategoriesSelector;
   /** 상세 페이지에서 제목 CSS 셀렉터 */
   detail_title_selector?: RSSEverythingSchemaDetailTitleSelector;
-  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingSchemaDetailDescriptionSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_content_selector?: RSSEverythingSchemaDetailContentSelector;
+  detail_description_selector?: RSSEverythingSchemaDetailDescriptionSelector;
   /** 상세 페이지에서 날짜 CSS 셀렉터 */
   detail_date_selector?: RSSEverythingSchemaDetailDateSelector;
   /** 상세 페이지에서 이미지 CSS 셀렉터 */
@@ -791,14 +779,9 @@ export type RSSEverythingCreateRequestCategoriesSelector = string | null;
 export type RSSEverythingCreateRequestDetailTitleSelector = string | null;
 
 /**
- * 상세 페이지에서 설명/요약 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailDescriptionSelector = string | null;
-
-/**
  * 상세 페이지에서 본문 CSS 셀렉터
  */
-export type RSSEverythingCreateRequestDetailContentSelector = string | null;
+export type RSSEverythingCreateRequestDetailDescriptionSelector = string | null;
 
 /**
  * 상세 페이지에서 날짜 CSS 셀렉터
@@ -859,10 +842,8 @@ export interface RSSEverythingCreateRequest {
   categories_selector?: RSSEverythingCreateRequestCategoriesSelector;
   /** 상세 페이지에서 제목 CSS 셀렉터 */
   detail_title_selector?: RSSEverythingCreateRequestDetailTitleSelector;
-  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingCreateRequestDetailDescriptionSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_content_selector?: RSSEverythingCreateRequestDetailContentSelector;
+  detail_description_selector?: RSSEverythingCreateRequestDetailDescriptionSelector;
   /** 상세 페이지에서 날짜 CSS 셀렉터 */
   detail_date_selector?: RSSEverythingCreateRequestDetailDateSelector;
   /** 상세 페이지에서 이미지 CSS 셀렉터 */
@@ -990,14 +971,9 @@ export type RSSEverythingUpdateRequestCategoriesSelector = string | null;
 export type RSSEverythingUpdateRequestDetailTitleSelector = string | null;
 
 /**
- * 상세 페이지에서 설명/요약 CSS 셀렉터
- */
-export type RSSEverythingUpdateRequestDetailDescriptionSelector = string | null;
-
-/**
  * 상세 페이지에서 본문 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailContentSelector = string | null;
+export type RSSEverythingUpdateRequestDetailDescriptionSelector = string | null;
 
 /**
  * 상세 페이지에서 날짜 CSS 셀렉터
@@ -1075,10 +1051,8 @@ export interface RSSEverythingUpdateRequest {
   categories_selector?: RSSEverythingUpdateRequestCategoriesSelector;
   /** 상세 페이지에서 제목 CSS 셀렉터 */
   detail_title_selector?: RSSEverythingUpdateRequestDetailTitleSelector;
-  /** 상세 페이지에서 설명/요약 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingUpdateRequestDetailDescriptionSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_content_selector?: RSSEverythingUpdateRequestDetailContentSelector;
+  detail_description_selector?: RSSEverythingUpdateRequestDetailDescriptionSelector;
   /** 상세 페이지에서 날짜 CSS 셀렉터 */
   detail_date_selector?: RSSEverythingUpdateRequestDetailDateSelector;
   /** 상세 페이지에서 이미지 CSS 셀렉터 */

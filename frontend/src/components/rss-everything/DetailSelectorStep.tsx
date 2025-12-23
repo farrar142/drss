@@ -18,7 +18,6 @@ function useDetailFieldLabels() {
   return {
     detailTitleSelector: t.rssEverything.titleSelector,
     detailDescriptionSelector: t.rssEverything.descriptionSelector,
-    detailContentSelector: t.rssEverything.contentSelector,
     detailDateSelector: t.rssEverything.dateSelector,
     detailImageSelector: t.rssEverything.imageSelector,
     detailAuthorSelector: t.rssEverything.authorSelector,
@@ -202,7 +201,7 @@ export function DetailSelectorStep({
             <Button
               className="flex-1"
               onClick={onPreview}
-              disabled={!detailHtml || !detailSelectors.detailContentSelector || previewLoading}
+              disabled={!detailHtml || !detailSelectors.detailDescriptionSelector || previewLoading}
             >
               {previewLoading ? (
                 <>

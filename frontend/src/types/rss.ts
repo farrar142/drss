@@ -67,7 +67,6 @@ export interface RSSSourceCreate {
   // 상세 페이지용 셀렉터
   detail_title_selector?: string;
   detail_description_selector?: string;
-  detail_content_selector?: string;
   detail_date_selector?: string;
   detail_image_selector?: string;
 
@@ -103,7 +102,6 @@ export interface RSSItem {
   description: string;
   image?: string;
   author?: string;
-  categories?: string[];
   published_at: string;
   is_read: boolean;
   is_favorite: boolean;

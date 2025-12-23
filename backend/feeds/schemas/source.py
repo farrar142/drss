@@ -73,7 +73,6 @@ class SourceCreateSchema(Schema):
     # 상세 페이지용 셀렉터
     detail_title_selector: str = ""
     detail_description_selector: str = ""
-    detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
     detail_author_selector: str = ""
@@ -107,7 +106,6 @@ class SourceUpdateSchema(Schema):
     # 상세 페이지용 셀렉터
     detail_title_selector: Optional[str] = None
     detail_description_selector: Optional[str] = None
-    detail_content_selector: Optional[str] = None
     detail_date_selector: Optional[str] = None
     detail_image_selector: Optional[str] = None
     detail_author_selector: Optional[str] = None
@@ -202,7 +200,6 @@ class CrawlRequest(BaseModel):
     follow_links: bool = False
     detail_title_selector: str = ""
     detail_description_selector: str = ""
-    detail_content_selector: str = ""
     detail_date_selector: str = ""
     detail_image_selector: str = ""
     detail_author_selector: str = ""

@@ -47,26 +47,59 @@ function testDateFormat(dateText: string, format: string): { success: boolean; r
   }
 
   try {
-    // Python strftime 포맷에서 날짜 추출 시도
-    const regex = format
-      .replace(/%Y/g, '(\\d{4})')
-      .replace(/%y/g, '(\\d{2})')
-      .replace(/%m/g, '(\\d{1,2})')
-      .replace(/%d/g, '(\\d{1,2})')
-      .replace(/%H/g, '(\\d{1,2})')
-      .replace(/%I/g, '(\\d{1,2})')
-      .replace(/%M/g, '(\\d{1,2})')
-      .replace(/%S/g, '(\\d{1,2})')
-      .replace(/%p/g, '(AM|PM|am|pm)')
-      .replace(/\./g, '\\.')
-      .replace(/\(/g, '\\(')
-      .replace(/\)/g, '\\)')
-      .replace(/\s+/g, '\\s*');
+    // 대문자 포맷 코드를 소문자로 변환 (%D -> %d 등)
+    const normalizedFormat = format
+      .replace(/%D/g, '%d')
+      .replace(/%E/g, '%e');
 
-    const match = dateText.match(new RegExp(regex));
+    // 포맷 코드 정의
+    const placeholders: { pattern: string; key: string; regex: string }[] = [
+      { pattern: '%Y', key: 'year4', regex: '(\\d{4})' },
+      { pattern: '%y', key: 'year2', regex: '(\\d{2})' },
+      { pattern: '%m', key: 'month', regex: '(\\d{1,2})' },
+      { pattern: '%d', key: 'day', regex: '(\\d{1,2})' },
+      { pattern: '%H', key: 'hour24', regex: '(\\d{1,2})' },
+      { pattern: '%I', key: 'hour12', regex: '(\\d{1,2})' },
+      { pattern: '%M', key: 'minute', regex: '(\\d{1,2})' },
+      { pattern: '%S', key: 'second', regex: '(\\d{1,2})' },
+      { pattern: '%p', key: 'ampm', regex: '(AM|PM|am|pm|오전|오후)' },
+    ];
+
+    // 포맷에서 어떤 순서로 필드가 나오는지 파악
+    const foundParts: { key: string; index: number }[] = [];
+    for (const p of placeholders) {
+      const idx = normalizedFormat.indexOf(p.pattern);
+      if (idx !== -1) {
+        foundParts.push({ key: p.key, index: idx });
+      }
+    }
+    foundParts.sort((a, b) => a.index - b.index);
+
+    // 정규표현식 생성: 포맷 코드를 먼저 플레이스홀더로 치환한 후 특수문자 이스케이프
+    let tempFormat = normalizedFormat;
+    const placeholderMarkers: { marker: string; regex: string }[] = [];
+
+    placeholders.forEach((p, i) => {
+      const marker = `__PH${i}__`;
+      if (tempFormat.includes(p.pattern)) {
+        tempFormat = tempFormat.split(p.pattern).join(marker);
+        placeholderMarkers.push({ marker, regex: p.regex });
+      }
+    });
+
+    // 특수문자 이스케이프 (플레이스홀더 제외)
+    let regex = tempFormat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // 플레이스홀더를 정규식으로 복원
+    for (const { marker, regex: r } of placeholderMarkers) {
+      regex = regex.split(marker).join(r);
+    }
+
+    // 공백 유연하게 처리
+    regex = regex.replace(/\s+/g, '\\s*');
+
+    const match = dateText.match(new RegExp('^' + regex + '$', 'i'));
     if (match) {
-      // 포맷에서 어떤 순서로 캡처했는지 파악
-      const formatParts = format.match(/%[YymdHIMSp]/g) || [];
       const values: Record<string, number> = {
         year: new Date().getFullYear(),
         month: 1,
@@ -76,16 +109,17 @@ function testDateFormat(dateText: string, format: string): { success: boolean; r
         second: 0,
       };
 
-      formatParts.forEach((part, idx) => {
-        const val = parseInt(match[idx + 1], 10);
-        switch (part) {
-          case '%Y': values.year = val; break;
-          case '%y': values.year = 2000 + val; break;
-          case '%m': values.month = val; break;
-          case '%d': values.day = val; break;
-          case '%H': case '%I': values.hour = val; break;
-          case '%M': values.minute = val; break;
-          case '%S': values.second = val; break;
+      foundParts.forEach((part, idx) => {
+        const val = match[idx + 1];
+        const numVal = parseInt(val, 10);
+        switch (part.key) {
+          case 'year4': values.year = numVal; break;
+          case 'year2': values.year = 2000 + numVal; break;
+          case 'month': values.month = numVal; break;
+          case 'day': values.day = numVal; break;
+          case 'hour24': case 'hour12': values.hour = numVal; break;
+          case 'minute': values.minute = numVal; break;
+          case 'second': values.second = numVal; break;
         }
       });
 

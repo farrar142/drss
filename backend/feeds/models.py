@@ -224,9 +224,6 @@ class RSSEverythingSource(BaseModel):
         max_length=500, blank=True, help_text="상세 페이지에서 제목 CSS 셀렉터"
     )
     detail_description_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 설명/요약 CSS 셀렉터"
-    )
-    detail_content_selector = models.CharField(
         max_length=500, blank=True, help_text="상세 페이지에서 본문 CSS 셀렉터"
     )
     detail_date_selector = models.CharField(

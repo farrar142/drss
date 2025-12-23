@@ -280,7 +280,6 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       image_selector: source.image_selector,
       detail_title_selector: source.detail_title_selector,
       detail_description_selector: source.detail_description_selector,
-      detail_content_selector: source.detail_content_selector,
       detail_date_selector: source.detail_date_selector,
       detail_image_selector: source.detail_image_selector,
       exclude_selectors: source.exclude_selectors,
