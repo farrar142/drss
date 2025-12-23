@@ -1,3 +1,5 @@
+import { FeedSchema, ItemSchema, SourceCreateSchema, SourceSchema } from "@/services/api";
+
 // RSS 관련 타입 정의
 export interface RSSCategory {
   id: number;
@@ -14,95 +16,11 @@ export type SourceType = 'rss' | 'page_scraping' | 'detail_page_scraping';
 export type BrowserServiceType = 'realbrowser' | 'browserless';
 
 // 피드 소스 스키마 - API의 SourceSchema와 일치
-export interface RSSSource {
-  id: number;
-  feed_id: number;
-  source_type: SourceType;
-  is_active: boolean;
-  url: string;
-  custom_headers?: Record<string, unknown>;
-
-  // 스크래핑용 셀렉터
-  item_selector?: string;
-  title_selector?: string;
-  link_selector?: string;
-  description_selector?: string;
-  date_selector?: string;
-  image_selector?: string;
-
-  // 상세 페이지용 셀렉터
-  detail_title_selector?: string;
-  detail_description_selector?: string;
-  detail_content_selector?: string;
-  detail_date_selector?: string;
-  detail_image_selector?: string;
-
-  // 기타 설정
-  exclude_selectors?: string[];
-  date_formats?: string[];
-  date_locale?: string;
-  use_browser?: boolean;
-  browser_service?: BrowserServiceType;
-  wait_selector?: string;
-  timeout?: number;
-
-  last_crawled_at?: string | null;
-  last_error?: string;
-}
+export type RSSSource = SourceSchema;
 
 // 소스 생성용 스키마
-export interface RSSSourceCreate {
-  source_type: SourceType;
-  url: string;
-  custom_headers?: Record<string, any>;
+export type RSSSourceCreate = SourceCreateSchema
 
-  // 스크래핑용 셀렉터
-  item_selector?: string;
-  title_selector?: string;
-  link_selector?: string;
-  description_selector?: string;
-  date_selector?: string;
-  image_selector?: string;
+export type RSSFeed = FeedSchema
 
-  // 상세 페이지용 셀렉터
-  detail_title_selector?: string;
-  detail_description_selector?: string;
-  detail_date_selector?: string;
-  detail_image_selector?: string;
-
-  // 기타 설정
-  exclude_selectors?: string[];
-  date_formats?: string[];
-  date_locale?: string;
-  use_browser?: boolean;
-  browser_service?: BrowserServiceType;
-  wait_selector?: string;
-  timeout?: number;
-}
-
-export interface RSSFeed {
-  id: number;
-  category_id: number;
-  title: string;
-  favicon_url?: string;
-  description: string;
-  visible: boolean;
-  refresh_interval?: number;
-  last_updated: string;
-  item_count: number;
-  sources?: RSSSource[];
-}
-
-export interface RSSItem {
-  id: number;
-  feed_id: number;
-  source_id?: number | null;
-  title: string;
-  link: string;
-  description: string;
-  image?: string;
-  author?: string;
-  published_at: string;
-  is_read: boolean;
-  is_favorite: boolean;
-}
+export type RSSItem = ItemSchema;

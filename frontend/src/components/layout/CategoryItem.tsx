@@ -80,7 +80,7 @@ export const CategoryItem: FC<{
     const [editDescription, setEditDescription] = useState(category.description);
     const [editVisible, setEditVisible] = useState(category.visible);
     const [isDragOver, setIsDragOver] = useState(false);
-    const feeds = useMemo(() => _feeds.filter((f) => f.category_id == category.id), [_feeds, category.id]);
+    const feeds = useMemo(() => _feeds.filter((f) => f.category == category.id), [_feeds, category.id]);
     const totalItemCount = useMemo(() => feeds.reduce((sum, f) => sum + f.item_count, 0), [feeds]);
     const categoryIdFromPath = pathname.startsWith('/category/') ? pathname.split('/')[2] : null;
     const isActive = categoryIdFromPath && parseInt(categoryIdFromPath) === category.id;
@@ -199,7 +199,7 @@ export const CategoryItem: FC<{
         <div
           className={cn(
             "w-full group rounded-lg transition-all duration-200",
-            isDragOver && draggingFeed && draggingFeed.category_id !== category.id && 'bg-primary/10 ring-2 ring-primary ring-inset'
+            isDragOver && draggingFeed && draggingFeed.category !== category.id && 'bg-primary/10 ring-2 ring-primary ring-inset'
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}

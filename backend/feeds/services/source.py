@@ -12,7 +12,7 @@ import re
 from ninja import Schema
 
 from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult, RSSItem
-from feeds.schemas.source import PreviewItemResponse
+from feeds.schemas.source import PreviewItemResponse, SourceCreateSchema, SourceUpdateSchema
 from feeds.utils.html_parser import (
     generate_selector,
     extract_text,
@@ -23,7 +23,7 @@ from feeds.utils.html_parser import (
     extract_src,
 )
 from feeds.services.crawler import CrawlerService
-from feeds.schemas import SourceCreateSchema, SourceUpdateSchema, CrawlRequest
+from feeds.schemas import  CrawlRequest
 
 logger = logging.getLogger(__name__)
 
@@ -267,8 +267,7 @@ class SourceService:
     @staticmethod
     def delete_source(user, source_id: int) -> bool:
         """소스 삭제 - 연결된 피드도 함께 삭제"""
-        source = get_object_or_404(RSSEverythingSource, id=source_id, feed__user=user)
-        source.feed.delete()
+        get_object_or_404(RSSEverythingSource, id=source_id, feed__user=user)
         return True
 
     @staticmethod
@@ -300,27 +299,8 @@ class SourceService:
 
         source = RSSEverythingSource.objects.create(
             feed=feed,
-            source_type=data.source_type,
             is_active=True,
-            url=data.url,
-            custom_headers=data.custom_headers,
-            item_selector=data.item_selector,
-            title_selector=data.title_selector,
-            link_selector=data.link_selector,
-            description_selector=data.description_selector,
-            date_selector=data.date_selector,
-            image_selector=data.image_selector,
-            detail_title_selector=data.detail_title_selector,
-            detail_description_selector=data.detail_description_selector,
-            detail_date_selector=data.detail_date_selector,
-            detail_image_selector=data.detail_image_selector,
-            exclude_selectors=data.exclude_selectors,
-            date_formats=data.date_formats,
-            date_locale=data.date_locale,
-            use_browser=data.use_browser,
-            browser_service=data.browser_service,
-            wait_selector=data.wait_selector,
-            timeout=data.timeout,
+            **data.dict()
         )
         return source
 

@@ -21,8 +21,6 @@ from feeds.schemas import (
     FeedCreateSchema,
     FeedUpdateSchema,
     FeedValidationRequest,
-    SourceCreateSchema,
-    SourceUpdateSchema,
 )
 from feeds.utils.feed_fetcher import fetch_feed_data, extract_favicon_url
 

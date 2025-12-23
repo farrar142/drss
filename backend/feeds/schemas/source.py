@@ -2,6 +2,7 @@
 Source Schemas - RSS Everything 소스 관련 스키마
 """
 
+from curses.ascii import RS
 from datetime import datetime
 from typing import Optional, Literal
 from ninja import Schema
@@ -13,111 +14,6 @@ from feeds.models import RSSEverythingSource
 # Source 타입 정의
 
 # Browser 서비스 타입 정의
-BrowserServiceType = Literal["realbrowser", "browserless"]
-
-
-class SourceSchema(Schema):
-    """소스 스키마"""
-
-    id: int
-    feed_id: int
-    source_type: RSSEverythingSource.SourceType
-    is_active: bool
-    url: str
-    custom_headers: dict = {}
-
-    # 스크래핑용 셀렉터
-    item_selector: str = ""
-    title_selector: str = ""
-    link_selector: str = ""
-    description_selector: str = ""
-    date_selector: str = ""
-    image_selector: str = ""
-
-    # 상세 페이지용 셀렉터
-    detail_title_selector: str = ""
-    detail_description_selector: str = ""
-    detail_content_selector: str = ""
-    detail_date_selector: str = ""
-    detail_image_selector: str = ""
-
-    # 기타 설정
-    exclude_selectors: list[str] = []
-    date_formats: list[str] = []
-    date_locale: str = "ko_KR"
-    use_browser: bool = False
-    browser_service: BrowserServiceType = "realbrowser"
-    wait_selector: str = ""
-    timeout: int = 30000
-
-    last_crawled_at: Optional[datetime] = None
-    last_error: str = ""
-
-
-class SourceCreateSchema(Schema):
-    """소스 생성 스키마"""
-
-    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
-    url: str
-    custom_headers: dict = {}
-
-    # 스크래핑용 셀렉터
-    item_selector: str = ""
-    title_selector: str = ""
-    link_selector: str = ""
-    description_selector: str = ""
-    date_selector: str = ""
-    image_selector: str = ""
-    author_selector: str = ""
-
-    # 상세 페이지용 셀렉터
-    detail_title_selector: str = ""
-    detail_description_selector: str = ""
-    detail_date_selector: str = ""
-    detail_image_selector: str = ""
-    detail_author_selector: str = ""
-
-    # 기타 설정
-    exclude_selectors: list[str] = []
-    date_formats: list[str] = []
-    date_locale: str = "ko_KR"
-    use_browser: bool = False
-    browser_service: BrowserServiceType = "realbrowser"
-    wait_selector: str = ""
-    timeout: int = 30000
-
-
-class SourceUpdateSchema(Schema):
-    """소스 업데이트 스키마"""
-
-    source_type: Optional[RSSEverythingSource.SourceType] = None
-    is_active: Optional[bool] = None
-    url: Optional[str] = None
-    custom_headers: Optional[dict] = None
-
-    # 스크래핑용 셀렉터
-    item_selector: Optional[str] = None
-    title_selector: Optional[str] = None
-    link_selector: Optional[str] = None
-    description_selector: Optional[str] = None
-    date_selector: Optional[str] = None
-    image_selector: Optional[str] = None
-    author_selector: Optional[str] = None
-    # 상세 페이지용 셀렉터
-    detail_title_selector: Optional[str] = None
-    detail_description_selector: Optional[str] = None
-    detail_date_selector: Optional[str] = None
-    detail_image_selector: Optional[str] = None
-    detail_author_selector: Optional[str] = None
-
-    # 기타 설정
-    exclude_selectors: Optional[list[str]] = None
-    date_formats: Optional[list[str]] = None
-    date_locale: Optional[str] = None
-    use_browser: Optional[bool] = None
-    browser_service: Optional[BrowserServiceType] = None
-    wait_selector: Optional[str] = None
-    timeout: Optional[int] = None
 
 
 # ============== RSS Everything 관련 스키마 ==============
@@ -128,7 +24,7 @@ class FetchHTMLRequest(BaseModel):
 
     url: str
     use_browser: bool = True
-    browser_service: BrowserServiceType = "realbrowser"
+    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
     wait_selector: str = "body"
     timeout: int = 30000
     custom_headers: dict = Field(default_factory=dict)
@@ -193,7 +89,7 @@ class CrawlRequest(BaseModel):
     image_selector: str = ""
     author_selector: str = ""
     use_browser: bool = True
-    browser_service: BrowserServiceType = "realbrowser"
+    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
     wait_selector: str = "body"
     custom_headers: dict = Field(default_factory=dict)
     exclude_selectors: list[str] = Field(default_factory=list)
@@ -218,12 +114,13 @@ class PreviewItemResponse(BaseModel):
     error: Optional[str] = None
 
 
-class RSSEverythingCreateRequest(ModelSchema):
+class SourceCreateSchema(ModelSchema):
     """RSSEverything 소스 생성 요청"""
 
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
-
+    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
+    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
     class Meta:
         model = RSSEverythingSource
         exclude = [
@@ -235,14 +132,18 @@ class RSSEverythingCreateRequest(ModelSchema):
             "updated_at",
             "date_formats",
             "exclude_selectors",
+            "source_type",
+            "browser_service"
         ]
 
 
-class RSSEverythingUpdateRequest(ModelSchema):
+class SourceUpdateSchema(ModelSchema):
     """RSSEverything 소스 수정 요청"""
 
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
+    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
+    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
 
     class Meta:
         model = RSSEverythingSource
@@ -255,20 +156,25 @@ class RSSEverythingUpdateRequest(ModelSchema):
             "updated_at",
             "date_formats",
             "exclude_selectors",
+            "source_type",
+            "browser_service"
         ]
         fields_optional = "__all__"
 
 
-class RSSEverythingSchema(ModelSchema):
+class SourceSchema(ModelSchema):
     """RSSEverything 소스 스키마"""
 
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
-
+    source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
+    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
     class Meta:
         model = RSSEverythingSource
         fields = "__all__"
-        exclude = ["date_formats", "exclude_selectors"]
+        exclude = ["date_formats", "exclude_selectors",
+            "source_type",
+            "browser_service"]
 
 
 class RefreshResponse(BaseModel):

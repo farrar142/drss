@@ -30,7 +30,7 @@ import {
   createFeed,
   updateFeed,
   listFeeds,
-  deleteFeedSource,
+  deleteRssEverythingSource,
   refreshRssEverythingSource,
   crawlPaginated,
 } from '@/services/api';
@@ -114,7 +114,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           setFaviconUrl(foundFeed.favicon_url || '');
           setVisible(foundFeed.visible);
           setRefreshInterval(foundFeed.refresh_interval || 60);
-          setCategoryId(foundFeed.category_id);
+          setCategoryId(foundFeed.category);
         } else {
           setError(t.feed.notFound);
         }
@@ -247,7 +247,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     if (!confirmed) return;
 
     try {
-      await deleteFeedSource(feed.id, source.id);
+      await deleteRssEverythingSource(source.id);
       // 피드 데이터 다시 로드
       await loadFeed();
     } catch (err) {

@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Self
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -92,7 +92,7 @@ class RSSFeed(BaseModel):
 
 
 class RSSItem(BaseModel):
-    objects: RSSItemManager = RSSItemManager()
+    objects: RSSItemManager[Self] = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
     source:models.ForeignKey["RSSEverythingSource|None"] = models.ForeignKey(
         "RSSEverythingSource",
@@ -159,6 +159,7 @@ class RSSEverythingSource(BaseModel):
         RSS = "rss", "RSS/Atom (Classic)"
         PAGE_SCRAPING = "page_scraping", "Page Scraping"
         DETAIL_PAGE_SCRAPING = "detail_page_scraping", "Detail Page Scraping"
+
 
     # 연결된 RSSFeed (필수) - 1:N 관계로 변경
     feed = models.ForeignKey(

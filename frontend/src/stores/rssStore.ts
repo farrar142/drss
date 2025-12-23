@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { RSSFeed, RSSCategory } from '../types/rss';
-import { FeedSchema, listCategoriesWithFeeds } from '../services/api';
+import { CategorySchema, FeedSchema, listCategoriesWithFeeds } from '../services/api';
 
 interface RSSStore {
   // Data
   feeds: FeedSchema[];
-  categories: RSSCategory[];
+  categories: CategorySchema[];
 
   // 서버에서 초기 데이터를 받았는지 여부
   _initialized: boolean;
@@ -14,19 +13,19 @@ interface RSSStore {
   searchQuery: string;
 
   // Actions
-  setFeeds: (feeds: RSSFeed[]) => void;
-  setCategories: (categories: RSSCategory[]) => void;
-  addFeed: (feed: RSSFeed) => void;
-  updateFeed: (feed: RSSFeed) => void;
+  setFeeds: (feeds: FeedSchema[]) => void;
+  setCategories: (categories: CategorySchema[]) => void;
+  addFeed: (feed: FeedSchema) => void;
+  updateFeed: (feed: FeedSchema) => void;
   removeFeed: (id: number) => void;
-  addCategory: (category: RSSCategory) => void;
-  updateCategory: (category: RSSCategory) => void;
+  addCategory: (category: CategorySchema) => void;
+  updateCategory: (category: CategorySchema) => void;
   removeCategory: (id: number) => void;
 
   setSearchQuery: (query: string) => void;
 
   // 서버 초기 데이터로 초기화 (SSR에서 사용)
-  initializeFromServer: (categories: RSSCategory[], feeds: FeedSchema[]) => void;
+  initializeFromServer: (categories: CategorySchema[], feeds: FeedSchema[]) => void;
 
   // 카테고리와 피드를 서버에서 새로 불러와 갱신
   refreshCategoriesWithFeeds: () => Promise<void>;

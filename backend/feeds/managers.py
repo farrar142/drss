@@ -8,8 +8,8 @@ class RSSFeedWithCountManager(models.Manager):
             item_count=models.Count("rssitem", filter=models.Q(rssitem__is_read=False))
         )
 
-class RSSItemManager(models.Manager):
-    def search(self, search):
+class RSSItemManager[T:models.Model](models.Manager):
+    def search(self, search)->models.QuerySet[T]:
         if not search:
             return self
 

@@ -27,65 +27,185 @@ export interface FeedValidationRequest {
   custom_headers?: FeedValidationRequestCustomHeaders;
 }
 
+export type BrowserService = typeof BrowserService[keyof typeof BrowserService];
+
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const BrowserService = {
+  realbrowser: 'realbrowser',
+  browserless: 'browserless',
+} as const;
+
+export type FeedSchemaTitle = string | null;
+
+export type FeedSchemaFaviconUrl = string | null;
+
+export type FeedSchemaDescription = string | null;
+
 /**
  * 피드 스키마
  */
 export interface FeedSchema {
   id: number;
-  category_id: number;
-  title: string;
-  favicon_url?: string;
-  description: string;
-  visible: boolean;
+  item_count?: number;
+  sources?: SourceSchema[];
+  category: number;
+  title?: FeedSchemaTitle;
+  favicon_url?: FeedSchemaFaviconUrl;
+  description?: FeedSchemaDescription;
+  visible?: boolean;
+  /** RSS 피드 공개 여부 */
+  is_public?: boolean;
+  /** 자동 새로고침 주기 (분) */
   refresh_interval?: number;
   last_updated: string;
-  item_count: number;
-  sources?: SourceSchema[];
+  created_at: string;
 }
 
-export type SourceSchemaCustomHeaders = { [key: string]: unknown };
+export type SourceSchemaId = number | null;
 
-export type SourceSchemaBrowserService = typeof SourceSchemaBrowserService[keyof typeof SourceSchemaBrowserService];
+export type SourceSchemaCustomHeadersAnyOf = { [key: string]: unknown };
 
+export type SourceSchemaCustomHeaders = SourceSchemaCustomHeadersAnyOf | null;
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceSchemaBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
+/**
+ * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
+ */
+export type SourceSchemaItemSelector = string | null;
+
+/**
+ * 제목 CSS 셀렉터 (아이템 내부)
+ */
+export type SourceSchemaTitleSelector = string | null;
+
+/**
+ * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
+ */
+export type SourceSchemaLinkSelector = string | null;
+
+/**
+ * 설명 CSS 셀렉터 (아이템 내부)
+ */
+export type SourceSchemaDescriptionSelector = string | null;
+
+/**
+ * 날짜 CSS 셀렉터 (아이템 내부)
+ */
+export type SourceSchemaDateSelector = string | null;
+
+/**
+ * 이미지 CSS 셀렉터 (아이템 내부)
+ */
+export type SourceSchemaImageSelector = string | null;
+
+/**
+ * 작성자 CSS 셀렉터 (아이템 내부)
+ */
+export type SourceSchemaAuthorSelector = string | null;
+
+/**
+ * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
+ */
+export type SourceSchemaCategoriesSelector = string | null;
+
+/**
+ * 상세 페이지에서 제목 CSS 셀렉터
+ */
+export type SourceSchemaDetailTitleSelector = string | null;
+
+/**
+ * 상세 페이지에서 본문 CSS 셀렉터
+ */
+export type SourceSchemaDetailDescriptionSelector = string | null;
+
+/**
+ * 상세 페이지에서 날짜 CSS 셀렉터
+ */
+export type SourceSchemaDetailDateSelector = string | null;
+
+/**
+ * 상세 페이지에서 이미지 CSS 셀렉터
+ */
+export type SourceSchemaDetailImageSelector = string | null;
+
+/**
+ * 상세 페이지에서 작성자 CSS 셀렉터
+ */
+export type SourceSchemaDetailAuthorSelector = string | null;
+
+/**
+ * 상세 페이지에서 카테고리 CSS 셀렉터
+ */
+export type SourceSchemaDetailCategoriesSelector = string | null;
+
+/**
+ * 페이지 로드 완료 확인용 셀렉터
+ */
+export type SourceSchemaWaitSelector = string | null;
 
 export type SourceSchemaLastCrawledAt = string | null;
 
+export type SourceSchemaLastError = string | null;
+
 /**
- * 소스 스키마
+ * RSSEverything 소스 스키마
  */
 export interface SourceSchema {
-  id: number;
-  feed_id: number;
-  source_type: SourceType;
-  is_active: boolean;
+  date_formats?: string[];
+  exclude_selectors?: string[];
+  source_type?: SourceType;
+  browser_service?: BrowserService;
+  id?: SourceSchemaId;
+  /** 연결된 RSS 피드 */
+  feed: number;
+  /** 이 소스의 활성화 여부 */
+  is_active?: boolean;
+  /** RSS URL 또는 크롤링할 페이지 URL */
   url: string;
   custom_headers?: SourceSchemaCustomHeaders;
-  item_selector?: string;
-  title_selector?: string;
-  link_selector?: string;
-  description_selector?: string;
-  date_selector?: string;
-  image_selector?: string;
-  detail_title_selector?: string;
-  detail_description_selector?: string;
-  detail_content_selector?: string;
-  detail_date_selector?: string;
-  detail_image_selector?: string;
-  exclude_selectors?: string[];
-  date_formats?: string[];
+  /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
+  item_selector?: SourceSchemaItemSelector;
+  /** 제목 CSS 셀렉터 (아이템 내부) */
+  title_selector?: SourceSchemaTitleSelector;
+  /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
+  link_selector?: SourceSchemaLinkSelector;
+  /** 설명 CSS 셀렉터 (아이템 내부) */
+  description_selector?: SourceSchemaDescriptionSelector;
+  /** 날짜 CSS 셀렉터 (아이템 내부) */
+  date_selector?: SourceSchemaDateSelector;
+  /** 이미지 CSS 셀렉터 (아이템 내부) */
+  image_selector?: SourceSchemaImageSelector;
+  /** 작성자 CSS 셀렉터 (아이템 내부) */
+  author_selector?: SourceSchemaAuthorSelector;
+  /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
+  categories_selector?: SourceSchemaCategoriesSelector;
+  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  detail_title_selector?: SourceSchemaDetailTitleSelector;
+  /** 상세 페이지에서 본문 CSS 셀렉터 */
+  detail_description_selector?: SourceSchemaDetailDescriptionSelector;
+  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  detail_date_selector?: SourceSchemaDetailDateSelector;
+  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  detail_image_selector?: SourceSchemaDetailImageSelector;
+  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  detail_author_selector?: SourceSchemaDetailAuthorSelector;
+  /** 상세 페이지에서 카테고리 CSS 셀렉터 */
+  detail_categories_selector?: SourceSchemaDetailCategoriesSelector;
+  /**
+   * 날짜 로케일 (예: ko_KR, en_US)
+   * @maxLength 20
+   */
   date_locale?: string;
+  /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
   use_browser?: boolean;
-  browser_service?: SourceSchemaBrowserService;
-  wait_selector?: string;
+  /** 페이지 로드 완료 확인용 셀렉터 */
+  wait_selector?: SourceSchemaWaitSelector;
+  /** 타임아웃 (밀리초) */
   timeout?: number;
   last_crawled_at?: SourceSchemaLastCrawledAt;
-  last_error?: string;
+  last_error?: SourceSchemaLastError;
+  created_at: string;
+  updated_at: string;
 }
 
 export type SourceType = typeof SourceType[keyof typeof SourceType];
@@ -98,58 +218,51 @@ export const SourceType = {
   detail_page_scraping: 'detail_page_scraping',
 } as const;
 
-export type FeedCreateSchemaSource = SourceCreateSchema | null;
+export type FeedCreateSchemaId = number | null;
+
+export type FeedCreateSchemaCategoryId = number | null;
+
+export type FeedCreateSchemaTitle = string | null;
+
+export type FeedCreateSchemaFaviconUrl = string | null;
+
+export type FeedCreateSchemaDescription = string | null;
+
+export type FeedCreateSchemaVisible = boolean | null;
+
+/**
+ * RSS 피드 공개 여부
+ */
+export type FeedCreateSchemaIsPublic = boolean | null;
+
+/**
+ * 자동 새로고침 주기 (분)
+ */
+export type FeedCreateSchemaRefreshInterval = number | null;
+
+export type FeedCreateSchemaLastUpdated = string | null;
+
+export type FeedCreateSchemaCreatedAt = string | null;
 
 /**
  * 피드 생성 스키마 - 소스 정보는 선택적
  */
 export interface FeedCreateSchema {
-  category_id: number;
-  title?: string;
-  description?: string;
-  visible?: boolean;
-  refresh_interval?: number;
-  source?: FeedCreateSchemaSource;
+  id?: FeedCreateSchemaId;
+  category_id?: FeedCreateSchemaCategoryId;
+  title?: FeedCreateSchemaTitle;
+  favicon_url?: FeedCreateSchemaFaviconUrl;
+  description?: FeedCreateSchemaDescription;
+  visible?: FeedCreateSchemaVisible;
+  /** RSS 피드 공개 여부 */
+  is_public?: FeedCreateSchemaIsPublic;
+  /** 자동 새로고침 주기 (분) */
+  refresh_interval?: FeedCreateSchemaRefreshInterval;
+  last_updated?: FeedCreateSchemaLastUpdated;
+  created_at?: FeedCreateSchemaCreatedAt;
 }
 
-export type SourceCreateSchemaCustomHeaders = { [key: string]: unknown };
-
-export type SourceCreateSchemaBrowserService = typeof SourceCreateSchemaBrowserService[keyof typeof SourceCreateSchemaBrowserService];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const SourceCreateSchemaBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
-
-/**
- * 소스 생성 스키마
- */
-export interface SourceCreateSchema {
-  source_type?: SourceType;
-  url: string;
-  custom_headers?: SourceCreateSchemaCustomHeaders;
-  item_selector?: string;
-  title_selector?: string;
-  link_selector?: string;
-  description_selector?: string;
-  date_selector?: string;
-  image_selector?: string;
-  author_selector?: string;
-  detail_title_selector?: string;
-  detail_description_selector?: string;
-  detail_date_selector?: string;
-  detail_image_selector?: string;
-  detail_author_selector?: string;
-  exclude_selectors?: string[];
-  date_formats?: string[];
-  date_locale?: string;
-  use_browser?: boolean;
-  browser_service?: SourceCreateSchemaBrowserService;
-  wait_selector?: string;
-  timeout?: number;
-}
+export type FeedUpdateSchemaId = number | null;
 
 export type FeedUpdateSchemaCategoryId = number | null;
 
@@ -161,95 +274,37 @@ export type FeedUpdateSchemaDescription = string | null;
 
 export type FeedUpdateSchemaVisible = boolean | null;
 
+/**
+ * RSS 피드 공개 여부
+ */
+export type FeedUpdateSchemaIsPublic = boolean | null;
+
+/**
+ * 자동 새로고침 주기 (분)
+ */
 export type FeedUpdateSchemaRefreshInterval = number | null;
+
+export type FeedUpdateSchemaLastUpdated = string | null;
+
+export type FeedUpdateSchemaCreatedAt = string | null;
 
 /**
  * 피드 수정 스키마
  */
 export interface FeedUpdateSchema {
+  sources?: SourceSchema[];
+  id?: FeedUpdateSchemaId;
   category_id?: FeedUpdateSchemaCategoryId;
   title?: FeedUpdateSchemaTitle;
   favicon_url?: FeedUpdateSchemaFaviconUrl;
   description?: FeedUpdateSchemaDescription;
   visible?: FeedUpdateSchemaVisible;
+  /** RSS 피드 공개 여부 */
+  is_public?: FeedUpdateSchemaIsPublic;
+  /** 자동 새로고침 주기 (분) */
   refresh_interval?: FeedUpdateSchemaRefreshInterval;
-}
-
-export type SourceUpdateSchemaSourceType = SourceType | null;
-
-export type SourceUpdateSchemaIsActive = boolean | null;
-
-export type SourceUpdateSchemaUrl = string | null;
-
-export type SourceUpdateSchemaCustomHeadersAnyOf = { [key: string]: unknown };
-
-export type SourceUpdateSchemaCustomHeaders = SourceUpdateSchemaCustomHeadersAnyOf | null;
-
-export type SourceUpdateSchemaItemSelector = string | null;
-
-export type SourceUpdateSchemaTitleSelector = string | null;
-
-export type SourceUpdateSchemaLinkSelector = string | null;
-
-export type SourceUpdateSchemaDescriptionSelector = string | null;
-
-export type SourceUpdateSchemaDateSelector = string | null;
-
-export type SourceUpdateSchemaImageSelector = string | null;
-
-export type SourceUpdateSchemaAuthorSelector = string | null;
-
-export type SourceUpdateSchemaDetailTitleSelector = string | null;
-
-export type SourceUpdateSchemaDetailDescriptionSelector = string | null;
-
-export type SourceUpdateSchemaDetailDateSelector = string | null;
-
-export type SourceUpdateSchemaDetailImageSelector = string | null;
-
-export type SourceUpdateSchemaDetailAuthorSelector = string | null;
-
-export type SourceUpdateSchemaExcludeSelectors = string[] | null;
-
-export type SourceUpdateSchemaDateFormats = string[] | null;
-
-export type SourceUpdateSchemaDateLocale = string | null;
-
-export type SourceUpdateSchemaUseBrowser = boolean | null;
-
-export type SourceUpdateSchemaBrowserService = 'realbrowser' | 'browserless' | null;
-
-export type SourceUpdateSchemaWaitSelector = string | null;
-
-export type SourceUpdateSchemaTimeout = number | null;
-
-/**
- * 소스 업데이트 스키마
- */
-export interface SourceUpdateSchema {
-  source_type?: SourceUpdateSchemaSourceType;
-  is_active?: SourceUpdateSchemaIsActive;
-  url?: SourceUpdateSchemaUrl;
-  custom_headers?: SourceUpdateSchemaCustomHeaders;
-  item_selector?: SourceUpdateSchemaItemSelector;
-  title_selector?: SourceUpdateSchemaTitleSelector;
-  link_selector?: SourceUpdateSchemaLinkSelector;
-  description_selector?: SourceUpdateSchemaDescriptionSelector;
-  date_selector?: SourceUpdateSchemaDateSelector;
-  image_selector?: SourceUpdateSchemaImageSelector;
-  author_selector?: SourceUpdateSchemaAuthorSelector;
-  detail_title_selector?: SourceUpdateSchemaDetailTitleSelector;
-  detail_description_selector?: SourceUpdateSchemaDetailDescriptionSelector;
-  detail_date_selector?: SourceUpdateSchemaDetailDateSelector;
-  detail_image_selector?: SourceUpdateSchemaDetailImageSelector;
-  detail_author_selector?: SourceUpdateSchemaDetailAuthorSelector;
-  exclude_selectors?: SourceUpdateSchemaExcludeSelectors;
-  date_formats?: SourceUpdateSchemaDateFormats;
-  date_locale?: SourceUpdateSchemaDateLocale;
-  use_browser?: SourceUpdateSchemaUseBrowser;
-  browser_service?: SourceUpdateSchemaBrowserService;
-  wait_selector?: SourceUpdateSchemaWaitSelector;
-  timeout?: SourceUpdateSchemaTimeout;
+  last_updated?: FeedUpdateSchemaLastUpdated;
+  created_at?: FeedUpdateSchemaCreatedAt;
 }
 
 /**
@@ -452,15 +507,6 @@ export interface FetchHTMLResponse {
   error?: FetchHTMLResponseError;
 }
 
-export type FetchHTMLRequestBrowserService = typeof FetchHTMLRequestBrowserService[keyof typeof FetchHTMLRequestBrowserService];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const FetchHTMLRequestBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
-
 export type FetchHTMLRequestCustomHeaders = { [key: string]: unknown };
 
 /**
@@ -469,7 +515,7 @@ export type FetchHTMLRequestCustomHeaders = { [key: string]: unknown };
 export interface FetchHTMLRequest {
   url: string;
   use_browser?: boolean;
-  browser_service?: FetchHTMLRequestBrowserService;
+  browser_service?: BrowserService;
   wait_selector?: string;
   timeout?: number;
   custom_headers?: FetchHTMLRequestCustomHeaders;
@@ -535,15 +581,6 @@ export interface PreviewItemResponse {
   error?: PreviewItemResponseError;
 }
 
-export type CrawlRequestBrowserService = typeof CrawlRequestBrowserService[keyof typeof CrawlRequestBrowserService];
-
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CrawlRequestBrowserService = {
-  realbrowser: 'realbrowser',
-  browserless: 'browserless',
-} as const;
-
 export type CrawlRequestCustomHeaders = { [key: string]: unknown };
 
 /**
@@ -559,7 +596,7 @@ export interface CrawlRequest {
   image_selector?: string;
   author_selector?: string;
   use_browser?: boolean;
-  browser_service?: CrawlRequestBrowserService;
+  browser_service?: BrowserService;
   wait_selector?: string;
   custom_headers?: CrawlRequestCustomHeaders;
   exclude_selectors?: string[];
@@ -575,283 +612,126 @@ export interface CrawlRequest {
   timeout?: number;
 }
 
-export type RSSEverythingSchemaId = number | null;
+export type SourceCreateSchemaCustomHeadersAnyOf = { [key: string]: unknown };
 
-export type RSSEverythingSchemaCustomHeadersAnyOf = { [key: string]: unknown };
-
-export type RSSEverythingSchemaCustomHeaders = RSSEverythingSchemaCustomHeadersAnyOf | null;
+export type SourceCreateSchemaCustomHeaders = SourceCreateSchemaCustomHeadersAnyOf | null;
 
 /**
  * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
  */
-export type RSSEverythingSchemaItemSelector = string | null;
+export type SourceCreateSchemaItemSelector = string | null;
 
 /**
  * 제목 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingSchemaTitleSelector = string | null;
+export type SourceCreateSchemaTitleSelector = string | null;
 
 /**
  * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
  */
-export type RSSEverythingSchemaLinkSelector = string | null;
+export type SourceCreateSchemaLinkSelector = string | null;
 
 /**
  * 설명 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingSchemaDescriptionSelector = string | null;
+export type SourceCreateSchemaDescriptionSelector = string | null;
 
 /**
  * 날짜 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingSchemaDateSelector = string | null;
+export type SourceCreateSchemaDateSelector = string | null;
 
 /**
  * 이미지 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingSchemaImageSelector = string | null;
+export type SourceCreateSchemaImageSelector = string | null;
 
 /**
  * 작성자 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingSchemaAuthorSelector = string | null;
+export type SourceCreateSchemaAuthorSelector = string | null;
 
 /**
  * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
  */
-export type RSSEverythingSchemaCategoriesSelector = string | null;
+export type SourceCreateSchemaCategoriesSelector = string | null;
 
 /**
  * 상세 페이지에서 제목 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailTitleSelector = string | null;
+export type SourceCreateSchemaDetailTitleSelector = string | null;
 
 /**
  * 상세 페이지에서 본문 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailDescriptionSelector = string | null;
+export type SourceCreateSchemaDetailDescriptionSelector = string | null;
 
 /**
  * 상세 페이지에서 날짜 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailDateSelector = string | null;
+export type SourceCreateSchemaDetailDateSelector = string | null;
 
 /**
  * 상세 페이지에서 이미지 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailImageSelector = string | null;
+export type SourceCreateSchemaDetailImageSelector = string | null;
 
 /**
  * 상세 페이지에서 작성자 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailAuthorSelector = string | null;
+export type SourceCreateSchemaDetailAuthorSelector = string | null;
 
 /**
  * 상세 페이지에서 카테고리 CSS 셀렉터
  */
-export type RSSEverythingSchemaDetailCategoriesSelector = string | null;
+export type SourceCreateSchemaDetailCategoriesSelector = string | null;
 
 /**
  * 페이지 로드 완료 확인용 셀렉터
  */
-export type RSSEverythingSchemaWaitSelector = string | null;
-
-export type RSSEverythingSchemaLastCrawledAt = string | null;
-
-export type RSSEverythingSchemaLastError = string | null;
-
-/**
- * RSSEverything 소스 스키마
- */
-export interface RSSEverythingSchema {
-  date_formats?: string[];
-  exclude_selectors?: string[];
-  id?: RSSEverythingSchemaId;
-  /** 연결된 RSS 피드 */
-  feed: number;
-  /**
-   * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
-   * @maxLength 30
-   */
-  source_type?: string;
-  /** 이 소스의 활성화 여부 */
-  is_active?: boolean;
-  /** RSS URL 또는 크롤링할 페이지 URL */
-  url: string;
-  custom_headers?: RSSEverythingSchemaCustomHeaders;
-  /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
-  item_selector?: RSSEverythingSchemaItemSelector;
-  /** 제목 CSS 셀렉터 (아이템 내부) */
-  title_selector?: RSSEverythingSchemaTitleSelector;
-  /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
-  link_selector?: RSSEverythingSchemaLinkSelector;
-  /** 설명 CSS 셀렉터 (아이템 내부) */
-  description_selector?: RSSEverythingSchemaDescriptionSelector;
-  /** 날짜 CSS 셀렉터 (아이템 내부) */
-  date_selector?: RSSEverythingSchemaDateSelector;
-  /** 이미지 CSS 셀렉터 (아이템 내부) */
-  image_selector?: RSSEverythingSchemaImageSelector;
-  /** 작성자 CSS 셀렉터 (아이템 내부) */
-  author_selector?: RSSEverythingSchemaAuthorSelector;
-  /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
-  categories_selector?: RSSEverythingSchemaCategoriesSelector;
-  /** 상세 페이지에서 제목 CSS 셀렉터 */
-  detail_title_selector?: RSSEverythingSchemaDetailTitleSelector;
-  /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingSchemaDetailDescriptionSelector;
-  /** 상세 페이지에서 날짜 CSS 셀렉터 */
-  detail_date_selector?: RSSEverythingSchemaDetailDateSelector;
-  /** 상세 페이지에서 이미지 CSS 셀렉터 */
-  detail_image_selector?: RSSEverythingSchemaDetailImageSelector;
-  /** 상세 페이지에서 작성자 CSS 셀렉터 */
-  detail_author_selector?: RSSEverythingSchemaDetailAuthorSelector;
-  /** 상세 페이지에서 카테고리 CSS 셀렉터 */
-  detail_categories_selector?: RSSEverythingSchemaDetailCategoriesSelector;
-  /**
-   * 날짜 로케일 (예: ko_KR, en_US)
-   * @maxLength 20
-   */
-  date_locale?: string;
-  /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
-  use_browser?: boolean;
-  /**
-   * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
-   * @maxLength 20
-   */
-  browser_service?: string;
-  /** 페이지 로드 완료 확인용 셀렉터 */
-  wait_selector?: RSSEverythingSchemaWaitSelector;
-  /** 타임아웃 (밀리초) */
-  timeout?: number;
-  last_crawled_at?: RSSEverythingSchemaLastCrawledAt;
-  last_error?: RSSEverythingSchemaLastError;
-  created_at: string;
-  updated_at: string;
-}
-
-export type RSSEverythingCreateRequestCustomHeadersAnyOf = { [key: string]: unknown };
-
-export type RSSEverythingCreateRequestCustomHeaders = RSSEverythingCreateRequestCustomHeadersAnyOf | null;
-
-/**
- * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
- */
-export type RSSEverythingCreateRequestItemSelector = string | null;
-
-/**
- * 제목 CSS 셀렉터 (아이템 내부)
- */
-export type RSSEverythingCreateRequestTitleSelector = string | null;
-
-/**
- * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
- */
-export type RSSEverythingCreateRequestLinkSelector = string | null;
-
-/**
- * 설명 CSS 셀렉터 (아이템 내부)
- */
-export type RSSEverythingCreateRequestDescriptionSelector = string | null;
-
-/**
- * 날짜 CSS 셀렉터 (아이템 내부)
- */
-export type RSSEverythingCreateRequestDateSelector = string | null;
-
-/**
- * 이미지 CSS 셀렉터 (아이템 내부)
- */
-export type RSSEverythingCreateRequestImageSelector = string | null;
-
-/**
- * 작성자 CSS 셀렉터 (아이템 내부)
- */
-export type RSSEverythingCreateRequestAuthorSelector = string | null;
-
-/**
- * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
- */
-export type RSSEverythingCreateRequestCategoriesSelector = string | null;
-
-/**
- * 상세 페이지에서 제목 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailTitleSelector = string | null;
-
-/**
- * 상세 페이지에서 본문 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailDescriptionSelector = string | null;
-
-/**
- * 상세 페이지에서 날짜 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailDateSelector = string | null;
-
-/**
- * 상세 페이지에서 이미지 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailImageSelector = string | null;
-
-/**
- * 상세 페이지에서 작성자 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailAuthorSelector = string | null;
-
-/**
- * 상세 페이지에서 카테고리 CSS 셀렉터
- */
-export type RSSEverythingCreateRequestDetailCategoriesSelector = string | null;
-
-/**
- * 페이지 로드 완료 확인용 셀렉터
- */
-export type RSSEverythingCreateRequestWaitSelector = string | null;
+export type SourceCreateSchemaWaitSelector = string | null;
 
 /**
  * RSSEverything 소스 생성 요청
  */
-export interface RSSEverythingCreateRequest {
+export interface SourceCreateSchema {
   date_formats?: string[];
   exclude_selectors?: string[];
+  source_type?: SourceType;
+  browser_service?: BrowserService;
   /** 연결된 RSS 피드 */
   feed_id: number;
-  /**
-   * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
-   * @maxLength 30
-   */
-  source_type?: string;
   /** RSS URL 또는 크롤링할 페이지 URL */
   url: string;
-  custom_headers?: RSSEverythingCreateRequestCustomHeaders;
+  custom_headers?: SourceCreateSchemaCustomHeaders;
   /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
-  item_selector?: RSSEverythingCreateRequestItemSelector;
+  item_selector?: SourceCreateSchemaItemSelector;
   /** 제목 CSS 셀렉터 (아이템 내부) */
-  title_selector?: RSSEverythingCreateRequestTitleSelector;
+  title_selector?: SourceCreateSchemaTitleSelector;
   /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
-  link_selector?: RSSEverythingCreateRequestLinkSelector;
+  link_selector?: SourceCreateSchemaLinkSelector;
   /** 설명 CSS 셀렉터 (아이템 내부) */
-  description_selector?: RSSEverythingCreateRequestDescriptionSelector;
+  description_selector?: SourceCreateSchemaDescriptionSelector;
   /** 날짜 CSS 셀렉터 (아이템 내부) */
-  date_selector?: RSSEverythingCreateRequestDateSelector;
+  date_selector?: SourceCreateSchemaDateSelector;
   /** 이미지 CSS 셀렉터 (아이템 내부) */
-  image_selector?: RSSEverythingCreateRequestImageSelector;
+  image_selector?: SourceCreateSchemaImageSelector;
   /** 작성자 CSS 셀렉터 (아이템 내부) */
-  author_selector?: RSSEverythingCreateRequestAuthorSelector;
+  author_selector?: SourceCreateSchemaAuthorSelector;
   /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
-  categories_selector?: RSSEverythingCreateRequestCategoriesSelector;
+  categories_selector?: SourceCreateSchemaCategoriesSelector;
   /** 상세 페이지에서 제목 CSS 셀렉터 */
-  detail_title_selector?: RSSEverythingCreateRequestDetailTitleSelector;
+  detail_title_selector?: SourceCreateSchemaDetailTitleSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingCreateRequestDetailDescriptionSelector;
+  detail_description_selector?: SourceCreateSchemaDetailDescriptionSelector;
   /** 상세 페이지에서 날짜 CSS 셀렉터 */
-  detail_date_selector?: RSSEverythingCreateRequestDetailDateSelector;
+  detail_date_selector?: SourceCreateSchemaDetailDateSelector;
   /** 상세 페이지에서 이미지 CSS 셀렉터 */
-  detail_image_selector?: RSSEverythingCreateRequestDetailImageSelector;
+  detail_image_selector?: SourceCreateSchemaDetailImageSelector;
   /** 상세 페이지에서 작성자 CSS 셀렉터 */
-  detail_author_selector?: RSSEverythingCreateRequestDetailAuthorSelector;
+  detail_author_selector?: SourceCreateSchemaDetailAuthorSelector;
   /** 상세 페이지에서 카테고리 CSS 셀렉터 */
-  detail_categories_selector?: RSSEverythingCreateRequestDetailCategoriesSelector;
+  detail_categories_selector?: SourceCreateSchemaDetailCategoriesSelector;
   /**
    * 날짜 로케일 (예: ko_KR, en_US)
    * @maxLength 20
@@ -859,13 +739,8 @@ export interface RSSEverythingCreateRequest {
   date_locale?: string;
   /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
   use_browser?: boolean;
-  /**
-   * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
-   * @maxLength 20
-   */
-  browser_service?: string;
   /** 페이지 로드 완료 확인용 셀렉터 */
-  wait_selector?: RSSEverythingCreateRequestWaitSelector;
+  wait_selector?: SourceCreateSchemaWaitSelector;
   /** 타임아웃 (밀리초) */
   timeout?: number;
 }
@@ -909,168 +784,156 @@ export interface PaginationCrawlRequest {
 /**
  * 연결된 RSS 피드
  */
-export type RSSEverythingUpdateRequestFeedId = number | null;
-
-/**
- * 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑)
- */
-export type RSSEverythingUpdateRequestSourceType = string | null;
+export type SourceUpdateSchemaFeedId = number | null;
 
 /**
  * RSS URL 또는 크롤링할 페이지 URL
  */
-export type RSSEverythingUpdateRequestUrl = string | null;
+export type SourceUpdateSchemaUrl = string | null;
 
-export type RSSEverythingUpdateRequestCustomHeadersAnyOf = { [key: string]: unknown };
+export type SourceUpdateSchemaCustomHeadersAnyOf = { [key: string]: unknown };
 
-export type RSSEverythingUpdateRequestCustomHeaders = RSSEverythingUpdateRequestCustomHeadersAnyOf | null;
+export type SourceUpdateSchemaCustomHeaders = SourceUpdateSchemaCustomHeadersAnyOf | null;
 
 /**
  * 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)
  */
-export type RSSEverythingUpdateRequestItemSelector = string | null;
+export type SourceUpdateSchemaItemSelector = string | null;
 
 /**
  * 제목 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingUpdateRequestTitleSelector = string | null;
+export type SourceUpdateSchemaTitleSelector = string | null;
 
 /**
  * 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)
  */
-export type RSSEverythingUpdateRequestLinkSelector = string | null;
+export type SourceUpdateSchemaLinkSelector = string | null;
 
 /**
  * 설명 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingUpdateRequestDescriptionSelector = string | null;
+export type SourceUpdateSchemaDescriptionSelector = string | null;
 
 /**
  * 날짜 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingUpdateRequestDateSelector = string | null;
+export type SourceUpdateSchemaDateSelector = string | null;
 
 /**
  * 이미지 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingUpdateRequestImageSelector = string | null;
+export type SourceUpdateSchemaImageSelector = string | null;
 
 /**
  * 작성자 CSS 셀렉터 (아이템 내부)
  */
-export type RSSEverythingUpdateRequestAuthorSelector = string | null;
+export type SourceUpdateSchemaAuthorSelector = string | null;
 
 /**
  * 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)
  */
-export type RSSEverythingUpdateRequestCategoriesSelector = string | null;
+export type SourceUpdateSchemaCategoriesSelector = string | null;
 
 /**
  * 상세 페이지에서 제목 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailTitleSelector = string | null;
+export type SourceUpdateSchemaDetailTitleSelector = string | null;
 
 /**
  * 상세 페이지에서 본문 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailDescriptionSelector = string | null;
+export type SourceUpdateSchemaDetailDescriptionSelector = string | null;
 
 /**
  * 상세 페이지에서 날짜 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailDateSelector = string | null;
+export type SourceUpdateSchemaDetailDateSelector = string | null;
 
 /**
  * 상세 페이지에서 이미지 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailImageSelector = string | null;
+export type SourceUpdateSchemaDetailImageSelector = string | null;
 
 /**
  * 상세 페이지에서 작성자 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailAuthorSelector = string | null;
+export type SourceUpdateSchemaDetailAuthorSelector = string | null;
 
 /**
  * 상세 페이지에서 카테고리 CSS 셀렉터
  */
-export type RSSEverythingUpdateRequestDetailCategoriesSelector = string | null;
+export type SourceUpdateSchemaDetailCategoriesSelector = string | null;
 
 /**
  * 날짜 로케일 (예: ko_KR, en_US)
  */
-export type RSSEverythingUpdateRequestDateLocale = string | null;
+export type SourceUpdateSchemaDateLocale = string | null;
 
 /**
  * 브라우저 렌더링 사용 여부 (JavaScript 필요 시)
  */
-export type RSSEverythingUpdateRequestUseBrowser = boolean | null;
-
-/**
- * 사용할 브라우저 서비스 (RealBrowser 또는 Browserless)
- */
-export type RSSEverythingUpdateRequestBrowserService = string | null;
+export type SourceUpdateSchemaUseBrowser = boolean | null;
 
 /**
  * 페이지 로드 완료 확인용 셀렉터
  */
-export type RSSEverythingUpdateRequestWaitSelector = string | null;
+export type SourceUpdateSchemaWaitSelector = string | null;
 
 /**
  * 타임아웃 (밀리초)
  */
-export type RSSEverythingUpdateRequestTimeout = number | null;
+export type SourceUpdateSchemaTimeout = number | null;
 
 /**
  * RSSEverything 소스 수정 요청
  */
-export interface RSSEverythingUpdateRequest {
+export interface SourceUpdateSchema {
   date_formats?: string[];
   exclude_selectors?: string[];
+  source_type?: SourceType;
+  browser_service?: BrowserService;
   /** 연결된 RSS 피드 */
-  feed_id?: RSSEverythingUpdateRequestFeedId;
-  /** 소스 타입 (RSS/Atom, 페이지 스크래핑, 상세 페이지 스크래핑) */
-  source_type?: RSSEverythingUpdateRequestSourceType;
+  feed_id?: SourceUpdateSchemaFeedId;
   /** RSS URL 또는 크롤링할 페이지 URL */
-  url?: RSSEverythingUpdateRequestUrl;
-  custom_headers?: RSSEverythingUpdateRequestCustomHeaders;
+  url?: SourceUpdateSchemaUrl;
+  custom_headers?: SourceUpdateSchemaCustomHeaders;
   /** 아이템 목록의 CSS 셀렉터 (예: article.post, .news-item) */
-  item_selector?: RSSEverythingUpdateRequestItemSelector;
+  item_selector?: SourceUpdateSchemaItemSelector;
   /** 제목 CSS 셀렉터 (아이템 내부) */
-  title_selector?: RSSEverythingUpdateRequestTitleSelector;
+  title_selector?: SourceUpdateSchemaTitleSelector;
   /** 링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용) */
-  link_selector?: RSSEverythingUpdateRequestLinkSelector;
+  link_selector?: SourceUpdateSchemaLinkSelector;
   /** 설명 CSS 셀렉터 (아이템 내부) */
-  description_selector?: RSSEverythingUpdateRequestDescriptionSelector;
+  description_selector?: SourceUpdateSchemaDescriptionSelector;
   /** 날짜 CSS 셀렉터 (아이템 내부) */
-  date_selector?: RSSEverythingUpdateRequestDateSelector;
+  date_selector?: SourceUpdateSchemaDateSelector;
   /** 이미지 CSS 셀렉터 (아이템 내부) */
-  image_selector?: RSSEverythingUpdateRequestImageSelector;
+  image_selector?: SourceUpdateSchemaImageSelector;
   /** 작성자 CSS 셀렉터 (아이템 내부) */
-  author_selector?: RSSEverythingUpdateRequestAuthorSelector;
+  author_selector?: SourceUpdateSchemaAuthorSelector;
   /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
-  categories_selector?: RSSEverythingUpdateRequestCategoriesSelector;
+  categories_selector?: SourceUpdateSchemaCategoriesSelector;
   /** 상세 페이지에서 제목 CSS 셀렉터 */
-  detail_title_selector?: RSSEverythingUpdateRequestDetailTitleSelector;
+  detail_title_selector?: SourceUpdateSchemaDetailTitleSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
-  detail_description_selector?: RSSEverythingUpdateRequestDetailDescriptionSelector;
+  detail_description_selector?: SourceUpdateSchemaDetailDescriptionSelector;
   /** 상세 페이지에서 날짜 CSS 셀렉터 */
-  detail_date_selector?: RSSEverythingUpdateRequestDetailDateSelector;
+  detail_date_selector?: SourceUpdateSchemaDetailDateSelector;
   /** 상세 페이지에서 이미지 CSS 셀렉터 */
-  detail_image_selector?: RSSEverythingUpdateRequestDetailImageSelector;
+  detail_image_selector?: SourceUpdateSchemaDetailImageSelector;
   /** 상세 페이지에서 작성자 CSS 셀렉터 */
-  detail_author_selector?: RSSEverythingUpdateRequestDetailAuthorSelector;
+  detail_author_selector?: SourceUpdateSchemaDetailAuthorSelector;
   /** 상세 페이지에서 카테고리 CSS 셀렉터 */
-  detail_categories_selector?: RSSEverythingUpdateRequestDetailCategoriesSelector;
+  detail_categories_selector?: SourceUpdateSchemaDetailCategoriesSelector;
   /** 날짜 로케일 (예: ko_KR, en_US) */
-  date_locale?: RSSEverythingUpdateRequestDateLocale;
+  date_locale?: SourceUpdateSchemaDateLocale;
   /** 브라우저 렌더링 사용 여부 (JavaScript 필요 시) */
-  use_browser?: RSSEverythingUpdateRequestUseBrowser;
-  /** 사용할 브라우저 서비스 (RealBrowser 또는 Browserless) */
-  browser_service?: RSSEverythingUpdateRequestBrowserService;
+  use_browser?: SourceUpdateSchemaUseBrowser;
   /** 페이지 로드 완료 확인용 셀렉터 */
-  wait_selector?: RSSEverythingUpdateRequestWaitSelector;
+  wait_selector?: SourceUpdateSchemaWaitSelector;
   /** 타임아웃 (밀리초) */
-  timeout?: RSSEverythingUpdateRequestTimeout;
+  timeout?: SourceUpdateSchemaTimeout;
 }
 
 /**
@@ -1382,53 +1245,6 @@ export const deleteAllFeedItems = (
  ) => {
       return axiosInstance<void>(
       {url: `/api/feeds/${feedId}/items`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
- * 피드에 새 소스 추가
- * @summary Add Source
- */
-export const addFeedSource = (
-    feedId: number,
-    sourceCreateSchema: SourceCreateSchema,
- ) => {
-      return axiosInstance<SourceSchema>(
-      {url: `/api/feeds/${feedId}/sources`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: sourceCreateSchema
-    },
-      );
-    }
-  
-/**
- * 소스 업데이트
- * @summary Update Source
- */
-export const updateFeedSource = (
-    feedId: number,
-    sourceId: number,
-    sourceUpdateSchema: SourceUpdateSchema,
- ) => {
-      return axiosInstance<SourceSchema>(
-      {url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: sourceUpdateSchema
-    },
-      );
-    }
-  
-/**
- * 소스 삭제
- * @summary Delete Source
- */
-export const deleteFeedSource = (
-    feedId: number,
-    sourceId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/feeds/${feedId}/sources/${sourceId}`, method: 'DELETE'
     },
       );
     }
@@ -1816,7 +1632,7 @@ export const previewItems = (
 export const listRssEverythingSources = (
     
  ) => {
-      return axiosInstance<RSSEverythingSchema[]>(
+      return axiosInstance<SourceSchema[]>(
       {url: `/api/rss-everything`, method: 'GET'
     },
       );
@@ -1827,12 +1643,12 @@ export const listRssEverythingSources = (
  * @summary Create Source
  */
 export const createRssEverythingSource = (
-    rSSEverythingCreateRequest: RSSEverythingCreateRequest,
+    sourceCreateSchema: SourceCreateSchema,
  ) => {
-      return axiosInstance<RSSEverythingSchema>(
+      return axiosInstance<SourceSchema>(
       {url: `/api/rss-everything`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: rSSEverythingCreateRequest
+      data: sourceCreateSchema
     },
       );
     }
@@ -1872,7 +1688,7 @@ export const crawlPaginated = (
 export const getRssEverythingSource = (
     sourceId: number,
  ) => {
-      return axiosInstance<RSSEverythingSchema>(
+      return axiosInstance<SourceSchema>(
       {url: `/api/rss-everything/${sourceId}`, method: 'GET'
     },
       );
@@ -1884,12 +1700,12 @@ export const getRssEverythingSource = (
  */
 export const updateRssEverythingSource = (
     sourceId: number,
-    rSSEverythingUpdateRequest: RSSEverythingUpdateRequest,
+    sourceUpdateSchema: SourceUpdateSchema,
  ) => {
-      return axiosInstance<RSSEverythingSchema>(
+      return axiosInstance<SourceSchema>(
       {url: `/api/rss-everything/${sourceId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: rSSEverythingUpdateRequest
+      data: sourceUpdateSchema
     },
       );
     }
@@ -2079,9 +1895,6 @@ export type DeleteFeedResult = NonNullable<Awaited<ReturnType<typeof deleteFeed>
 export type RefreshFeedResult = NonNullable<Awaited<ReturnType<typeof refreshFeed>>>
 export type MarkAllFeedItemsReadResult = NonNullable<Awaited<ReturnType<typeof markAllFeedItemsRead>>>
 export type DeleteAllFeedItemsResult = NonNullable<Awaited<ReturnType<typeof deleteAllFeedItems>>>
-export type AddFeedSourceResult = NonNullable<Awaited<ReturnType<typeof addFeedSource>>>
-export type UpdateFeedSourceResult = NonNullable<Awaited<ReturnType<typeof updateFeedSource>>>
-export type DeleteFeedSourceResult = NonNullable<Awaited<ReturnType<typeof deleteFeedSource>>>
 export type ListCategoriesWithFeedsResult = NonNullable<Awaited<ReturnType<typeof listCategoriesWithFeeds>>>
 export type ListCategoriesResult = NonNullable<Awaited<ReturnType<typeof listCategories>>>
 export type CreateCategoryResult = NonNullable<Awaited<ReturnType<typeof createCategory>>>

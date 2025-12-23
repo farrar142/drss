@@ -15,9 +15,9 @@ from feeds.schemas import (
     PreviewItem,
     CrawlRequest,
     PreviewItemResponse,
-    RSSEverythingSchema,
-    RSSEverythingCreateRequest,
-    RSSEverythingUpdateRequest,
+    SourceSchema,
+    SourceCreateSchema,
+    SourceUpdateSchema,
     RefreshResponse,
     PaginationCrawlRequest,
     PaginationCrawlResponse,
@@ -75,7 +75,7 @@ def crawl(request, data: CrawlRequest):
 
 @router.get(
     "",
-    response=list[RSSEverythingSchema],
+    response=list[SourceSchema],
     auth=JWTAuth(),
     operation_id="listRssEverythingSources",
 )
@@ -120,7 +120,7 @@ def crawl_paginated(request, data: PaginationCrawlRequest):
 
 @router.get(
     "/{source_id}",
-    response=RSSEverythingSchema,
+    response=SourceSchema,
     auth=JWTAuth(),
     operation_id="getRssEverythingSource",
 )
@@ -132,23 +132,25 @@ def get_source(request, source_id: int):
 
 @router.post(
     "",
-    response=RSSEverythingSchema,
+    response=SourceSchema,
     auth=JWTAuth(),
     operation_id="createRssEverythingSource",
 )
-def create_source(request, data: RSSEverythingCreateRequest):
+def create_source(request, data: SourceCreateSchema):
     """기존 피드에 새 RSSEverything 소스 추가"""
-    source = SourceService.create_source(request.auth, data.feed, data.dict())
+    source = SourceService.create_source(request.auth,
+                                         data.feed, #type:ignore
+                                         data.dict())
     return source
 
 
 @router.put(
     "/{source_id}",
-    response=RSSEverythingSchema,
+    response=SourceSchema,
     auth=JWTAuth(),
     operation_id="updateRssEverythingSource",
 )
-def update_source_rss(request, source_id: int, data: RSSEverythingUpdateRequest):
+def update_source_rss(request, source_id: int, data: SourceUpdateSchema):
     """RSSEverything 소스 수정"""
     source = SourceService.update_source(
         request.auth, source_id, data.dict(exclude_unset=True)

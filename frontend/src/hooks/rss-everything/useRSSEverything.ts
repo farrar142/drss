@@ -12,9 +12,9 @@ import {
   listCategories,
   FetchHTMLRequest,
   CrawlRequest,
-  RSSEverythingCreateRequest,
-  RSSEverythingUpdateRequest,
   PreviewItem,
+  SourceCreateSchema,
+  SourceUpdateSchema,
 } from '@/services/api';
 import { BrowserServiceType } from '@/types/rss';
 import { ListSelectors, DetailSelectors } from '@/components/common/SelectorBuilder';
@@ -304,7 +304,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     try {
       if (context?.mode === 'edit' && editingSourceId) {
         // 수정 모드: 기존 소스 업데이트
-        const updateData: RSSEverythingUpdateRequest = {
+        const updateData: SourceUpdateSchema = {
           url,
           source_type: 'rss',
           custom_headers: customHeaders,
@@ -316,7 +316,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         alert('소스가 업데이트되었습니다.');
       } else {
         // 생성 모드: 기존 피드에 소스 추가
-        const sourceData: RSSEverythingCreateRequest = {
+        const sourceData: SourceCreateSchema = {
           feed_id: context.feedId,
           url,
           source_type: 'rss',
@@ -612,7 +612,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
       if (context?.mode === 'edit' && editingSourceId) {
         // 수정 모드: 기존 소스 업데이트
-        const updateData: RSSEverythingUpdateRequest = {
+        const updateData: SourceUpdateSchema = {
           url,
           source_type: sourceTypeValue,
           item_selector: listSelectors.itemSelector,
@@ -636,7 +636,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         await updateRssEverythingSource(editingSourceId, updateData);
       } else {
         // 생성 모드: 새 소스 생성
-        const request: RSSEverythingCreateRequest = {
+        const request: SourceCreateSchema = {
           feed_id: context.feedId,
           url,
           source_type: sourceTypeValue,

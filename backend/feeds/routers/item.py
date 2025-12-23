@@ -111,7 +111,7 @@ def export_all_items_rss(
             feed__category__is_public=True,
         ).order_by("-published_at")[offset : offset + page_size]
     )
-
+    print(items)
     title = "DRSS - Public Items"
     link = "https://drss.app/"
     description = "Public RSS items from DRSS"
