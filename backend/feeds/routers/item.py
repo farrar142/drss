@@ -9,40 +9,40 @@ from ninja.pagination import paginate
 from django.http import HttpResponse
 from ninja.errors import HttpError
 
-from base.authentications import JWTAuth
-from base.paginations import CursorPagination
+from base.authentications import JWTAuth, async_jwt
+from base.paginations import AsyncCursorPagination
 from feeds.models import RSSItem, RSSFeed, RSSCategory
 from feeds.services import ItemService
 from feeds.schemas import ItemSchema, ItemRefreshResponse
 from feeds.utils.rss_generator import generate_rss_xml, generate_atom_xml
 
-router = Router(tags=["items"], auth=JWTAuth())
+router = Router(tags=["items"], auth=async_jwt)
 
 
 @router.post(
     "/{item_id}/refresh", response=ItemRefreshResponse, operation_id="refreshItem"
 )
-def refresh_item(request, item_id: int):
+async def refresh_item(request, item_id: int):
     """아이템 새로고침 (상세 페이지 다시 크롤링)"""
-    item, fields = ItemService.refresh_item(request.auth, item_id)
+    item, fields = await ItemService.refresh_item(request.auth, item_id)
     return dict(success=True, updated_fields=fields, item=item)
 
 
 @router.put("/{item_id}/favorite", operation_id="toggleItemFavorite")
-def toggle_item_favorite(request, item_id: int):
+async def toggle_item_favorite(request, item_id: int):
     """아이템 즐겨찾기 토글"""
     return ItemService.toggle_favorite(request.auth, item_id)
 
 
 @router.put("/{item_id}/read", operation_id="toggleItemRead")
-def toggle_item_read(request, item_id: int):
+async def toggle_item_read(request, item_id: int):
     """아이템 읽음 상태 토글"""
     return ItemService.toggle_read(request.auth, item_id)
 
 
 @router.get("", response=list[ItemSchema], operation_id="listAllItems")
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
-def list_all_items(
+@paginate(AsyncCursorPagination[RSSItem], ordering_field="published_at")
+async def list_all_items(
     request,
     is_read: Optional[bool] = None,
     is_favorite: Optional[bool] = None,
@@ -57,8 +57,8 @@ def list_all_items(
     response=list[ItemSchema],
     operation_id="listItemsByCategory",
 )
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
-def list_items_by_category(
+@paginate(AsyncCursorPagination[RSSItem], ordering_field="published_at")
+async def list_items_by_category(
     request,
     category_id: int,
     is_read: Optional[bool] = None,
@@ -78,8 +78,8 @@ def list_items_by_category(
 @router.get(
     "/feed/{feed_id}", response=list[ItemSchema], operation_id="listItemsByFeed"
 )
-@paginate(CursorPagination[RSSItem], ordering_field="published_at")
-def list_items_by_feed(
+@paginate(AsyncCursorPagination[RSSItem], ordering_field="published_at")
+async def list_items_by_feed(
     request,
     feed_id: int,
     is_read: Optional[bool] = None,
@@ -96,7 +96,7 @@ def list_items_by_feed(
 
 
 @router.get("/rss", auth=None, operation_id="exportAllItemsRss")
-def export_all_items_rss(
+async def export_all_items_rss(
     request,
     page: int = 1,
     page_size: int = 50,
@@ -105,12 +105,13 @@ def export_all_items_rss(
     """공개된 카테고리/피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
     offset = (page - 1) * page_size
 
-    items = list(
-        RSSItem.objects.filter(
+    items = [
+        item
+        async for item in RSSItem.objects.filter(
             feed__is_public=True,
             feed__category__is_public=True,
         ).order_by("-published_at")[offset : offset + page_size]
-    )
+    ]
     print(items)
     title = "DRSS - Public Items"
     link = "https://drss.app/"
@@ -129,7 +130,7 @@ def export_all_items_rss(
 @router.get(
     "/category/{category_id}/rss", auth=None, operation_id="exportCategoryItemsRss"
 )
-def export_category_items_rss(
+async def export_category_items_rss(
     request,
     category_id: int,
     page: int = 1,
@@ -137,18 +138,19 @@ def export_category_items_rss(
     format: str = "rss",
 ):
     """공개된 카테고리의 공개 피드 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
-    category = RSSCategory.objects.filter(id=category_id, is_public=True).first()
+    category = await RSSCategory.objects.filter(id=category_id, is_public=True).afirst()
     if not category:
         raise HttpError(404, "Category not found or not public")
 
     offset = (page - 1) * page_size
 
-    items = list(
-        RSSItem.objects.filter(
+    items = [
+        item
+        async for item in RSSItem.objects.filter(
             feed__category_id=category_id,
             feed__is_public=True,
         ).order_by("-published_at")[offset : offset + page_size]
-    )
+    ]
 
     title = f"DRSS - {category.name}"
     link = f"https://drss.app/category/{category_id}"
@@ -165,7 +167,7 @@ def export_category_items_rss(
 
 
 @router.get("/feed/{feed_id}/rss", auth=None, operation_id="exportFeedItemsRss")
-def export_feed_items_rss(
+async def export_feed_items_rss(
     request,
     feed_id: int,
     page: int = 1,
@@ -173,21 +175,22 @@ def export_feed_items_rss(
     format: str = "rss",
 ):
     """공개된 피드의 아이템을 RSS/Atom 피드로 내보내기 (인증 불필요)"""
-    feed = RSSFeed.objects.filter(
+    feed = await RSSFeed.objects.filter(
         id=feed_id,
         is_public=True,
         category__is_public=True,
-    ).first()
+    ).afirst()
     if not feed:
         raise HttpError(404, "Feed not found or not public")
 
     offset = (page - 1) * page_size
 
-    items = list(
-        RSSItem.objects.filter(feed_id=feed_id).order_by("-published_at")[
-            offset : offset + page_size
-        ]
-    )
+    items = [
+        item
+        async for item in RSSItem.objects.filter(feed_id=feed_id).order_by(
+            "-published_at"
+        )[offset : offset + page_size]
+    ]
 
     title = f"DRSS - {feed.title}"
     link = f"https://drss.app/feed/{feed_id}"
