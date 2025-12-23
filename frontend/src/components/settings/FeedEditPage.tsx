@@ -79,6 +79,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [description, setDescription] = useState('');
   const [faviconUrl, setFaviconUrl] = useState('');
   const [visible, setVisible] = useState(true);
+  const [isPublic, setIsPublic] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
 
@@ -113,6 +114,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           setDescription(foundFeed.description || '');
           setFaviconUrl(foundFeed.favicon_url || '');
           setVisible(foundFeed.visible);
+          setIsPublic(foundFeed.is_public ?? false);
           setRefreshInterval(foundFeed.refresh_interval || 60);
           setCategoryId(foundFeed.category);
         } else {
@@ -149,6 +151,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           description,
           favicon_url: faviconUrl || undefined,
           visible,
+          is_public: isPublic,
           refresh_interval: refreshInterval,
           category_id: categoryId,
         });
@@ -170,6 +173,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           title,
           description,
           visible,
+          is_public: isPublic,
           refresh_interval: refreshInterval,
         });
 
@@ -511,14 +515,34 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
             </div>
           </div>
 
-          {/* 공개 여부 */}
-          <div className="flex items-center gap-3">
+          {/* 표시 여부 */}
+          <div className="flex items-center justify-between py-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="visible">{t.feed.visible}</Label>
+              <p className="text-xs text-muted-foreground">
+                {t.feed.visibleDescription}
+              </p>
+            </div>
             <Switch
               checked={visible}
               onCheckedChange={setVisible}
               id="visible"
             />
-            <Label htmlFor="visible">{t.feed.visible}</Label>
+          </div>
+
+          {/* 공개 여부 (RSS Export) */}
+          <div className="flex items-center justify-between py-2">
+            <div className="space-y-0.5">
+              <Label htmlFor="is-public">RSS 피드 공개</Label>
+              <p className="text-xs text-muted-foreground">
+                /rss 엔드포인트에서 공개할지 여부를 설정합니다
+              </p>
+            </div>
+            <Switch
+              checked={isPublic}
+              onCheckedChange={setIsPublic}
+              id="is-public"
+            />
           </div>
         </div>
 

@@ -12,16 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/ui/dialog';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
-import { Switch } from '@/ui/switch';
 import { RSSCategory, RSSFeed } from '@/types/rss';
 import { FeedListItem } from '../feed/FeedListItem';
 import { useRSSStore } from '@/stores/rssStore';
@@ -75,10 +65,6 @@ export const CategoryItem: FC<{
     const toast = useToast();
     const confirm = useConfirm();
     const [expanded, setExpanded] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [editName, setEditName] = useState(category.name);
-    const [editDescription, setEditDescription] = useState(category.description);
-    const [editVisible, setEditVisible] = useState(category.visible);
     const [isDragOver, setIsDragOver] = useState(false);
     const feeds = useMemo(() => _feeds.filter((f) => f.category == category.id), [_feeds, category.id]);
     const totalItemCount = useMemo(() => feeds.reduce((sum, f) => sum + f.item_count, 0), [feeds]);
@@ -88,13 +74,6 @@ export const CategoryItem: FC<{
     useEffect(() => {
       if (isActive) setExpanded(true);
     }, [pathname, category.id, isActive]);
-
-    // 카테고리 데이터가 변경되면 편집 폼도 업데이트
-    useEffect(() => {
-      setEditName(category.name);
-      setEditDescription(category.description);
-      setEditVisible(category.visible);
-    }, [category]);
 
     const handleExpandToggle = () => {
       setExpanded((p) => !p);
@@ -117,18 +96,20 @@ export const CategoryItem: FC<{
       onCloseDrawer?.();
     };
 
-    const handleEditSave = async () => {
-      try {
-        const updated = await updateCategoryApi(category.id, ({
-          name: editName,
-          description: editDescription,
-          visible: editVisible,
-        } as any));
-        updateCategory({ ...(updated as any), visible: (updated as any).visible ?? true });
-        setEditOpen(false);
-      } catch (error) {
-        console.error('Failed to update category', error);
-      }
+    // 카테고리 편집 - CategoryEdit 탭 열기
+    const handleEdit = () => {
+      openTab({
+        type: 'category-edit',
+        title: `${category.name} - ${t.common.edit}`,
+        path: '/category-edit',
+        resourceId: category.id,
+        categoryEditContext: {
+          mode: 'edit',
+          categoryId: category.id,
+        },
+      });
+      // 플로팅 모드일 때 드로워 닫기
+      onCloseDrawer?.();
     };
 
     const handleToggleVisible = async () => {
@@ -302,7 +283,7 @@ export const CategoryItem: FC<{
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                  <DropdownMenuItem onClick={handleEdit}>
                     <Pencil className="w-4 h-4 mr-2 text-primary" /> {t.common.edit}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleToggleVisible}>
@@ -371,54 +352,6 @@ export const CategoryItem: FC<{
             </div>
           </div>
         </div>
-
-        {/* 카테고리 수정 다이얼로그 */}
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>{t.category.edit}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="category-name">{t.category.name}</Label>
-                <Input
-                  id="category-name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder={t.category.name}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category-description">{t.category.description}</Label>
-                <Input
-                  id="category-description"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  placeholder={t.category.description}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="category-visible">{t.category.visible}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {t.feed.visibleDescription}
-                  </p>
-                </div>
-                <Switch
-                  id="category-visible"
-                  checked={editVisible}
-                  onCheckedChange={setEditVisible}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditOpen(false)}>
-                {t.common.cancel}
-              </Button>
-              <Button onClick={handleEditSave}>{t.common.save}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </>
     );
   };

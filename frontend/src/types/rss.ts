@@ -1,13 +1,7 @@
-import { FeedSchema, ItemSchema, SourceCreateSchema, SourceSchema } from "@/services/api";
+import { CategorySchema, FeedSchema, ItemSchema, SourceCreateSchema, SourceSchema } from "@/services/api";
 
 // RSS 관련 타입 정의
-export interface RSSCategory {
-  id: number;
-  name: string;
-  description: string;
-  visible: boolean;
-  order: number;
-}
+export type RSSCategory = CategorySchema;
 
 // 소스 타입 정의
 export type SourceType = 'rss' | 'page_scraping' | 'detail_page_scraping';

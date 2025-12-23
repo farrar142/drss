@@ -45,6 +45,7 @@ class CategoryService:
             name=data.name,
             description=data.description,
             visible=data.visible,
+            is_public=data.is_public,
         )
 
     @staticmethod
@@ -60,6 +61,8 @@ class CategoryService:
             category.description = data.description
         if data.visible is not None:
             category.visible = data.visible
+        if data.is_public is not None:
+            category.is_public = data.is_public
         if data.order is not None:
             category.order = data.order
 

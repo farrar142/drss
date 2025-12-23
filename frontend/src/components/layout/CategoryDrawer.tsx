@@ -1,20 +1,10 @@
 'use client';
 
 import { FC, useState, useEffect, useCallback, memo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Rss, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/ui/button';
-import { Input } from '@/ui/input';
-import { Label } from '@/ui/label';
 import { ScrollArea } from '@/ui/scroll-area';
 import { Sheet, SheetContent } from '@/ui/sheet';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/ui/dialog';
 import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '@/types/rss';
 import { useRSSStore } from '@/stores/rssStore';
@@ -22,7 +12,6 @@ import { useTranslation } from '@/stores/languageStore';
 import { useTabStore } from '@/stores/tabStore';
 import { CategoryItem } from './CategoryItem';
 import {
-  createCategory,
   deleteCategory,
   reorderCategories,
   FeedSchema,
@@ -201,13 +190,9 @@ export const CategoryDrawer: FC<{
   variant?: 'permanent' | 'persistent' | 'temporary';
   onClose: () => void;
 }> = ({ open, pathname, variant = 'permanent', onClose }) => {
-  const router = useRouter();
   const { t } = useTranslation();
-  const { categories, setCategories, addCategory, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
+  const { categories, setCategories, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
   const { openTab, activeTabId, saveScrollPosition } = useTabStore();
-  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryDescription, setNewCategoryDescription] = useState('');
   const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
 
   // 현재 탭의 스크롤 위치 저장 헬퍼
@@ -266,21 +251,21 @@ export const CategoryDrawer: FC<{
     refreshCategoriesWithFeeds();
   }, [_initialized, refreshCategoriesWithFeeds]);
 
-  const handleAddCategory = async () => {
-    try {
-      const newCategory = await createCategory({
-        name: newCategoryName,
-        description: newCategoryDescription,
-      });
-      // Ensure `visible` exists (older API specs may omit it)
-      addCategory({ ...(newCategory as any), visible: (newCategory as any).visible ?? true });
-      setAddCategoryOpen(false);
-      setNewCategoryName('');
-      setNewCategoryDescription('');
-    } catch (error) {
-      console.error(error);
+  // 카테고리 추가 - CategoryEdit 탭 열기
+  const handleOpenAddCategory = useCallback(() => {
+    openTab({
+      type: 'category-edit',
+      title: t.category.add,
+      path: '/category-edit',
+      categoryEditContext: {
+        mode: 'create',
+      },
+    });
+    // 플로팅 모드(temporary)일 때 드로워 닫기
+    if (variant === 'temporary') {
+      onClose();
     }
-  };
+  }, [openTab, t, variant, onClose]);
 
   const handleDeleteCategory = async (category: RSSCategory) => {
     try {
@@ -310,127 +295,53 @@ export const CategoryDrawer: FC<{
   // Temporary (mobile) drawer
   if (variant === 'temporary') {
     return (
-      <>
-        <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-          <SheetContent side="left" className="w-[240px] p-0 pt-14" onClose={onClose}>
-            <DrawerContent
-              pathname={pathname}
-              categories={categories}
-              feeds={feeds}
-              onNavigateHome={handleNavigateHome}
-              onNavigateCategory={handleNavigateCategory}
-              onNavigateFeed={handleNavigateFeed}
-              onOpenAdd={() => setAddCategoryOpen(true)}
-              onDeleteCategory={handleDeleteCategory}
-              draggingFeed={draggingFeed}
-              onDragStart={setDraggingFeed}
-              onDragEnd={() => setDraggingFeed(null)}
-              onReorderCategories={handleReorderCategories}
-              onCloseDrawer={onClose}
-              t={t}
-            />
-          </SheetContent>
-        </Sheet>
-
-        {/* Add Category Dialog */}
-        <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
-          <DialogContent onClose={() => setAddCategoryOpen(false)}>
-            <DialogHeader>
-              <DialogTitle>{t.category.add}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t.category.name}</Label>
-                <Input
-                  id="name"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder={t.category.namePlaceholder}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">{t.category.description}</Label>
-                <Input
-                  id="description"
-                  value={newCategoryDescription}
-                  onChange={(e) => setNewCategoryDescription(e.target.value)}
-                  placeholder={t.category.descriptionPlaceholder}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
-                {t.common.cancel}
-              </Button>
-              <Button onClick={handleAddCategory}>{t.common.add}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </>
+      <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+        <SheetContent side="left" className="w-[240px] p-0 pt-14" onClose={onClose}>
+          <DrawerContent
+            pathname={pathname}
+            categories={categories}
+            feeds={feeds}
+            onNavigateHome={handleNavigateHome}
+            onNavigateCategory={handleNavigateCategory}
+            onNavigateFeed={handleNavigateFeed}
+            onOpenAdd={handleOpenAddCategory}
+            onDeleteCategory={handleDeleteCategory}
+            draggingFeed={draggingFeed}
+            onDragStart={setDraggingFeed}
+            onDragEnd={() => setDraggingFeed(null)}
+            onReorderCategories={handleReorderCategories}
+            onCloseDrawer={onClose}
+            t={t}
+          />
+        </SheetContent>
+      </Sheet>
     );
   }
 
   // Persistent drawer
   return (
-    <>
-      <aside
-        className={cn(
-          'fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] border-r border-sidebar-border bg-sidebar-background transition-transform duration-300',
-          !open && '-translate-x-full'
-        )}
-        style={{ width: DRAWER_WIDTH }}
-      >
-        <DrawerContent
-          pathname={pathname}
-          categories={categories}
-          feeds={feeds}
-          onNavigateHome={handleNavigateHome}
-          onNavigateCategory={handleNavigateCategory}
-          onNavigateFeed={handleNavigateFeed}
-          onOpenAdd={() => setAddCategoryOpen(true)}
-          onDeleteCategory={handleDeleteCategory}
-          draggingFeed={draggingFeed}
-          onDragStart={setDraggingFeed}
-          onDragEnd={() => setDraggingFeed(null)}
-          onReorderCategories={handleReorderCategories}
-          t={t}
-        />
-      </aside>
-
-      {/* Add Category Dialog */}
-      <Dialog open={addCategoryOpen} onOpenChange={setAddCategoryOpen}>
-        <DialogContent onClose={() => setAddCategoryOpen(false)}>
-          <DialogHeader>
-            <DialogTitle>{t.category.add}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">{t.category.name}</Label>
-              <Input
-                id="name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder={t.category.name}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">{t.category.description}</Label>
-              <Input
-                id="description"
-                value={newCategoryDescription}
-                onChange={(e) => setNewCategoryDescription(e.target.value)}
-                placeholder={t.category.description}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddCategoryOpen(false)}>
-              {t.common.cancel}
-            </Button>
-            <Button onClick={handleAddCategory}>{t.common.add}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <aside
+      className={cn(
+        'fixed left-0 top-14 z-40 h-[calc(100vh-3.5rem)] border-r border-sidebar-border bg-sidebar-background transition-transform duration-300',
+        !open && '-translate-x-full'
+      )}
+      style={{ width: DRAWER_WIDTH }}
+    >
+      <DrawerContent
+        pathname={pathname}
+        categories={categories}
+        feeds={feeds}
+        onNavigateHome={handleNavigateHome}
+        onNavigateCategory={handleNavigateCategory}
+        onNavigateFeed={handleNavigateFeed}
+        onOpenAdd={handleOpenAddCategory}
+        onDeleteCategory={handleDeleteCategory}
+        draggingFeed={draggingFeed}
+        onDragStart={setDraggingFeed}
+        onDragEnd={() => setDraggingFeed(null)}
+        onReorderCategories={handleReorderCategories}
+        t={t}
+      />
+    </aside>
   );
 };

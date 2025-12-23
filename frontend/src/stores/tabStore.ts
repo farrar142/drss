@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'periodic-tasks' | 'feed-edit' | 'admin';
+export type TabType = 'home' | 'category' | 'feed' | 'settings' | 'rss-everything' | 'task-results' | 'periodic-tasks' | 'feed-edit' | 'category-edit' | 'admin';
 
 // RSSEverything 탭 컨텍스트 (소스 편집용)
 export interface RSSEverythingContext {
@@ -15,6 +15,12 @@ export interface FeedEditContext {
   mode: 'create' | 'edit';
   categoryId?: number;  // 피드 생성 시 카테고리 ID
   feedId?: number;      // 피드 수정 시 피드 ID
+}
+
+// CategoryEdit 탭 컨텍스트 (카테고리 편집용)
+export interface CategoryEditContext {
+  mode: 'create' | 'edit';
+  categoryId?: number;  // 카테고리 수정 시 카테고리 ID
 }
 
 export interface Tab {
@@ -35,6 +41,8 @@ export interface Tab {
   context?: RSSEverythingContext;
   // FeedEdit 탭의 컨텍스트 데이터
   feedEditContext?: FeedEditContext;
+  // CategoryEdit 탭의 컨텍스트 데이터
+  categoryEditContext?: CategoryEditContext;
 }
 
 // 패널 ID 타입

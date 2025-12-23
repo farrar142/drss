@@ -315,6 +315,7 @@ export interface CategoryWithFeedsSchema {
   name: string;
   description: string;
   visible: boolean;
+  is_public: boolean;
   order: number;
   feeds?: FeedSchema[];
 }
@@ -327,6 +328,7 @@ export interface CategorySchema {
   name: string;
   description: string;
   visible: boolean;
+  is_public: boolean;
   order: number;
 }
 
@@ -337,6 +339,7 @@ export interface CategoryCreateSchema {
   name: string;
   description?: string;
   visible?: boolean;
+  is_public?: boolean;
 }
 
 export type CategoryUpdateSchemaName = string | null;
@@ -344,6 +347,8 @@ export type CategoryUpdateSchemaName = string | null;
 export type CategoryUpdateSchemaDescription = string | null;
 
 export type CategoryUpdateSchemaVisible = boolean | null;
+
+export type CategoryUpdateSchemaIsPublic = boolean | null;
 
 export type CategoryUpdateSchemaOrder = number | null;
 
@@ -354,6 +359,7 @@ export interface CategoryUpdateSchema {
   name?: CategoryUpdateSchemaName;
   description?: CategoryUpdateSchemaDescription;
   visible?: CategoryUpdateSchemaVisible;
+  is_public?: CategoryUpdateSchemaIsPublic;
   order?: CategoryUpdateSchemaOrder;
 }
 

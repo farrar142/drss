@@ -16,6 +16,7 @@ class CategorySchema(Schema):
     name: str
     description: str
     visible: bool
+    is_public: bool
     order: int
 
 
@@ -26,6 +27,7 @@ class CategoryWithFeedsSchema(Schema):
     name: str
     description: str
     visible: bool
+    is_public: bool
     order: int
     feeds: list["FeedSchema"] = []
 
@@ -36,6 +38,7 @@ class CategoryCreateSchema(Schema):
     name: str
     description: str = ""
     visible: bool = True
+    is_public: bool = False
 
 
 class CategoryUpdateSchema(Schema):
@@ -44,6 +47,7 @@ class CategoryUpdateSchema(Schema):
     name: Optional[str] = None
     description: Optional[str] = None
     visible: Optional[bool] = None
+    is_public: Optional[bool] = None
     order: Optional[int] = None
 
 

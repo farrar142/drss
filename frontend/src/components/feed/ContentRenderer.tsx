@@ -7,6 +7,7 @@ import RSSEverythingPage from '../rss-everything/RSSEverythingPage';
 import TaskResultsPage from '../settings/TaskResultsPage';
 import PeriodicTasksPage from '../settings/PeriodicTasksPage';
 import FeedEditPage from '../settings/FeedEditPage';
+import CategoryEditPage from '../settings/CategoryEditPage';
 import AdminPage from '../settings/AdminPage';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useRSSStore } from '../../stores/rssStore';
@@ -170,6 +171,7 @@ const getTabContentKey = (tab: Tab): string => {
   if (tab.type === 'admin') return 'admin';
   if (tab.type === 'rss-everything') return `rss-everything-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'feed-edit') return `feed-edit-${tab.resourceId ?? 'new'}`;
+  if (tab.type === 'category-edit') return `category-edit-${tab.resourceId ?? 'new'}`;
   if (tab.type === 'task-results') return 'task-results';
   if (tab.type === 'periodic-tasks') return 'periodic-tasks';
   if (tab.type === 'category' && tab.resourceId) return `category-${tab.resourceId}`;
@@ -200,6 +202,8 @@ const TabContentRenderer = memo(({ tab, isActive, scrollContainerRef }: { tab: T
       return <RSSEverythingPage context={tab.context} />;
     case 'feed-edit':
       return <FeedEditPage context={tab.feedEditContext} />;
+    case 'category-edit':
+      return <CategoryEditPage context={tab.categoryEditContext} />;
     case 'task-results':
       return <TaskResultsPage />;
     case 'periodic-tasks':
