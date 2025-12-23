@@ -103,6 +103,7 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
     try {
       const updated = await updateFeedApi(feed.id, {
         visible: !feed.visible,
+        category_id: categoryId,
       });
       updateFeed(updated);
     } catch (error) {

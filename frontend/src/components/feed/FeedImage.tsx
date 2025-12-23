@@ -1,34 +1,57 @@
-import { FC, useState, useRef, useEffect, memo } from "react";
+import { FC, useState, useRef, useEffect, memo, useCallback } from "react";
 import Image from 'next/image';
 import { cn } from "@/lib/utils";
 
 // 전역 IntersectionObserver 싱글톤 - 모든 FeedImage가 공유
-let globalObserver: IntersectionObserver | null = null;
-const observerCallbacks = new WeakMap<Element, () => void>();
+// 로딩용 observer (화면 근처 500px)
+let loadObserver: IntersectionObserver | null = null;
+const loadCallbacks = new WeakMap<Element, () => void>();
 
-const getGlobalObserver = () => {
-  if (globalObserver) return globalObserver;
+// 언로딩용 observer (화면에서 2000px 벗어나면)
+let unloadObserver: IntersectionObserver | null = null;
+const unloadCallbacks = new WeakMap<Element, () => void>();
+
+const getLoadObserver = () => {
+  if (loadObserver) return loadObserver;
   if (typeof IntersectionObserver === 'undefined') return null;
 
-  globalObserver = new IntersectionObserver(
+  loadObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const callback = observerCallbacks.get(entry.target);
-          if (callback) {
-            callback();
-            observerCallbacks.delete(entry.target);
-            globalObserver?.unobserve(entry.target);
-          }
+          const callback = loadCallbacks.get(entry.target);
+          callback?.();
         }
       });
     },
     {
       threshold: 0,
-      rootMargin: '200px 0px'
+      rootMargin: '500px 0px' // 화면 500px 전에 로드 시작
     }
   );
-  return globalObserver;
+  return loadObserver;
+};
+
+const getUnloadObserver = () => {
+  if (unloadObserver) return unloadObserver;
+  if (typeof IntersectionObserver === 'undefined') return null;
+
+  unloadObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        // 화면에서 완전히 벗어났을 때만 언로드
+        if (!entry.isIntersecting) {
+          const callback = unloadCallbacks.get(entry.target);
+          callback?.();
+        }
+      });
+    },
+    {
+      threshold: 0,
+      rootMargin: '2000px 0px' // 화면에서 2000px 벗어나면 언로드
+    }
+  );
+  return unloadObserver;
 };
 
 export const FeedImage: FC<{
@@ -39,51 +62,90 @@ export const FeedImage: FC<{
   onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
   onDoubleClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
 }> = memo(({ src, alt = '', className, contain = false, onClick, onDoubleClick }) => {
-  const [isVisible, setIsVisible] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  // 초기 로딩 상태만 state로 관리 (최초 1회만 변경)
+  const [initialLoad, setInitialLoad] = useState(false);
+  // 이후 visible/hidden은 ref + DOM 직접 조작으로 처리 (리렌더링 없음)
+  const isVisibleRef = useRef(false);
+  const naturalSizeRef = useRef<{ width: number; height: number } | null>(null);
 
-  // Start loading only when element is near viewport - 전역 observer 사용
+  // content-visibility로 숨김 처리 (리렌더링 없이 DOM 직접 조작)
+  const hideImage = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || !isVisibleRef.current) return;
+
+    isVisibleRef.current = false;
+    // content-visibility: hidden - 브라우저가 렌더 트리에서 제외
+    // contain-intrinsic-size로 레이아웃 크기 유지
+    const size = naturalSizeRef.current;
+    if (size) {
+      wrapper.style.contentVisibility = 'hidden';
+      wrapper.style.containIntrinsicSize = `auto ${size.width}px auto ${size.height}px`;
+    }
+  }, []);
+
+  const showImage = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper || isVisibleRef.current) return;
+
+    isVisibleRef.current = true;
+    wrapper.style.contentVisibility = 'visible';
+    wrapper.style.containIntrinsicSize = 'auto';
+
+    // 최초 로드 트리거
+    if (!initialLoad) {
+      setInitialLoad(true);
+    }
+  }, [initialLoad]);
+
+  // 뷰포트 진입/이탈 감지 설정
   useEffect(() => {
-    // If src is not an absolute http(s) url, load immediately
+    // http가 아닌 URL은 즉시 로드
     try {
       const u = new URL(src);
       if (!u.protocol.startsWith('http')) {
-        setIsVisible(true);
+        setInitialLoad(true);
+        isVisibleRef.current = true;
         return;
       }
-    } catch (e) {
-      // not a url - load immediately
-      setIsVisible(true);
+    } catch {
+      setInitialLoad(true);
+      isVisibleRef.current = true;
       return;
     }
-
-    if (isVisible) return; // already visible
 
     const el = wrapperRef.current;
     if (!el) {
-      setIsVisible(true);
+      setInitialLoad(true);
+      isVisibleRef.current = true;
       return;
     }
 
-    const observer = getGlobalObserver();
-    if (!observer) {
-      setIsVisible(true);
+    const loadObs = getLoadObserver();
+    const unloadObs = getUnloadObserver();
+
+    if (!loadObs || !unloadObs) {
+      setInitialLoad(true);
+      isVisibleRef.current = true;
       return;
     }
 
-    // 콜백 등록 및 관찰 시작
-    observerCallbacks.set(el, () => setIsVisible(true));
-    observer.observe(el);
+    // 콜백 등록 (리렌더링 없이 DOM 직접 조작)
+    loadCallbacks.set(el, showImage);
+    unloadCallbacks.set(el, hideImage);
+
+    loadObs.observe(el);
+    unloadObs.observe(el);
 
     return () => {
-      observerCallbacks.delete(el);
-      observer.unobserve(el);
+      loadCallbacks.delete(el);
+      unloadCallbacks.delete(el);
+      loadObs.unobserve(el);
+      unloadObs.unobserve(el);
     };
-  }, [src, isVisible]);
+  }, [src, showImage, hideImage]);
 
-
-  // Pre-schedule caching for nearby (above-the-fold / near-viewport) items to improve
-  // NOTE: scheduling of caching for nearby items is handled in the parent
   const [error, setError] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
@@ -91,12 +153,14 @@ export const FeedImage: FC<{
   // Calculate aspect ratio based height when image loads
   const handleLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+    const size = { width: img.naturalWidth, height: img.naturalHeight };
+    naturalSizeRef.current = size;
+    setNaturalSize(size);
     setLoaded(true);
   };
 
-  // Placeholder skeleton while not visible (애니메이션 제거 - 성능 이슈)
-  if (!isVisible) {
+  // 초기 로드 전에는 placeholder만 표시
+  if (!initialLoad) {
     return (
       <div
         ref={wrapperRef}

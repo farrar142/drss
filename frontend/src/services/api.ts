@@ -220,8 +220,6 @@ export const SourceType = {
 
 export type FeedCreateSchemaId = number | null;
 
-export type FeedCreateSchemaCategoryId = number | null;
-
 export type FeedCreateSchemaTitle = string | null;
 
 export type FeedCreateSchemaFaviconUrl = string | null;
@@ -248,8 +246,8 @@ export type FeedCreateSchemaCreatedAt = string | null;
  * 피드 생성 스키마 - 소스 정보는 선택적
  */
 export interface FeedCreateSchema {
+  category_id: number;
   id?: FeedCreateSchemaId;
-  category_id?: FeedCreateSchemaCategoryId;
   title?: FeedCreateSchemaTitle;
   favicon_url?: FeedCreateSchemaFaviconUrl;
   description?: FeedCreateSchemaDescription;
@@ -263,8 +261,6 @@ export interface FeedCreateSchema {
 }
 
 export type FeedUpdateSchemaId = number | null;
-
-export type FeedUpdateSchemaCategoryId = number | null;
 
 export type FeedUpdateSchemaTitle = string | null;
 
@@ -292,9 +288,9 @@ export type FeedUpdateSchemaCreatedAt = string | null;
  * 피드 수정 스키마
  */
 export interface FeedUpdateSchema {
+  category_id: number;
   sources?: SourceSchema[];
   id?: FeedUpdateSchemaId;
-  category_id?: FeedUpdateSchemaCategoryId;
   title?: FeedUpdateSchemaTitle;
   favicon_url?: FeedUpdateSchemaFaviconUrl;
   description?: FeedUpdateSchemaDescription;

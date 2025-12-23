@@ -32,19 +32,20 @@ class FeedSchema(ModelSchema):
 
 class FeedCreateSchema(ModelSchema):
     """피드 생성 스키마 - 소스 정보는 선택적"""
-
+    category_id : int
     class Meta:
         model = RSSFeed
-        exclude = ["user"]
+        exclude = ["user","category"]
         fields_optional = '__all__'
+
 
 class FeedUpdateSchema(ModelSchema):
     """피드 수정 스키마"""
-
+    category_id : int
     sources: list[SourceSchema] = Field(default=list())
     class Meta:
         model = RSSFeed
-        exclude = ["user"]
+        exclude = ["user","category"]
         fields_optional = '__all__'
 
 

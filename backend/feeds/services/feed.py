@@ -88,6 +88,7 @@ class FeedService:
                 description=description,
                 visible=data.visible,
                 refresh_interval=data.refresh_interval,
+                is_public=data.is_public,
             )
 
         # item_count 추가하여 반환
@@ -106,7 +107,6 @@ class FeedService:
         if data.category_id is not None:
             category = get_object_or_404(RSSCategory, id=data.category_id, user=user)
             feed.category = category
-
         if data.title is not None:
             feed.title = data.title
         if data.description is not None:
@@ -115,6 +115,8 @@ class FeedService:
             feed.visible = data.visible
         if data.refresh_interval is not None:
             feed.refresh_interval = data.refresh_interval
+        if data.sources is not None:
+            feed.is_public = data.is_public
         if getattr(data, "favicon_url", None) is not None:
             feed.favicon_url = data.favicon_url
 
