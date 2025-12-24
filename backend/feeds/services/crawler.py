@@ -468,7 +468,7 @@ class CrawlerService:
             if not link:
                 continue
 
-            link = urljoin(option.url, Maybe.of(link).instanceof(str).split("?")[:1][0])
+            link = urljoin(option.url, Maybe.of(link).instanceof(str))
             print("Extracted detail link:", link)
             # 이미 존재하면 스킵
             if link[:499] in existing_guids:
@@ -492,9 +492,7 @@ class CrawlerService:
                 if img_el:
                     list_data["image"] = Maybe.of(
                         img_el.get("src") or img_el.get("data-src") or ""
-                    ).instanceof(
-                        str
-                    )  # type:ignore
+                    ).instanceof(str)
                     if list_data["image"]:
                         list_data["image"] = urljoin(option.url, list_data["image"])
 
