@@ -13,7 +13,7 @@ from django.utils import timezone as django_timezone
 from base.utils import Maybe
 from feeds.schemas.source import CrawlRequest
 from feeds.utils.date_parser import parse_date
-from feeds.utils.html_parser import extract_src, extract_html
+from feeds.utils.html_parser import extract_src, extract_html_with_css
 from feeds.utils.html_utils import strip_html_tags
 from feeds.browser_crawler import fetch_html_with_browser, fetch_html_smart
 
@@ -145,12 +145,12 @@ class CrawlerService:
             if guid in existing_guids:
                 continue
 
-            # 설명 추출 (HTML 블록으로)
+            # 설명 추출 (HTML 블록 + CSS 포함)
             description = ""
             if option.description_selector:
                 desc_el = item.select_one(option.description_selector)
                 if desc_el:
-                    description = extract_html(desc_el, option.url)
+                    description = extract_html_with_css(desc_el, soup, option.url)
 
             # 날짜 추출
             date = ""
@@ -227,12 +227,12 @@ class CrawlerService:
             if title_el:
                 title = title_el.get_text(strip=True)[:199]
 
-        # 설명/본문
+        # 설명/본문 (CSS 포함)
         description = ""
         if option.detail_description_selector:
             desc_el = soup.select_one(option.detail_description_selector)
             if desc_el:
-                description = str(desc_el)
+                description = extract_html_with_css(desc_el, soup, detail_url)
 
         # 날짜
         date_str = list_data.get("date", "")

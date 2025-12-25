@@ -112,7 +112,6 @@ class PreviewItemResponse(BaseModel):
     items: list[PreviewItem] = []
     count: int = 0
     error: Optional[str] = None
-    page_css: str = ""  # 페이지에서 추출한 CSS (::marker 등 pseudo-element 지원용)
 
 
 class SourceCreateSchema(ModelSchema):

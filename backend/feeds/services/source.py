@@ -16,8 +16,6 @@ from feeds.schemas.source import PreviewItemResponse, SourceCreateSchema, Source
 from feeds.utils.html_parser import (
     generate_selector,
     extract_text,
-    extract_css_from_html,
-    extract_html_with_css,
     extract_html,
     extract_href,
     extract_src,
@@ -118,50 +116,6 @@ class SourceService:
                 count=0,
                 error=str(e),
             )
-
-    @staticmethod
-    def crawl_with_css(
-        option: CrawlRequest,
-        max_items: int = 30,
-    ) -> tuple[int, list[RSSItem], str]:
-        """
-        아이템 크롤링 + 페이지 CSS 추출 (미리보기용)
-        ::marker 등 pseudo-element 스타일 유지를 위해 CSS도 함께 반환
-        """
-        result = CrawlerService.fetch_html(
-            url=option.url,
-            use_browser=option.use_browser,
-            browser_service=option.browser_service,
-            wait_selector=option.wait_selector,
-            custom_headers=option.custom_headers,
-        )
-        if not result.success:
-            raise Exception(f"Failed to fetch HTML: {result.error}")
-        if not result.html:
-            raise Exception("Fetched HTML is empty")
-        
-        html = result.html
-        soup = BeautifulSoup(html, "html.parser")
-        
-        # 페이지 CSS 추출
-        page_css = extract_css_from_html(soup, option.url)
-        
-        if option.source_type == "rss":
-            entries, items = CrawlerService.crawl_rss_source(
-                html, None, set(), max_items
-            )
-        elif option.source_type == "detail_page_scraping":
-            entries, items = CrawlerService.crawl_detail_scraping_source(
-                option, soup, set(), max_items=max_items
-            )
-        elif option.source_type == "page_scraping":
-            entries, items = CrawlerService.crawl_page_scraping_source(
-                option, soup, set(), max_items=max_items
-            )
-        else:
-            raise Exception(f"Unknown source type: {option.source_type}")
-        
-        return entries, items, page_css
 
     @staticmethod
     def crawl(

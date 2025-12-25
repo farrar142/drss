@@ -260,6 +260,8 @@ export interface FeedCreateSchema {
   created_at?: FeedCreateSchemaCreatedAt;
 }
 
+export type FeedUpdateSchemaCategoryId = number | null;
+
 export type FeedUpdateSchemaId = number | null;
 
 export type FeedUpdateSchemaTitle = string | null;
@@ -288,7 +290,7 @@ export type FeedUpdateSchemaCreatedAt = string | null;
  * 피드 수정 스키마
  */
 export interface FeedUpdateSchema {
-  category_id: number;
+  category_id?: FeedUpdateSchemaCategoryId;
   sources?: SourceSchema[];
   id?: FeedUpdateSchemaId;
   title?: FeedUpdateSchemaTitle;
@@ -581,7 +583,6 @@ export interface PreviewItemResponse {
   items?: PreviewItem[];
   count?: number;
   error?: PreviewItemResponseError;
-  page_css?: string;
 }
 
 export type CrawlRequestCustomHeaders = { [key: string]: unknown };

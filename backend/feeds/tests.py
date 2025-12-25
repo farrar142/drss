@@ -1,22 +1,34 @@
 from hmac import new
 import json
-from django.test import TestCase
+import uuid
+from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
-from ninja.testing import TestClient
+from ninja.testing import TestClient, TestAsyncClient
 from feeds.routers import item_router, feed_router, category_router
 from feeds.models import RSSCategory, RSSFeed, RSSItem
 from django.utils import timezone
 import jwt
 from django.conf import settings
 from datetime import timedelta
+from asgiref.sync import async_to_sync
 
 User = get_user_model()
+
+
+def unique_username(prefix="user"):
+    """테스트용 고유 username 생성"""
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
+
+
+def unique_guid(prefix="guid"):
+    """테스트용 고유 guid 생성"""
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
 
 class FeedModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
+            username=unique_username("feedmodel"), password="testpass123"
         )
         self.category = RSSCategory.objects.create(
             user=self.user, name="Test Category", description="Test Description"
@@ -45,17 +57,17 @@ class FeedModelTest(TestCase):
             title="Test Item",
             link="http://example.com/item1",
             published_at=timezone.now(),
-            guid="test-guid-1",
+            guid=unique_guid("test-item"),
         )
         self.assertEqual(item.title, "Test Item")
         self.assertEqual(item.feed, feed)
         self.assertFalse(item.is_read)
 
 
-class FeedPaginationTest(TestCase):
+class FeedPaginationTest(TransactionTestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
+            username=unique_username("pagination"), password="testpass123"
         )
         self.category = RSSCategory.objects.create(
             user=self.user, name="Test Category", description="Test Description"
@@ -65,7 +77,7 @@ class FeedPaginationTest(TestCase):
             category=self.category,
             title="Test Feed",
         )
-        self.client = TestClient(item_router)
+        self.client = TestAsyncClient(item_router)
         self.token = jwt.encode(
             {"user_id": self.user.id}, settings.SECRET_KEY, algorithm="HS256"
         )
@@ -74,13 +86,14 @@ class FeedPaginationTest(TestCase):
     def test_pagination_with_30_items_page_size_10(self):
         # Create 30 items
         items = []
+        guid_prefix = uuid.uuid4().hex[:8]
         for i in range(30):
             item = RSSItem.objects.create(
                 feed=self.feed,
                 title=f"Test Item {i}",
                 link=f"http://example.com/item{i}",
                 published_at=timezone.now() - timedelta(minutes=i),
-                guid=f"test-guid-{i}",
+                guid=f"test-guid-{guid_prefix}-{i}",
             )
             items.append(item)
 
@@ -88,7 +101,7 @@ class FeedPaginationTest(TestCase):
         items.sort(key=lambda x: x.published_at, reverse=True)
 
         # First page (no cursor, returns newest items first)
-        response = self.client.get("/?limit=10&direction=before", headers=self.headers)
+        response = async_to_sync(self.client.get)("/?limit=10&direction=before", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
@@ -101,7 +114,7 @@ class FeedPaginationTest(TestCase):
 
         # Second page (use next_cursor with direction=before to get older items)
         cursor = data["next_cursor"]
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/?limit=10&cursor={cursor}&direction=before", headers=self.headers
         )
         self.assertEqual(response.status_code, 200)
@@ -111,7 +124,7 @@ class FeedPaginationTest(TestCase):
 
         # Third page
         cursor = data["next_cursor"]
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/?limit=10&cursor={cursor}&direction=before", headers=self.headers
         )
         self.assertEqual(response.status_code, 200)
@@ -121,6 +134,7 @@ class FeedPaginationTest(TestCase):
 
     def test_pagination_with_new_items_after_request(self):
         base_time = timezone.now()
+        guid_prefix = uuid.uuid4().hex[:8]
         # Create 30 items (older items)
         items = []
         for i in range(30):
@@ -130,12 +144,12 @@ class FeedPaginationTest(TestCase):
                 link=f"http://example.com/item{i}",
                 published_at=base_time
                 - timedelta(minutes=30 + i),  # Older than base_time
-                guid=f"test-guid-{i}",
+                guid=f"test-guid-{guid_prefix}-{i}",
             )
             items.append(item)
 
         # First page - get newest items (by published_at, descending)
-        response = self.client.get("/?limit=10&direction=before", headers=self.headers)
+        response = async_to_sync(self.client.get)("/?limit=10&direction=before", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
@@ -152,7 +166,7 @@ class FeedPaginationTest(TestCase):
                 link=f"http://example.com/new_item{i}",
                 published_at=base_time
                 + timedelta(minutes=i + 1),  # Newer than base_time
-                guid=f"new-test-guid-{i}",
+                guid=f"new-test-guid-{guid_prefix}-{i}",
             )
             new_items.append(item)
 
@@ -162,7 +176,7 @@ class FeedPaginationTest(TestCase):
         cursor = first_batch_max_published_at.isoformat().replace("+00:00", "Z")
 
         # Request newer items using after direction (published_at > cursor)
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/?limit=10&cursor={cursor}&direction=after",
             headers=self.headers,
         )
@@ -177,7 +191,7 @@ class FeedPaginationTest(TestCase):
 
         cursor = data["next_cursor"]
         # Request second
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/?limit=10&cursor={cursor}&direction=after",
             headers=self.headers,
         )
@@ -192,7 +206,7 @@ class FeedPaginationTest(TestCase):
         cursor = data["next_cursor"]
 
         # Request third
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/?limit=10&cursor={cursor}&direction=after",
             headers=self.headers,
         )
@@ -218,7 +232,7 @@ class FeedPaginationTest(TestCase):
 class FeedAPITest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
+            username=unique_username("feedapi"), password="testpass123"
         )
         self.category = RSSCategory.objects.create(
             user=self.user, name="Test Category", description="Test Description"
@@ -277,11 +291,11 @@ class FeedAPITest(TestCase):
         self.assertEqual(feed.user, self.user)
 
 
-class CategoryVisibilityTest(TestCase):
+class CategoryVisibilityTest(TransactionTestCase):
     """Category와 Feed의 visible 옵션 테스트"""
 
     def setUp(self):
-        self.user = User.objects.create_user(username="visuser", password="vispass123")
+        self.user = User.objects.create_user(username=unique_username("vis"), password="vispass123")
         # visible=True 카테고리
         self.visible_category = RSSCategory.objects.create(
             user=self.user,
@@ -327,24 +341,24 @@ class CategoryVisibilityTest(TestCase):
             title="Visible Item",
             link="http://example.com/v-item",
             published_at=timezone.now(),
-            guid="visible-guid",
+            guid=unique_guid("visible"),
         )
         self.hidden_item = RSSItem.objects.create(
             feed=self.hidden_feed,
             title="Hidden Item",
             link="http://example.com/h-item",
             published_at=timezone.now() - timedelta(minutes=1),
-            guid="hidden-guid",
+            guid=unique_guid("hidden"),
         )
         self.hidden_category_item = RSSItem.objects.create(
             feed=self.hidden_category_feed,
             title="Hidden Category Item",
             link="http://example.com/hc-item",
             published_at=timezone.now() - timedelta(minutes=2),
-            guid="hidden-cat-guid",
+            guid=unique_guid("hidden-cat"),
         )
 
-        self.client = TestClient(item_router)
+        self.client = TestAsyncClient(item_router)
         self.token = jwt.encode(
             {"user_id": self.user.id}, settings.SECRET_KEY, algorithm="HS256"
         )
@@ -352,7 +366,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_main_page_excludes_hidden_category_items(self):
         """메인 화면: Category.visible=False인 카테고리의 아이템은 제외"""
-        response = self.client.get("/", headers=self.headers)
+        response = async_to_sync(self.client.get)("/", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_ids = [item["id"] for item in data["items"]]
@@ -366,7 +380,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_main_page_excludes_hidden_feed_items(self):
         """메인 화면: Feed.visible=False인 피드의 아이템은 제외"""
-        response = self.client.get("/", headers=self.headers)
+        response = async_to_sync(self.client.get)("/", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_ids = [item["id"] for item in data["items"]]
@@ -375,7 +389,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_category_page_excludes_hidden_feed_items(self):
         """카테고리 화면: Feed.visible=False인 피드의 아이템은 제외"""
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/category/{self.visible_category.id}", headers=self.headers
         )
         self.assertEqual(response.status_code, 200)
@@ -389,7 +403,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_category_page_shows_hidden_category_items(self):
         """카테고리 화면: Category.visible=False여도 해당 카테고리 페이지에서는 visible 피드의 아이템 표시"""
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/category/{self.hidden_category.id}", headers=self.headers
         )
         self.assertEqual(response.status_code, 200)
@@ -401,7 +415,7 @@ class CategoryVisibilityTest(TestCase):
 
     def test_feed_page_shows_all_items(self):
         """피드 화면: visible 설정과 관계없이 해당 피드의 모든 아이템 표시"""
-        response = self.client.get(f"/feed/{self.hidden_feed.id}", headers=self.headers)
+        response = async_to_sync(self.client.get)(f"/feed/{self.hidden_feed.id}", headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_ids = [item["id"] for item in data["items"]]
@@ -470,13 +484,13 @@ class CategoryUpdateTest(TestCase):
         self.assertFalse(data["visible"])
 
 
-class RSSExportPublicTest(TestCase):
+class RSSExportPublicTest(TransactionTestCase):
     """RSS/Atom 피드 공개 내보내기 테스트"""
 
     def setUp(self):
         # 사용자 생성
         self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
+            username=unique_username("rssexport"), password="testpass123"
         )
 
         # 공개 카테고리와 피드 생성
@@ -527,35 +541,35 @@ class RSSExportPublicTest(TestCase):
             title="Public Item",
             link="http://example.com/public-item",
             published_at=timezone.now(),
-            guid="public-guid-1",
+            guid=unique_guid("public"),
         )
         self.private_item = RSSItem.objects.create(
             feed=self.private_feed,
             title="Private Item",
             link="http://example.com/private-item",
             published_at=timezone.now(),
-            guid="private-guid-1",
+            guid=unique_guid("private"),
         )
         self.private_feed_item = RSSItem.objects.create(
             feed=self.private_feed_in_public_category,
             title="Private Feed Item",
             link="http://example.com/private-feed-item",
             published_at=timezone.now(),
-            guid="private-feed-guid-1",
+            guid=unique_guid("private-feed"),
         )
         self.public_feed_private_category_item = RSSItem.objects.create(
             feed=self.public_feed_in_private_category,
             title="Public Feed Private Category Item",
             link="http://example.com/public-feed-private-category-item",
             published_at=timezone.now(),
-            guid="public-feed-private-category-guid-1",
+            guid=unique_guid("public-feed-private-category"),
         )
 
-        self.client = TestClient(item_router)
+        self.client = TestAsyncClient(item_router)
 
     def test_all_items_rss_only_public(self):
         """/rss 엔드포인트는 공개 카테고리+공개 피드의 아이템만 반환"""
-        response = self.client.get("/rss")
+        response = async_to_sync(self.client.get)("/rss")
         self.assertEqual(response.status_code, 200)
         self.assertIn("application/rss+xml", response["Content-Type"])
 
@@ -570,7 +584,7 @@ class RSSExportPublicTest(TestCase):
 
     def test_all_items_atom_only_public(self):
         """/rss?format=atom 엔드포인트도 공개 아이템만 반환"""
-        response = self.client.get("/rss?format=atom")
+        response = async_to_sync(self.client.get)("/rss?format=atom")
         self.assertEqual(response.status_code, 200)
         self.assertIn("application/atom+xml", response["Content-Type"])
 
@@ -580,7 +594,7 @@ class RSSExportPublicTest(TestCase):
 
     def test_category_rss_public_category_exists(self):
         """공개 카테고리의 RSS 엔드포인트는 200 반환"""
-        response = self.client.get(f"/category/{self.public_category.id}/rss")
+        response = async_to_sync(self.client.get)(f"/category/{self.public_category.id}/rss")
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode("utf-8")
@@ -591,17 +605,17 @@ class RSSExportPublicTest(TestCase):
 
     def test_category_rss_private_category_404(self):
         """비공개 카테고리의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(f"/category/{self.private_category.id}/rss")
+        response = async_to_sync(self.client.get)(f"/category/{self.private_category.id}/rss")
         self.assertEqual(response.status_code, 404)
 
     def test_category_rss_nonexistent_404(self):
         """존재하지 않는 카테고리의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get("/category/99999/rss")
+        response = async_to_sync(self.client.get)("/category/99999/rss")
         self.assertEqual(response.status_code, 404)
 
     def test_feed_rss_public_feed(self):
         """공개 피드(공개 카테고리 내)의 RSS 엔드포인트는 200 반환"""
-        response = self.client.get(f"/feed/{self.public_feed.id}/rss")
+        response = async_to_sync(self.client.get)(f"/feed/{self.public_feed.id}/rss")
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode("utf-8")
@@ -609,19 +623,19 @@ class RSSExportPublicTest(TestCase):
 
     def test_feed_rss_private_feed_404(self):
         """비공개 피드의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(f"/feed/{self.private_feed.id}/rss")
+        response = async_to_sync(self.client.get)(f"/feed/{self.private_feed.id}/rss")
         self.assertEqual(response.status_code, 404)
 
     def test_feed_rss_public_feed_in_private_category_404(self):
         """비공개 카테고리 내 공개 피드의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/feed/{self.public_feed_in_private_category.id}/rss"
         )
         self.assertEqual(response.status_code, 404)
 
     def test_feed_rss_private_feed_in_public_category_404(self):
         """공개 카테고리 내 비공개 피드의 RSS 엔드포인트는 404 반환"""
-        response = self.client.get(
+        response = async_to_sync(self.client.get)(
             f"/feed/{self.private_feed_in_public_category.id}/rss"
         )
         self.assertEqual(response.status_code, 404)
@@ -629,29 +643,30 @@ class RSSExportPublicTest(TestCase):
     def test_rss_no_auth_required(self):
         """RSS 엔드포인트는 인증 없이 접근 가능"""
         # 인증 헤더 없이 요청
-        response = self.client.get("/rss")
+        response = async_to_sync(self.client.get)("/rss")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(f"/category/{self.public_category.id}/rss")
+        response = async_to_sync(self.client.get)(f"/category/{self.public_category.id}/rss")
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.get(f"/feed/{self.public_feed.id}/rss")
+        response = async_to_sync(self.client.get)(f"/feed/{self.public_feed.id}/rss")
         self.assertEqual(response.status_code, 200)
 
     def test_rss_pagination(self):
         """RSS 엔드포인트 페이지네이션 테스트"""
         # 추가 아이템 생성
+        guid_prefix = uuid.uuid4().hex[:8]
         for i in range(10):
             RSSItem.objects.create(
                 feed=self.public_feed,
                 title=f"Pagination Item {i}",
                 link=f"http://example.com/pagination-item-{i}",
                 published_at=timezone.now() - timedelta(minutes=i),
-                guid=f"pagination-guid-{i}",
+                guid=f"pagination-guid-{guid_prefix}-{i}",
             )
 
         # page_size=5로 첫 페이지 요청
-        response = self.client.get("/rss?page=1&page_size=5")
+        response = async_to_sync(self.client.get)("/rss?page=1&page_size=5")
         self.assertEqual(response.status_code, 200)
         content = response.content.decode("utf-8")
         # 아이템 개수 확인 (최신 5개)
@@ -797,7 +812,7 @@ class RSSEverythingSourceTest(TestCase):
             url="http://example.com/news",
             item_selector=".news-item",
             title_selector="h2",
-            detail_content_selector=".article-body",
+            detail_description_selector=".article-body",
         )
         self.assertFalse(source.is_rss)
         self.assertTrue(source.is_scraping)

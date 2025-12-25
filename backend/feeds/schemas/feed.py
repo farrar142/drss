@@ -41,7 +41,7 @@ class FeedCreateSchema(ModelSchema):
 
 class FeedUpdateSchema(ModelSchema):
     """피드 수정 스키마"""
-    category_id : int
+    category_id: Optional[int] = None
     sources: list[SourceSchema] = Field(default=list())
     class Meta:
         model = RSSFeed

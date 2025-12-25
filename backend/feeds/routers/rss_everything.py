@@ -69,8 +69,8 @@ def extract_elements(request, data: ExtractElementsRequest):
 )
 def crawl(request, data: CrawlRequest):
     """설정된 셀렉터로 아이템들을 미리보기"""
-    entries, result, page_css = SourceService.crawl_with_css(data, max_items=5)
-    return dict(success=True, items=result, count=len(result), page_css=page_css)
+    entries, result = SourceService.crawl(data, max_items=5)
+    return dict(success=True, items=result, count=len(result))
 
 
 @router.get(
