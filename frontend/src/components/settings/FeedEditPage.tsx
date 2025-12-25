@@ -82,6 +82,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [isPublic, setIsPublic] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(60);
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
+  const [customCss, setCustomCss] = useState('');
 
   // 페이지네이션 크롤링 모달 상태
   const [paginationModalOpen, setPaginationModalOpen] = useState(false);
@@ -117,6 +118,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           setIsPublic(foundFeed.is_public ?? false);
           setRefreshInterval(foundFeed.refresh_interval || 60);
           setCategoryId(foundFeed.category);
+          setCustomCss(foundFeed.custom_css || '');
         } else {
           setError(t.feed.notFound);
         }
@@ -154,6 +156,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           is_public: isPublic,
           refresh_interval: refreshInterval,
           category_id: categoryId,
+          custom_css: customCss || undefined,
         });
         setFeed(updatedFeed);
         updateFeedInStore(updatedFeed);
@@ -542,6 +545,21 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
               checked={isPublic}
               onCheckedChange={setIsPublic}
               id="is-public"
+            />
+          </div>
+
+          {/* Custom CSS */}
+          <div className="space-y-2">
+            <Label htmlFor="custom-css">Custom CSS</Label>
+            <p className="text-xs text-muted-foreground">
+              피드 아이템 카드에 적용할 사용자 정의 CSS를 입력하세요
+            </p>
+            <textarea
+              id="custom-css"
+              value={customCss}
+              onChange={(e) => setCustomCss(e.target.value)}
+              placeholder=".content { font-size: 16px; }&#10;img { border-radius: 8px; }"
+              className="w-full h-32 px-3 py-2 text-sm font-mono border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
           </div>
         </div>

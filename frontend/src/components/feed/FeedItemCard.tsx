@@ -11,6 +11,96 @@ import { RSSItem } from "../../types/rss";
 import { FeedImage } from "./FeedImage";
 import { FeedVideo } from "./FeedVideo";
 
+/**
+ * CSS 선택자 앞에 scope prefix를 추가합니다.
+ * 예: ".content { color: red; }" -> ".rss-scope-123 .content { color: red; }"
+ */
+export const scopeCss = (css: string, scopeId: string): string => {
+  // 주석 제거
+  let cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  const result: string[] = [];
+  let i = 0;
+
+  while (i < cleanCss.length) {
+    // @media, @keyframes 등 @ 규칙 처리
+    if (cleanCss[i] === '@') {
+      const atRuleMatch = cleanCss.slice(i).match(/^@[\w-]+[^{]*\{/);
+      if (atRuleMatch) {
+        const atRule = atRuleMatch[0];
+        result.push(atRule);
+        i += atRule.length;
+
+        // @keyframes는 내부를 건드리지 않음
+        if (atRule.includes('@keyframes') || atRule.includes('@font-face')) {
+          let braceCount = 1;
+          const start = i;
+          while (i < cleanCss.length && braceCount > 0) {
+            if (cleanCss[i] === '{') braceCount++;
+            if (cleanCss[i] === '}') braceCount--;
+            i++;
+          }
+          result.push(cleanCss.slice(start, i));
+        }
+        continue;
+      }
+    }
+
+    // 닫는 중괄호
+    if (cleanCss[i] === '}') {
+      result.push('}');
+      i++;
+      continue;
+    }
+
+    // 선택자 찾기 (다음 { 까지)
+    const selectorEnd = cleanCss.indexOf('{', i);
+    if (selectorEnd === -1) break;
+
+    let selector = cleanCss.slice(i, selectorEnd).trim();
+    i = selectorEnd + 1;
+
+    // 빈 선택자 건너뛰기
+    if (!selector) {
+      result.push('{');
+      continue;
+    }
+
+    // 여러 선택자 (콤마로 구분) 각각에 scope 추가
+    const scopedSelectors = selector.split(',').map(sel => {
+      sel = sel.trim();
+      if (!sel) return sel;
+
+      // body, html, :root는 scope 클래스로 대체
+      if (sel === 'body' || sel === 'html' || sel === ':root') {
+        return `.${scopeId}`;
+      }
+
+      // 이미 scoped면 그대로
+      if (sel.includes(scopeId)) {
+        return sel;
+      }
+
+      // 일반 선택자 앞에 scope 추가
+      return `.${scopeId} ${sel}`;
+    }).join(', ');
+
+    result.push(scopedSelectors + ' {');
+
+    // 속성 블록 찾기 (다음 } 까지, 중첩 { } 고려)
+    let braceCount = 1;
+    const propsStart = i;
+    while (i < cleanCss.length && braceCount > 0) {
+      if (cleanCss[i] === '{') braceCount++;
+      if (cleanCss[i] === '}') braceCount--;
+      if (braceCount > 0) i++;
+    }
+    result.push(cleanCss.slice(propsStart, i));
+  }
+
+  return result.join('');
+};
+
 
 export const renderDescription = (
   description: string,
@@ -33,96 +123,6 @@ export const renderDescription = (
   const isBlockElement = (name: string): boolean => {
     const blockElements = ['div', 'p', 'figure', 'blockquote', 'ul', 'ol', 'li', 'table', 'section', 'article', 'header', 'footer', 'nav', 'aside', 'main', 'form', 'fieldset', 'address', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'hr', 'noscript'];
     return blockElements.includes(name);
-  };
-
-  /**
-   * CSS 선택자 앞에 scope prefix를 추가합니다.
-   * 예: ".content { color: red; }" -> ".rss-scope-123 .content { color: red; }"
-   */
-  const scopeCss = (css: string, scopeId: string): string => {
-    // 주석 제거
-    let cleanCss = css.replace(/\/\*[\s\S]*?\*\//g, '');
-
-    const result: string[] = [];
-    let i = 0;
-
-    while (i < cleanCss.length) {
-      // @media, @keyframes 등 @ 규칙 처리
-      if (cleanCss[i] === '@') {
-        const atRuleMatch = cleanCss.slice(i).match(/^@[\w-]+[^{]*\{/);
-        if (atRuleMatch) {
-          const atRule = atRuleMatch[0];
-          result.push(atRule);
-          i += atRule.length;
-
-          // @keyframes는 내부를 건드리지 않음
-          if (atRule.includes('@keyframes') || atRule.includes('@font-face')) {
-            let braceCount = 1;
-            const start = i;
-            while (i < cleanCss.length && braceCount > 0) {
-              if (cleanCss[i] === '{') braceCount++;
-              if (cleanCss[i] === '}') braceCount--;
-              i++;
-            }
-            result.push(cleanCss.slice(start, i));
-          }
-          continue;
-        }
-      }
-
-      // 닫는 중괄호
-      if (cleanCss[i] === '}') {
-        result.push('}');
-        i++;
-        continue;
-      }
-
-      // 선택자 찾기 (다음 { 까지)
-      const selectorEnd = cleanCss.indexOf('{', i);
-      if (selectorEnd === -1) break;
-
-      let selector = cleanCss.slice(i, selectorEnd).trim();
-      i = selectorEnd + 1;
-
-      // 빈 선택자 건너뛰기
-      if (!selector) {
-        result.push('{');
-        continue;
-      }
-
-      // 여러 선택자 (콤마로 구분) 각각에 scope 추가
-      const scopedSelectors = selector.split(',').map(sel => {
-        sel = sel.trim();
-        if (!sel) return sel;
-
-        // body, html, :root는 scope 클래스로 대체
-        if (sel === 'body' || sel === 'html' || sel === ':root') {
-          return `.${scopeId}`;
-        }
-
-        // 이미 scoped면 그대로
-        if (sel.includes(scopeId)) {
-          return sel;
-        }
-
-        // 일반 선택자 앞에 scope 추가
-        return `.${scopeId} ${sel}`;
-      }).join(', ');
-
-      result.push(scopedSelectors + ' {');
-
-      // 속성 블록 찾기 (다음 } 까지, 중첩 { } 고려)
-      let braceCount = 1;
-      const propsStart = i;
-      while (i < cleanCss.length && braceCount > 0) {
-        if (cleanCss[i] === '{') braceCount++;
-        if (cleanCss[i] === '}') braceCount--;
-        if (braceCount > 0) i++;
-      }
-      result.push(cleanCss.slice(propsStart, i));
-    }
-
-    return result.join('');
   };
 
   const normalizeSrc = (raw: string) => {
@@ -552,6 +552,10 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           "mt-2 sm:mt-3 text-muted-foreground leading-relaxed overflow-hidden prose dark:prose-invert max-w-none",
           fontSize.body
         )}>
+          {/* Feed custom CSS (user-defined) */}
+          {item.feed_custom_css && (
+            <style dangerouslySetInnerHTML={{ __html: scopeCss(item.feed_custom_css, `rss-scope-${item.id}`) }} />
+          )}
           {/* Show thumbnail if image exists and not already in description */}
           {item.image && !item.description?.includes(item.image) && (
             <FeedImage

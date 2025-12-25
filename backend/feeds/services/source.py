@@ -12,7 +12,11 @@ import re
 from ninja import Schema
 
 from feeds.models import RSSFeed, RSSEverythingSource, FeedTaskResult, RSSItem
-from feeds.schemas.source import PreviewItemResponse, SourceCreateSchema, SourceUpdateSchema
+from feeds.schemas.source import (
+    PreviewItemResponse,
+    SourceCreateSchema,
+    SourceUpdateSchema,
+)
 from feeds.utils.html_parser import (
     generate_selector,
     extract_text,
@@ -21,7 +25,7 @@ from feeds.utils.html_parser import (
     extract_src,
 )
 from feeds.services.crawler import CrawlerService
-from feeds.schemas import  CrawlRequest
+from feeds.schemas import CrawlRequest
 
 logger = logging.getLogger(__name__)
 
@@ -296,9 +300,7 @@ class SourceService:
         feed = get_object_or_404(RSSFeed, id=feed_id, user=user)
 
         source = RSSEverythingSource.objects.create(
-            feed=feed,
-            is_active=True,
-            **data.dict()
+            feed=feed, is_active=True, **data.dict()
         )
         return source
 

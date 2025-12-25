@@ -101,7 +101,9 @@ class FeedPaginationTest(TransactionTestCase):
         items.sort(key=lambda x: x.published_at, reverse=True)
 
         # First page (no cursor, returns newest items first)
-        response = async_to_sync(self.client.get)("/?limit=10&direction=before", headers=self.headers)
+        response = async_to_sync(self.client.get)(
+            "/?limit=10&direction=before", headers=self.headers
+        )
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
@@ -149,7 +151,9 @@ class FeedPaginationTest(TransactionTestCase):
             items.append(item)
 
         # First page - get newest items (by published_at, descending)
-        response = async_to_sync(self.client.get)("/?limit=10&direction=before", headers=self.headers)
+        response = async_to_sync(self.client.get)(
+            "/?limit=10&direction=before", headers=self.headers
+        )
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(len(data["items"]), 10)
@@ -295,7 +299,9 @@ class CategoryVisibilityTest(TransactionTestCase):
     """Category와 Feed의 visible 옵션 테스트"""
 
     def setUp(self):
-        self.user = User.objects.create_user(username=unique_username("vis"), password="vispass123")
+        self.user = User.objects.create_user(
+            username=unique_username("vis"), password="vispass123"
+        )
         # visible=True 카테고리
         self.visible_category = RSSCategory.objects.create(
             user=self.user,
@@ -415,7 +421,9 @@ class CategoryVisibilityTest(TransactionTestCase):
 
     def test_feed_page_shows_all_items(self):
         """피드 화면: visible 설정과 관계없이 해당 피드의 모든 아이템 표시"""
-        response = async_to_sync(self.client.get)(f"/feed/{self.hidden_feed.id}", headers=self.headers)
+        response = async_to_sync(self.client.get)(
+            f"/feed/{self.hidden_feed.id}", headers=self.headers
+        )
         self.assertEqual(response.status_code, 200)
         data = response.json()
         item_ids = [item["id"] for item in data["items"]]
@@ -594,7 +602,9 @@ class RSSExportPublicTest(TransactionTestCase):
 
     def test_category_rss_public_category_exists(self):
         """공개 카테고리의 RSS 엔드포인트는 200 반환"""
-        response = async_to_sync(self.client.get)(f"/category/{self.public_category.id}/rss")
+        response = async_to_sync(self.client.get)(
+            f"/category/{self.public_category.id}/rss"
+        )
         self.assertEqual(response.status_code, 200)
 
         content = response.content.decode("utf-8")
@@ -605,7 +615,9 @@ class RSSExportPublicTest(TransactionTestCase):
 
     def test_category_rss_private_category_404(self):
         """비공개 카테고리의 RSS 엔드포인트는 404 반환"""
-        response = async_to_sync(self.client.get)(f"/category/{self.private_category.id}/rss")
+        response = async_to_sync(self.client.get)(
+            f"/category/{self.private_category.id}/rss"
+        )
         self.assertEqual(response.status_code, 404)
 
     def test_category_rss_nonexistent_404(self):
@@ -646,7 +658,9 @@ class RSSExportPublicTest(TransactionTestCase):
         response = async_to_sync(self.client.get)("/rss")
         self.assertEqual(response.status_code, 200)
 
-        response = async_to_sync(self.client.get)(f"/category/{self.public_category.id}/rss")
+        response = async_to_sync(self.client.get)(
+            f"/category/{self.public_category.id}/rss"
+        )
         self.assertEqual(response.status_code, 200)
 
         response = async_to_sync(self.client.get)(f"/feed/{self.public_feed.id}/rss")

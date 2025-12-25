@@ -24,7 +24,9 @@ class FetchHTMLRequest(BaseModel):
 
     url: str
     use_browser: bool = True
-    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
+    browser_service: RSSEverythingSource.BrowserService = (
+        RSSEverythingSource.BrowserService.REALBROWSER
+    )
     wait_selector: str = "body"
     timeout: int = 30000
     custom_headers: dict = Field(default_factory=dict)
@@ -89,7 +91,9 @@ class CrawlRequest(BaseModel):
     image_selector: str = ""
     author_selector: str = ""
     use_browser: bool = True
-    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
+    browser_service: RSSEverythingSource.BrowserService = (
+        RSSEverythingSource.BrowserService.REALBROWSER
+    )
     wait_selector: str = "body"
     custom_headers: dict = Field(default_factory=dict)
     exclude_selectors: list[str] = Field(default_factory=list)
@@ -120,7 +124,10 @@ class SourceCreateSchema(ModelSchema):
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
     source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
-    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
+    browser_service: RSSEverythingSource.BrowserService = (
+        RSSEverythingSource.BrowserService.REALBROWSER
+    )
+
     class Meta:
         model = RSSEverythingSource
         exclude = [
@@ -133,7 +140,7 @@ class SourceCreateSchema(ModelSchema):
             "date_formats",
             "exclude_selectors",
             "source_type",
-            "browser_service"
+            "browser_service",
         ]
 
 
@@ -143,7 +150,9 @@ class SourceUpdateSchema(ModelSchema):
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
     source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
-    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
+    browser_service: RSSEverythingSource.BrowserService = (
+        RSSEverythingSource.BrowserService.REALBROWSER
+    )
 
     class Meta:
         model = RSSEverythingSource
@@ -157,7 +166,7 @@ class SourceUpdateSchema(ModelSchema):
             "date_formats",
             "exclude_selectors",
             "source_type",
-            "browser_service"
+            "browser_service",
         ]
         fields_optional = "__all__"
 
@@ -168,13 +177,19 @@ class SourceSchema(ModelSchema):
     date_formats: list[str] = Field(default_factory=list)
     exclude_selectors: list[str] = Field(default_factory=list)
     source_type: RSSEverythingSource.SourceType = RSSEverythingSource.SourceType.RSS
-    browser_service: RSSEverythingSource.BrowserService = RSSEverythingSource.BrowserService.REALBROWSER
+    browser_service: RSSEverythingSource.BrowserService = (
+        RSSEverythingSource.BrowserService.REALBROWSER
+    )
+
     class Meta:
         model = RSSEverythingSource
         fields = "__all__"
-        exclude = ["date_formats", "exclude_selectors",
+        exclude = [
+            "date_formats",
+            "exclude_selectors",
             "source_type",
-            "browser_service"]
+            "browser_service",
+        ]
 
 
 class RefreshResponse(BaseModel):

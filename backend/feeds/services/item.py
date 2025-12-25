@@ -96,6 +96,7 @@ class ItemService:
         """메인 화면 아이템 목록"""
         items = (
             RSSItem.objects.search(search)
+            .select_related('feed')
             .filter(feed__user=user)
             .filter(feed__visible=True, feed__category__visible=True)
         )
@@ -116,7 +117,7 @@ class ItemService:
         search: str = "",
     ) -> QuerySet[RSSItem]:
         """카테고리별 아이템 목록"""
-        items = RSSItem.objects.search(search).filter(
+        items = RSSItem.objects.search(search).select_related('feed').filter(
             feed__user=user,
             feed__category_id=category_id,
             feed__visible=True,
@@ -138,7 +139,7 @@ class ItemService:
         search: str = "",
     ) -> QuerySet[RSSItem]:
         """피드별 아이템 목록"""
-        items = RSSItem.objects.search(search).filter(feed__user=user, feed_id=feed_id)
+        items = RSSItem.objects.search(search).select_related('feed').filter(feed__user=user, feed_id=feed_id)
 
         if is_read is not None:
             items = items.filter(is_read=is_read)

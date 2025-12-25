@@ -43,6 +43,11 @@ export type FeedSchemaFaviconUrl = string | null;
 export type FeedSchemaDescription = string | null;
 
 /**
+ * 피드 아이템에 적용할 사용자 정의 CSS
+ */
+export type FeedSchemaCustomCss = string | null;
+
+/**
  * 피드 스키마
  */
 export interface FeedSchema {
@@ -53,6 +58,8 @@ export interface FeedSchema {
   title?: FeedSchemaTitle;
   favicon_url?: FeedSchemaFaviconUrl;
   description?: FeedSchemaDescription;
+  /** 피드 아이템에 적용할 사용자 정의 CSS */
+  custom_css?: FeedSchemaCustomCss;
   visible?: boolean;
   /** RSS 피드 공개 여부 */
   is_public?: boolean;
@@ -226,6 +233,11 @@ export type FeedCreateSchemaFaviconUrl = string | null;
 
 export type FeedCreateSchemaDescription = string | null;
 
+/**
+ * 피드 아이템에 적용할 사용자 정의 CSS
+ */
+export type FeedCreateSchemaCustomCss = string | null;
+
 export type FeedCreateSchemaVisible = boolean | null;
 
 /**
@@ -251,6 +263,8 @@ export interface FeedCreateSchema {
   title?: FeedCreateSchemaTitle;
   favicon_url?: FeedCreateSchemaFaviconUrl;
   description?: FeedCreateSchemaDescription;
+  /** 피드 아이템에 적용할 사용자 정의 CSS */
+  custom_css?: FeedCreateSchemaCustomCss;
   visible?: FeedCreateSchemaVisible;
   /** RSS 피드 공개 여부 */
   is_public?: FeedCreateSchemaIsPublic;
@@ -269,6 +283,11 @@ export type FeedUpdateSchemaTitle = string | null;
 export type FeedUpdateSchemaFaviconUrl = string | null;
 
 export type FeedUpdateSchemaDescription = string | null;
+
+/**
+ * 피드 아이템에 적용할 사용자 정의 CSS
+ */
+export type FeedUpdateSchemaCustomCss = string | null;
 
 export type FeedUpdateSchemaVisible = boolean | null;
 
@@ -296,6 +315,8 @@ export interface FeedUpdateSchema {
   title?: FeedUpdateSchemaTitle;
   favicon_url?: FeedUpdateSchemaFaviconUrl;
   description?: FeedUpdateSchemaDescription;
+  /** 피드 아이템에 적용할 사용자 정의 CSS */
+  custom_css?: FeedUpdateSchemaCustomCss;
   visible?: FeedUpdateSchemaVisible;
   /** RSS 피드 공개 여부 */
   is_public?: FeedUpdateSchemaIsPublic;
@@ -405,6 +426,7 @@ export interface ItemSchema {
   published_at: string;
   is_read: boolean;
   is_favorite: boolean;
+  feed_custom_css?: string;
 }
 
 export type InputCursor = string | null;

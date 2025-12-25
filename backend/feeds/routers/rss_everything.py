@@ -138,9 +138,11 @@ def get_source(request, source_id: int):
 )
 def create_source(request, data: SourceCreateSchema):
     """기존 피드에 새 RSSEverything 소스 추가"""
-    source = SourceService.create_source(request.auth,
-                                         data.feed, #type:ignore
-                                         data.dict())
+    source = SourceService.create_source(
+        request.auth,
+        data.feed,  # type:ignore
+        data.dict(),
+    )
     return source
 
 

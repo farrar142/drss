@@ -47,6 +47,11 @@ class RSSFeed(BaseModel):
     title = models.CharField(max_length=500, blank=True)
     favicon_url = models.URLField(blank=True, null=True, default="")
     description = models.TextField(blank=True)
+    custom_css = models.TextField(
+        blank=True,
+        default="",
+        help_text="피드 아이템에 적용할 사용자 정의 CSS"
+    )
     visible = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")
     refresh_interval = models.IntegerField(

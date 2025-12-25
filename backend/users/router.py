@@ -83,9 +83,13 @@ def signup(request, data: SignupRequest):
 
     if User.objects.filter(username=data.username).exists():
         raise errors.AuthorizationError(message="Username already exists")
-
+    is_superuser = User.objects.all().exists()
     user = User.objects.create_user(
-        username=data.username, password=data.password, email=data.email
+        username=data.username,
+        password=data.password,
+        email=data.email,
+        is_staff=is_superuser,
+        is_superuser=is_superuser,
     )
     SettingService.set_admin_signed(True)
 
@@ -129,8 +133,10 @@ def me(request):
 
 # ===== 관리자 설정 API =====
 
+
 class GlobalSettingSchema(Schema):
     """글로벌 설정 스키마"""
+
     admin_signed: bool
     allow_signup: bool
     site_name: str
@@ -140,6 +146,7 @@ class GlobalSettingSchema(Schema):
 
 class GlobalSettingUpdateSchema(Schema):
     """글로벌 설정 업데이트 스키마 (부분 업데이트 가능)"""
+
     allow_signup: bool | None = None
     site_name: str | None = None
     max_feeds_per_user: int | None = None

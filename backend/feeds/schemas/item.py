@@ -22,6 +22,14 @@ class ItemSchema(Schema):
     published_at: datetime
     is_read: bool
     is_favorite: bool
+    feed_custom_css: str = ""
+
+    @staticmethod
+    def resolve_feed_custom_css(obj) -> str:
+        """feed의 custom_css를 반환"""
+        if hasattr(obj, 'feed') and obj.feed:
+            return obj.feed.custom_css or ""
+        return ""
 
 
 class ItemFilterSchema(Schema):

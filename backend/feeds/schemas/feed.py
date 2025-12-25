@@ -4,18 +4,17 @@ Feed Schemas - 피드 관련 스키마
 
 from datetime import datetime
 from typing import Optional
-from ninja import Field, Schema,ModelSchema
+from ninja import Field, Schema, ModelSchema
 
 from feeds.models import RSSFeed
 from feeds.schemas.source import SourceSchema
-
 
 
 class FeedSchema(ModelSchema):
     """피드 스키마"""
 
     id: int
-    item_count:int = Field(0)
+    item_count: int = Field(0)
     # category_id: int
     # title: str
     # favicon_url: str = ""
@@ -25,6 +24,7 @@ class FeedSchema(ModelSchema):
     # last_updated: datetime
     # item_count: int
     sources: list[SourceSchema] = Field(default=list())
+
     class Meta:
         model = RSSFeed
         exclude = ["user"]
@@ -32,21 +32,25 @@ class FeedSchema(ModelSchema):
 
 class FeedCreateSchema(ModelSchema):
     """피드 생성 스키마 - 소스 정보는 선택적"""
-    category_id : int
+
+    category_id: int
+
     class Meta:
         model = RSSFeed
-        exclude = ["user","category"]
-        fields_optional = '__all__'
+        exclude = ["user", "category"]
+        fields_optional = "__all__"
 
 
 class FeedUpdateSchema(ModelSchema):
     """피드 수정 스키마"""
+
     category_id: Optional[int] = None
     sources: list[SourceSchema] = Field(default=list())
+
     class Meta:
         model = RSSFeed
-        exclude = ["user","category"]
-        fields_optional = '__all__'
+        exclude = ["user", "category"]
+        fields_optional = "__all__"
 
 
 class FeedValidationRequest(Schema):
