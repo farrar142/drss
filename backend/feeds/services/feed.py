@@ -109,7 +109,8 @@ class FeedService:
             category = get_object_or_404(RSSCategory, id=data.category_id, user=user)
             feed.category = category
         for key, value in data.dict().items():
-            if value is not None and key not in ["category_id"]:
+            print(key, value)
+            if value is not None and key not in ["category_id", "sources"]:
                 setattr(feed, key, value)
         feed.save()
 
