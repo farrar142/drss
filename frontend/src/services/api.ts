@@ -1426,6 +1426,19 @@ export const toggleItemRead = (
     }
   
 /**
+ * 아이템 삭제
+ * @summary Delete Item
+ */
+export const deleteItem = (
+    itemId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/items/${itemId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
  * 메인 화면 아이템 목록
  * @summary List All Items
  */
@@ -1509,19 +1522,6 @@ export const exportFeedItemsRss = (
       return axiosInstance<void>(
       {url: `/api/items/feed/${feedId}/rss`, method: 'GET',
         params
-    },
-      );
-    }
-  
-/**
- * 아이템 삭제
- * @summary Delete Item
- */
-export const deleteItem = (
-    itemId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/${itemId}`, method: 'DELETE'
     },
       );
     }
@@ -1945,13 +1945,13 @@ export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCa
 export type RefreshItemResult = NonNullable<Awaited<ReturnType<typeof refreshItem>>>
 export type ToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof toggleItemFavorite>>>
 export type ToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof toggleItemRead>>>
+export type DeleteItemResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 export type ListAllItemsResult = NonNullable<Awaited<ReturnType<typeof listAllItems>>>
 export type ListItemsByCategoryResult = NonNullable<Awaited<ReturnType<typeof listItemsByCategory>>>
 export type ListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof listItemsByFeed>>>
 export type ExportAllItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportAllItemsRss>>>
 export type ExportCategoryItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportCategoryItemsRss>>>
 export type ExportFeedItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportFeedItemsRss>>>
-export type DeleteItemResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>

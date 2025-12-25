@@ -1,9 +1,9 @@
 'use client';
 
-import { CheckCircle, Heart, User, Tag, RefreshCw } from "lucide-react";
+import { CheckCircle, Heart, User, Tag, RefreshCw, Trash2 } from "lucide-react";
 import parse, { DOMNode, Element, domToReact, HTMLReactParserOptions } from 'html-react-parser';
 import { FC, useCallback, useEffect, useMemo, useRef, useState, forwardRef } from "react";
-import { toggleItemFavorite, toggleItemRead, refreshItem } from "../../services/api";
+import { toggleItemFavorite, toggleItemRead, refreshItem, deleteItem } from "../../services/api";
 import { cn } from "@/lib/utils";
 import { useSettingsStore, fontSizeConfig, FontSizeLevel } from "../../stores/settingsStore";
 import { useRSSStore } from "../../stores/rssStore";
@@ -272,8 +272,9 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
   onMediaClick: (url: string, type: 'image' | 'video', itemId?: number) => void,
   onCollapseChange?: (id: number, collapsed: boolean) => void,
   onItemRefreshed?: (itemId: number, updatedItem: Partial<RSSItem>) => void,
+  onItemDeleted?: (itemId: number) => void,
   fontSizeOverride?: FontSizeLevel, // 미리보기용 오버라이드
-}>(({ item, onMediaClick, onCollapseChange, onItemRefreshed, fontSizeOverride }, ref) => {
+}>(({ item, onMediaClick, onCollapseChange, onItemRefreshed, onItemDeleted, fontSizeOverride }, ref) => {
   const { viewMode, fontSizeLevel: storeFontSize } = useSettingsStore();
   const fontSizeLevel = fontSizeOverride || storeFontSize;
   const fontSize = fontSizeConfig[fontSizeLevel];
@@ -371,6 +372,20 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       console.error(error);
     }
   }, [item.id, item.feed_id, isRead, adjustFeedItemCount]);
+
+  const handleDelete = useCallback(async () => {
+    if (!confirm('이 아이템을 삭제하시겠습니까?')) return;
+    try {
+      await deleteItem(item.id);
+      // 읽지 않은 아이템이었다면 카운트 감소
+      if (!isRead) {
+        adjustFeedItemCount(item.feed_id, -1);
+      }
+      onItemDeleted?.(item.id);
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+    }
+  }, [item.id, item.feed_id, isRead, adjustFeedItemCount, onItemDeleted]);
 
   return (
     <div
@@ -503,6 +518,18 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             title={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart className={cn(fontSize.icon, isFavorite && "fill-red-500")} />
+          </button>
+
+          {/* Delete Button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+            className={cn(
+              "p-1 rounded-full transition-colors flex items-center justify-center",
+              "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            )}
+            title="Delete item"
+          >
+            <Trash2 className={cn(fontSize.icon)} />
           </button>
 
           {/* Read More Link */}

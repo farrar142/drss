@@ -19,6 +19,8 @@ export interface FeedViewerProps {
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   /** 아이템 업데이트 콜백 */
   onItemUpdate?: (itemId: number, updatedData: Partial<RSSItem>) => void;
+  /** 아이템 삭제 콜백 */
+  onItemDelete?: (itemId: number) => void;
 }
 
 export const FeedViewer: FC<FeedViewerProps> = memo(function FeedViewer(props) {

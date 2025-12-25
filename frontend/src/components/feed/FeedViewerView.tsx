@@ -29,6 +29,7 @@ const Column = memo(function Column({
   handleMediaClick,
   setSentinelRef,
   onItemRefreshed,
+  onItemDeleted,
 }: {
   columnData: RSSItem[];
   columnIndex: number;
@@ -36,6 +37,7 @@ const Column = memo(function Column({
   handleMediaClick: (src: string, type?: 'image' | 'video', itemId?: number) => void;
   setSentinelRef: (index: number) => (el: HTMLDivElement | null) => void;
   onItemRefreshed: (itemId: number, updatedData: Partial<RSSItem>) => void;
+  onItemDeleted: (itemId: number) => void;
 }) {
   return (
     <div className="flex flex-col gap-4" style={{ contain: 'layout style' }}>
@@ -46,6 +48,7 @@ const Column = memo(function Column({
           onMediaClick={handleMediaClick}
           onCollapseChange={handleCollapseChange}
           onItemRefreshed={onItemRefreshed}
+          onItemDeleted={onItemDeleted}
         />
       ))}
       {/* Sentinel: 이 컬럼의 끝이 보이면 대기열에서 아이템 추가 */}
@@ -74,6 +77,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
   queueLength,
   scrollContainerRef,
   onItemRefreshed,
+  onItemDeleted,
 }) {
   // cruising에서 필요한 값만 추출 (객체 참조 변경으로 인한 리렌더링 방지)
   const { isCruising, speedPercent, toggleCruising, setSpeedPercent } = cruising;
@@ -100,6 +104,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
                   onMediaClick={handleMediaClick}
                   onCollapseChange={handleCollapseChange}
                   onItemRefreshed={onItemRefreshed}
+                  onItemDeleted={onItemDeleted}
                 />
               ))}
               <div ref={setSentinelRef(0)} className="flex-grow min-h-[100px]" />
@@ -126,6 +131,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
                   handleMediaClick={handleMediaClick}
                   setSentinelRef={setSentinelRef}
                   onItemRefreshed={onItemRefreshed}
+                  onItemDeleted={onItemDeleted}
                 />
               ))}
             </div>

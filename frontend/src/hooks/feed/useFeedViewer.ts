@@ -26,6 +26,8 @@ export interface UseFeedViewerOptions {
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   /** 아이템 업데이트 콜백 */
   onItemUpdate?: (itemId: number, updatedData: Partial<RSSItem>) => void;
+  /** 아이템 삭제 콜백 */
+  onItemDelete?: (itemId: number) => void;
 }
 
 export interface UseFeedViewerReturn {
@@ -69,6 +71,9 @@ export interface UseFeedViewerReturn {
 
   // 아이템 새로고침 핸들러
   onItemRefreshed: (itemId: number, updatedData: Partial<RSSItem>) => void;
+
+  // 아이템 삭제 핸들러
+  onItemDeleted: (itemId: number) => void;
 }
 
 export function useFeedViewer({
@@ -83,6 +88,7 @@ export function useFeedViewer({
   maxColumns = 3,
   scrollContainerRef,
   onItemUpdate,
+  onItemDelete,
 }: UseFeedViewerOptions): UseFeedViewerReturn {
   const { viewMode } = useSettingsStore();
   // 극도로 작은 화면 (480px 이하): 무조건 1열
@@ -111,6 +117,7 @@ export function useFeedViewer({
     queueLength,
     reset: resetDistributor,
     updateItem: updateColumnItem,
+    removeItem: removeColumnItem,
   } = useColumnDistributor({
     items,
     columns,
@@ -217,6 +224,17 @@ export function useFeedViewer({
     onItemUpdateRef.current?.(itemId, updatedData);
   }, [updateColumnItem]);
 
+  // 아이템 삭제 핸들러 - columnItems와 외부 onItemDelete 둘 다 처리
+  const onItemDeleteRef = useRef(onItemDelete);
+  onItemDeleteRef.current = onItemDelete;
+
+  const onItemDeleted = useCallback((itemId: number) => {
+    // columnItems에서 제거 (화면에 바로 반영)
+    removeColumnItem(itemId);
+    // 외부 콜백도 호출 (usePagination의 items에서 제거)
+    onItemDeleteRef.current?.(itemId);
+  }, [removeColumnItem]);
+
   // 반환 객체를 useMemo로 안정화 - 실제 값이 변경될 때만 새 객체 생성
   return useMemo(() => ({
     viewMode,
@@ -238,6 +256,7 @@ export function useFeedViewer({
     resetDistributor,
     scrollContainerRef,
     onItemRefreshed,
+    onItemDeleted,
   }), [
     viewMode,
     columns,
@@ -258,5 +277,6 @@ export function useFeedViewer({
     resetDistributor,
     scrollContainerRef,
     onItemRefreshed,
+    onItemDeleted,
   ]);
 }

@@ -165,5 +165,10 @@ export const usePagination = <T extends { id: number }>(
     ));
   }, []);
 
-  return { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem };
+  // 아이템 제거 함수 (삭제에서 사용)
+  const removeItem = useCallback((itemId: number) => {
+    setItems(prev => prev.filter(item => item.id !== itemId));
+  }, []);
+
+  return { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem, removeItem };
 }

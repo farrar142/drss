@@ -52,6 +52,8 @@ interface UseColumnDistributorReturn<T> {
   reset: () => void;
   /** 특정 아이템 업데이트 */
   updateItem: (itemId: number, updatedData: Partial<T>) => void;
+  /** 특정 아이템 제거 */
+  removeItem: (itemId: number) => void;
 }
 
 export function useColumnDistributor<T extends { id: number }>({
@@ -423,11 +425,33 @@ export function useColumnDistributor<T extends { id: number }>({
     });
   }, []);
 
+  // 특정 아이템 제거 함수
+  const removeItem = useCallback((itemId: number) => {
+    // distributedIds에서 제거
+    distributedIdsRef.current.delete(itemId);
+    // columnItems에서 제거
+    setColumnItems(prev => {
+      let found = false;
+      const next = prev.map(column => {
+        const filtered = column.filter(item => {
+          if (item.id === itemId) {
+            found = true;
+            return false;
+          }
+          return true;
+        });
+        return filtered;
+      });
+      return found ? next : prev;
+    });
+  }, []);
+
   return {
     columnItems,
     setSentinelRef,
     queueLength,
     reset,
     updateItem,
+    removeItem,
   };
 }
