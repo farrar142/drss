@@ -27,7 +27,7 @@ class ItemSchema(Schema):
     @staticmethod
     def resolve_feed_custom_css(obj) -> str:
         """feed의 custom_css를 반환"""
-        if hasattr(obj, 'feed') and obj.feed:
+        if hasattr(obj, "feed") and obj.feed:
             return obj.feed.custom_css or ""
         return ""
 

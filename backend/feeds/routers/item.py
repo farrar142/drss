@@ -40,13 +40,6 @@ async def toggle_item_read(request, item_id: int):
     return ItemService.toggle_read(request.auth, item_id)
 
 
-@router.delete("/{item_id}", operation_id="deleteItem")
-async def delete_item(request, item_id: int):
-    """아이템 삭제"""
-    await ItemService.delete_item(request.auth, item_id)
-    return {"success": True}
-
-
 @router.get("", response=list[ItemSchema], operation_id="listAllItems")
 @paginate(AsyncCursorPagination[RSSItem], ordering_field="published_at")
 async def list_all_items(
@@ -213,7 +206,7 @@ async def export_feed_items_rss(
     return HttpResponse(xml_content, content_type=content_type)
 
 
-@router.delete("/{item_id}", auth=JWTAuth(), operation_id="deleteItem")
+@router.delete("/{item_id}", operation_id="deleteItem")
 async def delete_item(request, item_id: int):
     """아이템 삭제"""
     await ItemService.delete_item(request.auth, item_id)

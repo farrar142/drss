@@ -43,7 +43,9 @@ class ItemService:
         소스가 연결되어 있고 상세 페이지 스크래핑 설정이 있는 경우에만 가능
         """
 
-        item = await aget_object_or_404(RSSItem, id=item_id, feed__user=user)
+        item = await aget_object_or_404(
+            RSSItem.objects.select_related("source"), id=item_id, feed__user=user
+        )
 
         # 소스 확인: 아이템에 직접 연결된 소스 또는 피드의 첫 번째 소스 사용
         source = item.source
@@ -96,7 +98,7 @@ class ItemService:
         """메인 화면 아이템 목록"""
         items = (
             RSSItem.objects.search(search)
-            .select_related('feed')
+            .select_related("feed")
             .filter(feed__user=user)
             .filter(feed__visible=True, feed__category__visible=True)
         )
@@ -117,10 +119,14 @@ class ItemService:
         search: str = "",
     ) -> QuerySet[RSSItem]:
         """카테고리별 아이템 목록"""
-        items = RSSItem.objects.search(search).select_related('feed').filter(
-            feed__user=user,
-            feed__category_id=category_id,
-            feed__visible=True,
+        items = (
+            RSSItem.objects.search(search)
+            .select_related("feed")
+            .filter(
+                feed__user=user,
+                feed__category_id=category_id,
+                feed__visible=True,
+            )
         )
 
         if is_read is not None:
@@ -139,7 +145,11 @@ class ItemService:
         search: str = "",
     ) -> QuerySet[RSSItem]:
         """피드별 아이템 목록"""
-        items = RSSItem.objects.search(search).select_related('feed').filter(feed__user=user, feed_id=feed_id)
+        items = (
+            RSSItem.objects.search(search)
+            .select_related("feed")
+            .filter(feed__user=user, feed_id=feed_id)
+        )
 
         if is_read is not None:
             items = items.filter(is_read=is_read)

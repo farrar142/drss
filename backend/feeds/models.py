@@ -48,9 +48,7 @@ class RSSFeed(BaseModel):
     favicon_url = models.URLField(blank=True, null=True, default="")
     description = models.TextField(blank=True)
     custom_css = models.TextField(
-        blank=True,
-        default="",
-        help_text="피드 아이템에 적용할 사용자 정의 CSS"
+        blank=True, default="", help_text="피드 아이템에 적용할 사용자 정의 CSS"
     )
     visible = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False, help_text="RSS 피드 공개 여부")
@@ -69,7 +67,7 @@ class RSSFeed(BaseModel):
             models.Index(fields=["category"]),
             models.Index(fields=["user", "visible"]),
             models.Index(fields=["category", "visible"]),
-            models.Index(fields=["is_public"])
+            models.Index(fields=["is_public"]),
         ]
 
     def __str__(self):
@@ -101,7 +99,7 @@ class RSSFeed(BaseModel):
 class RSSItem(BaseModel):
     objects: RSSItemManager[Self] = RSSItemManager()
     feed = models.ForeignKey(RSSFeed, on_delete=models.CASCADE)
-    source:models.ForeignKey["RSSEverythingSource|None"] = models.ForeignKey(
+    source: models.ForeignKey["RSSEverythingSource|None"] = models.ForeignKey(
         "RSSEverythingSource",
         on_delete=models.SET_NULL,
         null=True,
@@ -113,9 +111,7 @@ class RSSItem(BaseModel):
     link = models.URLField()
     description = models.TextField(blank=True)
     description_text = models.TextField(
-        blank=True,
-        default="",
-        help_text="HTML 태그가 제거된 순수 텍스트 (검색용)"
+        blank=True, default="", help_text="HTML 태그가 제거된 순수 텍스트 (검색용)"
     )
     author = models.CharField(max_length=255, blank=True, help_text="아이템 작성자")
     categories = models.JSONField(
@@ -150,7 +146,9 @@ class RSSItem(BaseModel):
         if self.description and not self.description_text:
             self.description_text = strip_html_tags(self.description)
         elif self.pk is None:  # 새로 생성되는 경우
-            self.description_text = strip_html_tags(self.description) if self.description else ""
+            self.description_text = (
+                strip_html_tags(self.description) if self.description else ""
+            )
 
         super().save(*args, **kwargs)
 
@@ -166,7 +164,6 @@ class RSSEverythingSource(BaseModel):
         RSS = "rss", "RSS/Atom (Classic)"
         PAGE_SCRAPING = "page_scraping", "Page Scraping"
         DETAIL_PAGE_SCRAPING = "detail_page_scraping", "Detail Page Scraping"
-
 
     # 연결된 RSSFeed (필수) - 1:N 관계로 변경
     feed = models.ForeignKey(
