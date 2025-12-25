@@ -204,3 +204,10 @@ async def export_feed_items_rss(
         content_type = "application/rss+xml; charset=utf-8"
 
     return HttpResponse(xml_content, content_type=content_type)
+
+
+@router.delete("/{item_id}", auth=JWTAuth(), operation_id="deleteItem")
+async def delete_item(request, item_id: int):
+    """아이템 삭제"""
+    await ItemService.delete_item(request.auth, item_id)
+    return {"success": True}

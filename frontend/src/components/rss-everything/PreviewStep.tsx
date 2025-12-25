@@ -9,11 +9,12 @@ import { useTranslation } from '@/stores/languageStore';
 
 interface PreviewStepProps {
   previewItems: PreviewItem[];
+  previewPageCss?: string;  // 페이지에서 추출한 CSS
   onBack: () => void;
   onContinue: () => void;
 }
 
-export function PreviewStep({ previewItems, onBack, onContinue }: PreviewStepProps) {
+export function PreviewStep({ previewItems, previewPageCss, onBack, onContinue }: PreviewStepProps) {
   const { t } = useTranslation();
 
   return (
@@ -25,7 +26,7 @@ export function PreviewStep({ previewItems, onBack, onContinue }: PreviewStepPro
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <PreviewPanel items={previewItems} />
+        <PreviewPanel items={previewItems} pageCss={previewPageCss} />
 
         <div className="mt-4 flex gap-2">
           <Button variant="outline" onClick={onBack}>

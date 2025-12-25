@@ -34,6 +34,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
     detailUrl,
     detailSelectors,
     previewItems,
+    previewPageCss,
     previewLoading,
     customHeaders,
     dateFormats,
@@ -189,6 +190,7 @@ export default function RSSEverythingPage({ context }: RSSEverythingPageProps) {
         {currentStep === 'preview' && (
           <PreviewStep
             previewItems={previewItems}
+            previewPageCss={previewPageCss}
             onBack={goBack}
             onContinue={goToSave}
           />

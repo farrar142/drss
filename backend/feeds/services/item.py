@@ -148,3 +148,10 @@ class ItemService:
         # items = ItemService._apply_search_filter(items, search)
 
         return items
+
+    @staticmethod
+    async def delete_item(user, item_id: int) -> bool:
+        """특정 아이템 삭제"""
+        item = await aget_object_or_404(RSSItem, id=item_id, feed__user=user)
+        await item.adelete()
+        return True

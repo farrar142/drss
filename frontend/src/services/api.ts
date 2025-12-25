@@ -581,6 +581,7 @@ export interface PreviewItemResponse {
   items?: PreviewItem[];
   count?: number;
   error?: PreviewItemResponseError;
+  page_css?: string;
 }
 
 export type CrawlRequestCustomHeaders = { [key: string]: unknown };
@@ -1490,6 +1491,19 @@ export const exportFeedItemsRss = (
     }
   
 /**
+ * 아이템 삭제
+ * @summary Delete Item
+ */
+export const deleteItem = (
+    itemId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/items/${itemId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+/**
  * @summary Login
  */
 export const usersRouterLogin = (
@@ -1914,6 +1928,7 @@ export type ListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof listIt
 export type ExportAllItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportAllItemsRss>>>
 export type ExportCategoryItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportCategoryItemsRss>>>
 export type ExportFeedItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportFeedItemsRss>>>
+export type DeleteItemResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>

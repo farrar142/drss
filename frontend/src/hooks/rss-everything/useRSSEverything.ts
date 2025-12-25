@@ -102,6 +102,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
   // Preview step
   const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
+  const [previewPageCss, setPreviewPageCss] = useState<string>('');  // ::marker 등 pseudo-element 스타일 유지용
   const [previewLoading, setPreviewLoading] = useState(false);
 
   // 셀렉터 검증 상태
@@ -585,6 +586,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
       if (response.success) {
         setPreviewItems(response.items || []);
+        setPreviewPageCss(response.page_css || '');  // 페이지 CSS 저장
         setCurrentStep('preview');
       } else {
         setError(response.error || 'Failed to preview items');
@@ -799,6 +801,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
     detailUrl,
     detailSelectors,
     previewItems,
+    previewPageCss,
     previewLoading,
     customHeaders,
     dateFormats,
