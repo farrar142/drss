@@ -28,14 +28,13 @@ from feeds.utils.feed_fetcher import fetch_feed_data, extract_favicon_url
 class FeedService:
     """피드 관련 비즈니스 로직을 처리하는 서비스"""
 
-
     @staticmethod
     def validate_feed(data: FeedValidationRequest) -> dict:
         """RSS 피드 URL 검증"""
         feed = fetch_feed_data(data.url, data.custom_headers)
 
-        title = feed.feed.get("title", "Unknown Title") #type:ignore
-        description = feed.feed.get("description", "") #type:ignore
+        title = feed.feed.get("title", "Unknown Title")  # type:ignore
+        description = feed.feed.get("description", "")  # type:ignore
         items_count = len(feed.entries)
         latest_item_date = None
 
@@ -65,7 +64,8 @@ class FeedService:
     def get_user_feeds(user) -> QuerySet[RSSFeed]:
         """사용자의 피드 목록 조회"""
         return (
-            RSSFeed.objects.with_item_counts().filter(user=user)
+            RSSFeed.objects.with_item_counts()
+            .filter(user=user)
             .prefetch_related("sources")
         )
 
@@ -93,7 +93,8 @@ class FeedService:
 
         # item_count 추가하여 반환
         feed_with_count = (
-            RSSFeed.objects.with_item_counts().filter(id=feed.pk)
+            RSSFeed.objects.with_item_counts()
+            .filter(id=feed.pk)
             .prefetch_related("sources")
             .first()
         )
@@ -107,23 +108,14 @@ class FeedService:
         if data.category_id is not None:
             category = get_object_or_404(RSSCategory, id=data.category_id, user=user)
             feed.category = category
-        if data.title is not None:
-            feed.title = data.title
-        if data.description is not None:
-            feed.description = data.description
-        if data.visible is not None:
-            feed.visible = data.visible
-        if data.refresh_interval is not None:
-            feed.refresh_interval = data.refresh_interval
-        if data.sources is not None:
-            feed.is_public = data.is_public
-        if getattr(data, "favicon_url", None) is not None:
-            feed.favicon_url = data.favicon_url
-
+        for key, value in data.dict().items():
+            if value is not None and key not in ["category_id"]:
+                setattr(feed, key, value)
         feed.save()
 
         feed_with_count = (
-            RSSFeed.objects.with_item_counts().filter(id=feed.pk)
+            RSSFeed.objects.with_item_counts()
+            .filter(id=feed.pk)
             .prefetch_related("sources")
             .first()
         )

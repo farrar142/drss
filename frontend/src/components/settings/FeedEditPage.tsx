@@ -148,6 +148,16 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     try {
       if (context?.mode === 'edit' && context.feedId) {
         // 피드 수정
+        console.log({
+          title,
+          description,
+          favicon_url: faviconUrl || undefined,
+          visible,
+          is_public: isPublic,
+          refresh_interval: refreshInterval,
+          category_id: categoryId,
+          custom_css: customCss || undefined,
+        })
         const updatedFeed = await updateFeed(context.feedId, {
           title,
           description,
