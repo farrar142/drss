@@ -44,7 +44,7 @@ class ItemService:
         """
 
         item = await aget_object_or_404(
-            RSSItem.objects.select_related("source", "item"),
+            RSSItem.objects.select_related("source", "feed"),
             id=item_id,
             feed__user=user,
         )
