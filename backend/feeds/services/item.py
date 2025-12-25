@@ -44,7 +44,9 @@ class ItemService:
         """
 
         item = await aget_object_or_404(
-            RSSItem.objects.select_related("source"), id=item_id, feed__user=user
+            RSSItem.objects.select_related("source", "item"),
+            id=item_id,
+            feed__user=user,
         )
 
         # 소스 확인: 아이템에 직접 연결된 소스 또는 피드의 첫 번째 소스 사용
