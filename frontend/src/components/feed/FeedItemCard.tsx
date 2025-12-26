@@ -396,7 +396,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
       key={item.id}
       className={cn(
-        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-[92px]",
+        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-[92px] @container",
         viewMode === 'board' ? 'mb-3' : ''
       )}
       style={{
@@ -410,11 +410,14 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
         onCollapseChange && onCollapseChange(item.id, newCollapsed);
       }}
     >
-      {/* Sticky Header: Title + Actions in one row */}
+      {/* Header: Responsive layout based on container width */}
+      {/* Wide (>600px): Title - Date - Actions (single row) */}
+      {/* Medium (400-600px): Title - Actions (row 1) / Date (row 2) */}
+      {/* Narrow (<400px): Title / Date / Actions (three rows) */}
       <div
         className={cn(
-          "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4 flex items-center justify-between",
-          fontSize.gap,
+          "-mx-3 sm:-mx-4 px-3 sm:px-4 py-1.5 sm:py-2 -mt-3 sm:-mt-4",
+          "flex flex-col @[400px]:flex-row @[400px]:flex-wrap @[600px]:flex-nowrap items-start @[400px]:items-center gap-1 @[400px]:gap-2",
           // Apply sticky when content is visible (expanded state)
           !collapsed && "sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[top] duration-300"
         )}
@@ -469,13 +472,47 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           }
         }}
       >
-        {/* Title - truncated */}
-        <h3 className={cn("font-semibold text-foreground leading-snug truncate flex-1 min-w-0", fontSize.title)}>
+        {/* Title - truncated (order: 1) */}
+        <h3 className={cn(
+          "font-semibold text-foreground leading-snug truncate min-w-0",
+          "w-full @[400px]:flex-1 @[400px]:w-auto",
+          "order-1",
+          fontSize.title
+        )}>
           {item.title}
         </h3>
 
-        {/* Actions */}
-        <div className={cn("flex items-center shrink-0", fontSize.gap)}>
+        {/* Date - Wide에서는 Title과 Actions 사이, Medium에서는 마지막 줄 */}
+        <div className={cn(
+          "text-muted-foreground shrink-0",
+          // Narrow: 전체 너비, 2번째
+          // Medium: 전체 너비로 줄바꿈되어 마지막에 표시
+          // Wide: 자동 너비로 중간에 표시
+          "w-full @[600px]:w-auto",
+          // order: narrow=2, medium=3(마지막), wide=2(중간)
+          "order-2 @[400px]:order-3 @[600px]:order-2",
+          fontSize.meta
+        )}>
+          {publishedAt && <span>{publishedAt}</span>}
+          {item.author && (
+            <span className="ml-3 inline-flex items-center gap-1">
+              <User className="w-3 h-3" />
+              {item.author}
+            </span>
+          )}
+        </div>
+
+        {/* Actions - Medium에서는 Title 옆에 */}
+        <div className={cn(
+          "flex items-center shrink-0",
+          // Narrow: 전체 너비
+          // Medium/Wide: 자동 너비
+          "w-full @[400px]:w-auto",
+          "justify-start @[400px]:justify-end",
+          // order: narrow=3(마지막), medium=2(Title 옆), wide=3(마지막)
+          "order-3 @[400px]:order-2 @[600px]:order-3",
+          fontSize.gap
+        )}>
           {/* Refresh Button - only shown if source_id exists */}
           {item.source_id && (
             <button
@@ -548,29 +585,6 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           </a>
         </div>
       </div>
-
-      {/* Date + Author + Categories - metadata row */}
-      <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground", fontSize.meta)}>
-        {publishedAt && <span>{publishedAt}</span>}
-        {item.author && (
-          <span className="flex items-center gap-1">
-            <User className="w-3 h-3" />
-            {item.author}
-          </span>
-        )}
-      </div>
-
-      {/* Thumbnail Image (shown when collapsed in board mode) */}
-      {item.image && viewMode === 'board' && collapsed && (
-        <div className="mt-2">
-          <FeedImage
-            src={item.image}
-            alt={item.title}
-            onClick={() => stableMediaClick(item.image!, 'image', item.id)}
-            className="w-full max-h-48 object-cover rounded-md"
-          />
-        </div>
-      )}
 
       {/* Description */}
       {!collapsed && (
