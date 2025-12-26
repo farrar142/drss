@@ -194,54 +194,57 @@ class RSSEverythingSource(BaseModel):
     item_selector = models.CharField(
         max_length=500,
         blank=True,
+        default="",
         help_text="아이템 목록의 CSS 셀렉터 (예: article.post, .news-item)",
     )
 
     # 각 아이템에서 추출할 정보의 셀렉터 (아이템 내부 상대 셀렉터) - 스크래핑용
     title_selector = models.CharField(
-        max_length=500, blank=True, help_text="제목 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, default="", help_text="제목 CSS 셀렉터 (아이템 내부)"
     )
     link_selector = models.CharField(
         max_length=500,
         blank=True,
+        default="",
         help_text="링크 CSS 셀렉터 (아이템 내부, 비워두면 title_selector의 a 태그 사용)",
     )
     description_selector = models.CharField(
-        max_length=500, blank=True, help_text="설명 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, default="", help_text="설명 CSS 셀렉터 (아이템 내부)"
     )
     date_selector = models.CharField(
-        max_length=500, blank=True, help_text="날짜 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, default="", help_text="날짜 CSS 셀렉터 (아이템 내부)"
     )
     image_selector = models.CharField(
-        max_length=500, blank=True, help_text="이미지 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, default="", help_text="이미지 CSS 셀렉터 (아이템 내부)"
     )
     author_selector = models.CharField(
-        max_length=500, blank=True, help_text="작성자 CSS 셀렉터 (아이템 내부)"
+        max_length=500, blank=True, default="", help_text="작성자 CSS 셀렉터 (아이템 내부)"
     )
     categories_selector = models.CharField(
         max_length=500,
         blank=True,
+        default="",
         help_text="카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능)",
     )
 
     # 상세 페이지 설정 (DETAIL_PAGE_SCRAPING 타입에서만 사용)
     detail_title_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 제목 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지 제목 셀렉터"
     )
     detail_description_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 본문 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지에서 본문 CSS 셀렉터"
     )
     detail_date_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 날짜 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지 날짜 셀렉터"
     )
     detail_image_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 이미지 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지 이미지 셀렉터"
     )
     detail_author_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 작성자 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지 작성자 셀렉터"
     )
     detail_categories_selector = models.CharField(
-        max_length=500, blank=True, help_text="상세 페이지에서 카테고리 CSS 셀렉터"
+        max_length=500, blank=True, default="", help_text="상세 페이지에서 카테고리 CSS 셀렉터"
     )
 
     # 제외할 셀렉터 설정
@@ -277,12 +280,12 @@ class RSSEverythingSource(BaseModel):
         help_text="사용할 브라우저 서비스 (RealBrowser 또는 Browserless)",
     )
     wait_selector = models.CharField(
-        max_length=500, blank=True, help_text="페이지 로드 완료 확인용 셀렉터"
+        max_length=500, blank=True, default="", help_text="페이지 로드 완료 확인용 셀렉터"
     )
     timeout = models.IntegerField(default=30000, help_text="타임아웃 (밀리초)")
 
     last_crawled_at = models.DateTimeField(null=True, blank=True)
-    last_error = models.TextField(blank=True)
+    last_error = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
