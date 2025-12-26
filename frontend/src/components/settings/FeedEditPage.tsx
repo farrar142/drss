@@ -33,6 +33,7 @@ import {
   deleteRssEverythingSource,
   refreshRssEverythingSource,
   crawlPaginated,
+  usersRouterGetUserSettings,
 } from '@/services/api';
 
 interface PaginationVariable {
@@ -80,7 +81,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [faviconUrl, setFaviconUrl] = useState('');
   const [visible, setVisible] = useState(true);
   const [isPublic, setIsPublic] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(60);
+  const [refreshInterval, setRefreshInterval] = useState<number | undefined>(undefined);
+  const [defaultRefreshInterval, setDefaultRefreshInterval] = useState(60);  // 서버 설정에서 가져오는 기본값
   const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
   const [customCss, setCustomCss] = useState('');
 
@@ -93,6 +95,27 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   ]);
   const [paginationDelayMs, setPaginationDelayMs] = useState(1000);
   const [paginationCrawling, setPaginationCrawling] = useState(false);
+
+  // 서버 설정(기본 새로고침 간격 등) 로드
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      try {
+        const settings = await usersRouterGetUserSettings();
+        setDefaultRefreshInterval(settings.default_refresh_interval);
+        // 생성 모드이고 refreshInterval이 설정되지 않았으면 기본값 적용
+        if (context?.mode === 'create' && refreshInterval === undefined) {
+          setRefreshInterval(settings.default_refresh_interval);
+        }
+      } catch (err) {
+        console.error('Failed to load user settings:', err);
+        // 실패해도 기본값 60 사용
+        if (context?.mode === 'create' && refreshInterval === undefined) {
+          setRefreshInterval(60);
+        }
+      }
+    };
+    loadUserSettings();
+  }, [context?.mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 피드 데이터 로드 (스토어에서 먼저 찾고, 없으면 API 호출)
   const loadFeed = useCallback(async () => {
@@ -519,13 +542,18 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
             <div className="flex items-center gap-2">
               <Input
                 type="number"
-                value={refreshInterval}
+                value={refreshInterval ?? defaultRefreshInterval}
                 onChange={(e) => setRefreshInterval(Number(e.target.value))}
                 className="w-24"
                 min={1}
               />
               <span className="text-muted-foreground">{t.rssEverything.refreshIntervalUnit}</span>
             </div>
+            {context?.mode === 'create' && (
+              <p className="text-xs text-muted-foreground">
+                기본값: {defaultRefreshInterval}분
+              </p>
+            )}
           </div>
 
           {/* 표시 여부 */}

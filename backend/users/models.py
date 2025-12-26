@@ -20,12 +20,8 @@ class GlobalSetting(models.Model):
     4. 프론트엔드 AdminPage의 ADMIN_SETTINGS에 설정 추가
     """
     # 관리자 관련 설정
-    admin_signed = models.BooleanField(
-        default=False,
-        help_text="관리자가 가입했는지 여부"
-    )
     allow_signup = models.BooleanField(
-        default=True,
+        default=False,
         help_text="새로운 사용자의 회원가입 허용 여부"
     )
 

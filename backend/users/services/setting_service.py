@@ -46,3 +46,15 @@ class SettingService:
 
         setting.save()
         return setting
+
+    @staticmethod
+    def get_max_feeds_per_user() -> int:
+        """사용자당 최대 피드 수 반환"""
+        setting = SettingService.get_global_setting()
+        return setting.max_feeds_per_user
+
+    @staticmethod
+    def get_default_refresh_interval() -> int:
+        """기본 새로고침 간격 반환 (분)"""
+        setting = SettingService.get_global_setting()
+        return setting.default_refresh_interval

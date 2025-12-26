@@ -205,3 +205,20 @@ def get_signup_status(request):
         allow_signup=setting.allow_signup,
         site_name=setting.site_name,
     )
+
+
+# 사용자용 설정 API (인증 필요, 관리자 아니어도 됨)
+class UserSettingsSchema(Schema):
+    """일반 사용자가 볼 수 있는 설정"""
+    max_feeds_per_user: int
+    default_refresh_interval: int
+
+
+@router.get("/user-settings", response=UserSettingsSchema, auth=JWTAuth())
+def get_user_settings(request):
+    """사용자용 설정 조회 (피드 생성 시 필요한 제한값 등)"""
+    setting = SettingService.get_global_setting()
+    return UserSettingsSchema(
+        max_feeds_per_user=setting.max_feeds_per_user,
+        default_refresh_interval=setting.default_refresh_interval,
+    )

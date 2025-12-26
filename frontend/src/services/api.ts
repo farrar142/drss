@@ -519,6 +519,14 @@ export interface SignupStatusSchema {
   site_name: string;
 }
 
+/**
+ * 일반 사용자가 볼 수 있는 설정
+ */
+export interface UserSettingsSchema {
+  max_feeds_per_user: number;
+  default_refresh_interval: number;
+}
+
 export type FetchHTMLResponseHtml = string | null;
 
 export type FetchHTMLResponseError = string | null;
@@ -1426,19 +1434,6 @@ export const toggleItemRead = (
     }
   
 /**
- * 아이템 삭제
- * @summary Delete Item
- */
-export const deleteItem = (
-    itemId: number,
- ) => {
-      return axiosInstance<void>(
-      {url: `/api/items/${itemId}`, method: 'DELETE'
-    },
-      );
-    }
-  
-/**
  * 메인 화면 아이템 목록
  * @summary List All Items
  */
@@ -1522,6 +1517,19 @@ export const exportFeedItemsRss = (
       return axiosInstance<void>(
       {url: `/api/items/feed/${feedId}/rss`, method: 'GET',
         params
+    },
+      );
+    }
+  
+/**
+ * 아이템 삭제
+ * @summary Delete Item
+ */
+export const deleteItem = (
+    itemId: number,
+ ) => {
+      return axiosInstance<void>(
+      {url: `/api/items/${itemId}`, method: 'DELETE'
     },
       );
     }
@@ -1615,6 +1623,19 @@ export const usersRouterGetSignupStatus = (
  ) => {
       return axiosInstance<SignupStatusSchema>(
       {url: `/api/auth/signup-status`, method: 'GET'
+    },
+      );
+    }
+  
+/**
+ * 사용자용 설정 조회 (피드 생성 시 필요한 제한값 등)
+ * @summary Get User Settings
+ */
+export const usersRouterGetUserSettings = (
+    
+ ) => {
+      return axiosInstance<UserSettingsSchema>(
+      {url: `/api/auth/user-settings`, method: 'GET'
     },
       );
     }
@@ -1945,13 +1966,13 @@ export type GetCategoryStatsResult = NonNullable<Awaited<ReturnType<typeof getCa
 export type RefreshItemResult = NonNullable<Awaited<ReturnType<typeof refreshItem>>>
 export type ToggleItemFavoriteResult = NonNullable<Awaited<ReturnType<typeof toggleItemFavorite>>>
 export type ToggleItemReadResult = NonNullable<Awaited<ReturnType<typeof toggleItemRead>>>
-export type DeleteItemResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 export type ListAllItemsResult = NonNullable<Awaited<ReturnType<typeof listAllItems>>>
 export type ListItemsByCategoryResult = NonNullable<Awaited<ReturnType<typeof listItemsByCategory>>>
 export type ListItemsByFeedResult = NonNullable<Awaited<ReturnType<typeof listItemsByFeed>>>
 export type ExportAllItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportAllItemsRss>>>
 export type ExportCategoryItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportCategoryItemsRss>>>
 export type ExportFeedItemsRssResult = NonNullable<Awaited<ReturnType<typeof exportFeedItemsRss>>>
+export type DeleteItemResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 export type UsersRouterLoginResult = NonNullable<Awaited<ReturnType<typeof usersRouterLogin>>>
 export type UsersRouterSignupResult = NonNullable<Awaited<ReturnType<typeof usersRouterSignup>>>
 export type UsersRouterProtectedResult = NonNullable<Awaited<ReturnType<typeof usersRouterProtected>>>
@@ -1959,6 +1980,7 @@ export type UsersRouterMeResult = NonNullable<Awaited<ReturnType<typeof usersRou
 export type UsersRouterGetGlobalSettingsResult = NonNullable<Awaited<ReturnType<typeof usersRouterGetGlobalSettings>>>
 export type UsersRouterUpdateGlobalSettingsResult = NonNullable<Awaited<ReturnType<typeof usersRouterUpdateGlobalSettings>>>
 export type UsersRouterGetSignupStatusResult = NonNullable<Awaited<ReturnType<typeof usersRouterGetSignupStatus>>>
+export type UsersRouterGetUserSettingsResult = NonNullable<Awaited<ReturnType<typeof usersRouterGetUserSettings>>>
 export type FetchHtmlResult = NonNullable<Awaited<ReturnType<typeof fetchHtml>>>
 export type ExtractElementsResult = NonNullable<Awaited<ReturnType<typeof extractElements>>>
 export type PreviewItemsResult = NonNullable<Awaited<ReturnType<typeof previewItems>>>
