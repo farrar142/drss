@@ -109,7 +109,6 @@ services:
     environment:
       - NODE_ENV=production
       - TZ=Asia/Seoul
-      - WATCHPACK_POLLING=true
       - HOST=0.0.0.0
     env_file:
       - .env

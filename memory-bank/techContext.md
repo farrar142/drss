@@ -14,8 +14,6 @@
   - Cloudscraper for anti-bot protection
   - Playwright for browser automation
 - **File Storage**: 
-  - AWS S3 with boto3
-  - MinIO support for self-hosted storage
   - WhiteNoise for static file serving
 - **HTTP Server**: Gunicorn with Uvicorn workers for async support
 
@@ -130,12 +128,6 @@ SECRET_KEY=your-secret-key
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# Storage (optional)
-USE_S3=False
-USE_MINIO=False
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_STORAGE_BUCKET_NAME=
 ```
 
 #### Frontend
@@ -220,7 +212,6 @@ npm run generate-api # Generate TypeScript client with Orval
 
 ### Static File Handling
 - **WhiteNoise**: Static file serving in production
-- **S3/MinIO**: Optional cloud storage for media files
 - **CDN**: Content delivery network support
 
 ## Testing Strategy

@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
     const { token, user } = response;
     localStorage.setItem('token', token);
     // 쿠키에도 저장 (middleware에서 사용)
-    document.cookie = `token=${token}; path=/; max-age=86400`; // 24시간
+    document.cookie = `token=${token}; path=/; max-age=30585600`; // 24시간
     setUser(user);
   };
 

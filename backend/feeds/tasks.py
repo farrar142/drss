@@ -15,9 +15,6 @@ from feeds.services.source import SourceService
 
 logger = getLogger(__name__)
 
-# MinIO 이미지 업로드 활성화 여부
-ENABLE_IMAGE_UPLOAD = os.getenv("ENABLE_IMAGE_UPLOAD", "True") == "True"
-
 
 # ===========================================
 # 헬퍼 함수

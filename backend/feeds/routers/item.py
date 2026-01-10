@@ -31,13 +31,13 @@ async def refresh_item(request, item_id: int):
 @router.put("/{item_id}/favorite", operation_id="toggleItemFavorite")
 async def toggle_item_favorite(request, item_id: int):
     """아이템 즐겨찾기 토글"""
-    return ItemService.toggle_favorite(request.auth, item_id)
+    return await ItemService.toggle_favorite(request.auth, item_id)
 
 
 @router.put("/{item_id}/read", operation_id="toggleItemRead")
 async def toggle_item_read(request, item_id: int):
     """아이템 읽음 상태 토글"""
-    return ItemService.toggle_read(request.auth, item_id)
+    return await ItemService.toggle_read(request.auth, item_id)
 
 
 @router.get("", response=list[ItemSchema], operation_id="listAllItems")

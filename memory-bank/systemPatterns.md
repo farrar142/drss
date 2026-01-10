@@ -121,12 +121,6 @@ User
 - **Fallback Mechanisms**: Multiple extraction strategies per source
 - **Content Cleaning**: HTML sanitization and content normalization
 
-### External Service Integration
-- **S3/MinIO**: File storage with fallback to local storage
-- **Email Services**: User notifications and alerts
-- **Monitoring Services**: Application performance monitoring
-- **Backup Services**: Automated data backup and recovery
-
 ## Development Patterns
 
 ### Code Organization

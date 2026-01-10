@@ -20,21 +20,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Detect MinIO usage first (some deployments prefer MinIO)
-USE_MINIO = os.getenv("USE_MINIO") == "True" or bool(
-    os.getenv("MINIO_ENDPOINT") or os.getenv("MINIO_URL") or os.getenv("MINIO_BUCKET")
-)
-
-# Determine whether to use S3/MinIO for media storage. Set via env vars like
-# AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_STORAGE_BUCKET_NAME or
-# helper flags USE_S3=True or USE_MINIO=True
-USE_S3 = bool(
-    os.getenv("USE_S3") == "True"
-    or os.getenv("AWS_STORAGE_BUCKET_NAME")
-    or os.getenv("AWS_S3_BUCKET")
-    or USE_MINIO
-)
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -160,31 +145,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 AWS_S3_CUSTOM_DOMAIN = os.getenv("AWS_S3_CUSTOM_DOMAIN", None)
 
 
-# MinIO-only configuration
-
 # Use the canonical Django setting name so other code can import it
-
-STORAGES = {"default": {"BACKEND": "storages.backends.s3boto3.S3Boto3Storage"}}
-# Ensure staticfiles storage is defined (helps system checks during tests)
-STORAGES.setdefault(
-    "staticfiles", {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
-)
-
-AWS_ACCESS_KEY_ID = os.getenv("MINIO_ACCESS_KEY")
-AWS_SECRET_ACCESS_KEY = os.getenv("MINIO_SECRET_KEY")
-AWS_STORAGE_BUCKET_NAME = os.getenv("MINIO_BUCKET")
-AWS_S3_ENDPOINT_URL = os.getenv("MINIO_ENDPOINT")
-AWS_S3_SIGNATURE_VERSION = os.getenv("MINIO_SIGNATURE_VERSION", "s3v4")
-AWS_S3_VERIFY = os.getenv("MINIO_USE_SSL", "True") == "True"
-
-# Construct MEDIA_URL using MinIO endpoint and bucket
-if AWS_S3_ENDPOINT_URL and AWS_STORAGE_BUCKET_NAME:
-    endpoint = AWS_S3_ENDPOINT_URL.rstrip("/")
-    MEDIA_URL = f"{endpoint}/{AWS_STORAGE_BUCKET_NAME}/"
-
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": os.getenv("AWS_S3_CACHE_CONTROL", "max-age=86400"),
-}
 
 # Use WhiteNoise's storage backend for compressed static files. This is
 # compatible with serving static files directly from the Django process
