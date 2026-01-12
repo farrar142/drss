@@ -91,7 +91,6 @@ def signup(request, data: SignupRequest):
         is_staff=is_superuser,
         is_superuser=is_superuser,
     )
-    SettingService.set_admin_signed(True)
 
     payload = {
         "user_id": user.pk,
@@ -137,7 +136,6 @@ def me(request):
 class GlobalSettingSchema(Schema):
     """글로벌 설정 스키마"""
 
-    admin_signed: bool
     allow_signup: bool
     site_name: str
     max_feeds_per_user: int
@@ -165,7 +163,6 @@ def get_global_settings(request):
     require_admin(request.auth)
     setting = SettingService.get_global_setting()
     return GlobalSettingSchema(
-        admin_signed=setting.admin_signed,
         allow_signup=setting.allow_signup,
         site_name=setting.site_name,
         max_feeds_per_user=setting.max_feeds_per_user,
@@ -183,7 +180,6 @@ def update_global_settings(request, data: GlobalSettingUpdateSchema):
     setting = SettingService.update_settings(update_data)
 
     return GlobalSettingSchema(
-        admin_signed=setting.admin_signed,
         allow_signup=setting.allow_signup,
         site_name=setting.site_name,
         max_feeds_per_user=setting.max_feeds_per_user,

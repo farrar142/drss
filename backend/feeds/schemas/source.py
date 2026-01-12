@@ -222,7 +222,7 @@ class PaginationCrawlRequest(BaseModel):
     url_template: str  # URL 템플릿 (예: https://example.com?page={page})
     variables: list[dict]  # [{"name": "page", "start": 1, "end": 10, "step": 1}]
     delay_ms: int = 1000  # 각 요청 사이의 딜레이 (밀리초)
-
+    keep_query_params: bool = True # 기존 URL의 쿼리 파라미터 유지 여부
 
 class PaginationCrawlResponse(BaseModel):
     """페이지네이션 크롤링 응답 (비동기 task 스케줄링)"""

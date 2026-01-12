@@ -1,6 +1,7 @@
 from ninja import NinjaAPI, Redoc
 
 from .authentications import JWTAuth
+from .exceptions import BaseException
 from users.router import router as auth_router
 from feeds.routers import (
     feed_router,
@@ -12,6 +13,15 @@ from feeds.routers import (
 )
 
 api = NinjaAPI(auth=JWTAuth(), urls_namespace="api")
+
+@api.exception_handler(BaseException)
+def base_exception_handler(request, exc: BaseException):
+    return api.create_response(
+        request,
+        {"detail": exc.message},
+        status=exc.status_code,
+    )
+
 
 api.add_router("/feeds", feed_router)
 api.add_router("/categories", category_router)

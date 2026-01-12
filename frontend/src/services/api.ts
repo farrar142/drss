@@ -116,7 +116,7 @@ export type SourceSchemaAuthorSelector = string | null;
 export type SourceSchemaCategoriesSelector = string | null;
 
 /**
- * 상세 페이지에서 제목 CSS 셀렉터
+ * 상세 페이지 제목 셀렉터
  */
 export type SourceSchemaDetailTitleSelector = string | null;
 
@@ -126,17 +126,17 @@ export type SourceSchemaDetailTitleSelector = string | null;
 export type SourceSchemaDetailDescriptionSelector = string | null;
 
 /**
- * 상세 페이지에서 날짜 CSS 셀렉터
+ * 상세 페이지 날짜 셀렉터
  */
 export type SourceSchemaDetailDateSelector = string | null;
 
 /**
- * 상세 페이지에서 이미지 CSS 셀렉터
+ * 상세 페이지 이미지 셀렉터
  */
 export type SourceSchemaDetailImageSelector = string | null;
 
 /**
- * 상세 페이지에서 작성자 CSS 셀렉터
+ * 상세 페이지 작성자 셀렉터
  */
 export type SourceSchemaDetailAuthorSelector = string | null;
 
@@ -186,15 +186,15 @@ export interface SourceSchema {
   author_selector?: SourceSchemaAuthorSelector;
   /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
   categories_selector?: SourceSchemaCategoriesSelector;
-  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  /** 상세 페이지 제목 셀렉터 */
   detail_title_selector?: SourceSchemaDetailTitleSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
   detail_description_selector?: SourceSchemaDetailDescriptionSelector;
-  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  /** 상세 페이지 날짜 셀렉터 */
   detail_date_selector?: SourceSchemaDetailDateSelector;
-  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  /** 상세 페이지 이미지 셀렉터 */
   detail_image_selector?: SourceSchemaDetailImageSelector;
-  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  /** 상세 페이지 작성자 셀렉터 */
   detail_author_selector?: SourceSchemaDetailAuthorSelector;
   /** 상세 페이지에서 카테고리 CSS 셀렉터 */
   detail_categories_selector?: SourceSchemaDetailCategoriesSelector;
@@ -489,7 +489,6 @@ export interface ProtectedResponse {
  * 글로벌 설정 스키마
  */
 export interface GlobalSettingSchema {
-  admin_signed: boolean;
   allow_signup: boolean;
   site_name: string;
   max_feeds_per_user: number;
@@ -691,7 +690,7 @@ export type SourceCreateSchemaAuthorSelector = string | null;
 export type SourceCreateSchemaCategoriesSelector = string | null;
 
 /**
- * 상세 페이지에서 제목 CSS 셀렉터
+ * 상세 페이지 제목 셀렉터
  */
 export type SourceCreateSchemaDetailTitleSelector = string | null;
 
@@ -701,17 +700,17 @@ export type SourceCreateSchemaDetailTitleSelector = string | null;
 export type SourceCreateSchemaDetailDescriptionSelector = string | null;
 
 /**
- * 상세 페이지에서 날짜 CSS 셀렉터
+ * 상세 페이지 날짜 셀렉터
  */
 export type SourceCreateSchemaDetailDateSelector = string | null;
 
 /**
- * 상세 페이지에서 이미지 CSS 셀렉터
+ * 상세 페이지 이미지 셀렉터
  */
 export type SourceCreateSchemaDetailImageSelector = string | null;
 
 /**
- * 상세 페이지에서 작성자 CSS 셀렉터
+ * 상세 페이지 작성자 셀렉터
  */
 export type SourceCreateSchemaDetailAuthorSelector = string | null;
 
@@ -754,15 +753,15 @@ export interface SourceCreateSchema {
   author_selector?: SourceCreateSchemaAuthorSelector;
   /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
   categories_selector?: SourceCreateSchemaCategoriesSelector;
-  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  /** 상세 페이지 제목 셀렉터 */
   detail_title_selector?: SourceCreateSchemaDetailTitleSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
   detail_description_selector?: SourceCreateSchemaDetailDescriptionSelector;
-  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  /** 상세 페이지 날짜 셀렉터 */
   detail_date_selector?: SourceCreateSchemaDetailDateSelector;
-  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  /** 상세 페이지 이미지 셀렉터 */
   detail_image_selector?: SourceCreateSchemaDetailImageSelector;
-  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  /** 상세 페이지 작성자 셀렉터 */
   detail_author_selector?: SourceCreateSchemaDetailAuthorSelector;
   /** 상세 페이지에서 카테고리 CSS 셀렉터 */
   detail_categories_selector?: SourceCreateSchemaDetailCategoriesSelector;
@@ -870,7 +869,7 @@ export type SourceUpdateSchemaAuthorSelector = string | null;
 export type SourceUpdateSchemaCategoriesSelector = string | null;
 
 /**
- * 상세 페이지에서 제목 CSS 셀렉터
+ * 상세 페이지 제목 셀렉터
  */
 export type SourceUpdateSchemaDetailTitleSelector = string | null;
 
@@ -880,17 +879,17 @@ export type SourceUpdateSchemaDetailTitleSelector = string | null;
 export type SourceUpdateSchemaDetailDescriptionSelector = string | null;
 
 /**
- * 상세 페이지에서 날짜 CSS 셀렉터
+ * 상세 페이지 날짜 셀렉터
  */
 export type SourceUpdateSchemaDetailDateSelector = string | null;
 
 /**
- * 상세 페이지에서 이미지 CSS 셀렉터
+ * 상세 페이지 이미지 셀렉터
  */
 export type SourceUpdateSchemaDetailImageSelector = string | null;
 
 /**
- * 상세 페이지에서 작성자 CSS 셀렉터
+ * 상세 페이지 작성자 셀렉터
  */
 export type SourceUpdateSchemaDetailAuthorSelector = string | null;
 
@@ -948,15 +947,15 @@ export interface SourceUpdateSchema {
   author_selector?: SourceUpdateSchemaAuthorSelector;
   /** 카테고리 CSS 셀렉터 (아이템 내부, 여러 개 선택 가능) */
   categories_selector?: SourceUpdateSchemaCategoriesSelector;
-  /** 상세 페이지에서 제목 CSS 셀렉터 */
+  /** 상세 페이지 제목 셀렉터 */
   detail_title_selector?: SourceUpdateSchemaDetailTitleSelector;
   /** 상세 페이지에서 본문 CSS 셀렉터 */
   detail_description_selector?: SourceUpdateSchemaDetailDescriptionSelector;
-  /** 상세 페이지에서 날짜 CSS 셀렉터 */
+  /** 상세 페이지 날짜 셀렉터 */
   detail_date_selector?: SourceUpdateSchemaDetailDateSelector;
-  /** 상세 페이지에서 이미지 CSS 셀렉터 */
+  /** 상세 페이지 이미지 셀렉터 */
   detail_image_selector?: SourceUpdateSchemaDetailImageSelector;
-  /** 상세 페이지에서 작성자 CSS 셀렉터 */
+  /** 상세 페이지 작성자 셀렉터 */
   detail_author_selector?: SourceUpdateSchemaDetailAuthorSelector;
   /** 상세 페이지에서 카테고리 CSS 셀렉터 */
   detail_categories_selector?: SourceUpdateSchemaDetailCategoriesSelector;

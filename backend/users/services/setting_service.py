@@ -7,12 +7,6 @@ class SettingService:
         from users.models import GlobalSetting
         return GlobalSetting.get_instance()
 
-    @staticmethod
-    def set_admin_signed(signed: bool):
-        setting = SettingService.get_global_setting()
-        setting.admin_signed = signed
-        setting.save()
-        return setting
 
     @staticmethod
     def is_signup_allowed() -> bool:

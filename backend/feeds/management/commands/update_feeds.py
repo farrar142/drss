@@ -61,6 +61,10 @@ class Command(BaseCommand):
 
         if parsed_feed.bozo:
             raise Exception("Invalid RSS feed")
+        if not parsed_feed.feed:
+            raise Exception("No feed data found")
+        if not isinstance(parsed_feed.feed, feedparser.FeedParserDict):
+            raise Exception("Invalid feed data format")
 
         # 피드 정보 업데이트
         if parsed_feed.feed.get("title"):
@@ -86,9 +90,9 @@ class Command(BaseCommand):
             # 날짜 파싱
             published_at = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
-                published_at = datetime(*entry.published_parsed[:6])
+                published_at = datetime(*entry.published_parsed[:6]) #type:ignore
             elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
-                published_at = datetime(*entry.updated_parsed[:6])
+                published_at = datetime(*entry.updated_parsed[:6]) #type:ignore
             else:
                 published_at = timezone.now()
 
@@ -97,7 +101,7 @@ class Command(BaseCommand):
                 title=entry.get("title", "No Title"),
                 link=entry.get("link", ""),
                 description=entry.get("description", ""),
-                description_text=strip_html_tags(entry.get("description", "")),
+                description_text=strip_html_tags(entry.get("description", "")), # type:ignore
                 published_at=published_at,
                 guid=guid,
             )

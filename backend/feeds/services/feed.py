@@ -80,19 +80,19 @@ class FeedService:
         # 사용자당 최대 피드 수 체크
         current_feed_count = RSSFeed.objects.filter(user=user).count()
         if current_feed_count >= global_setting.max_feeds_per_user:
-            raise HttpError(
+            raise Exception(
                 400,
                 f"피드 수 제한에 도달했습니다. (최대 {global_setting.max_feeds_per_user}개)"
             )
 
         category = get_object_or_404(RSSCategory, id=data.category_id, user=user)
-
-        title = data.title or "New Feed"
+        d = data.dict()
+        title = d.get("title") or "New Feed"
         favicon_url = ""
-        description = data.description or ""
+        description = d.get("description") or ""
 
         # refresh_interval: 명시적으로 지정되지 않으면 글로벌 설정 사용
-        refresh_interval = data.refresh_interval if data.refresh_interval is not None else global_setting.default_refresh_interval
+        refresh_interval = d.get("refresh_interval") if d.get("refresh_interval") is not None else global_setting.default_refresh_interval
 
         with transaction.atomic():
             # RSSFeed 생성 (소스 없이 생성)
@@ -102,9 +102,9 @@ class FeedService:
                 title=title,
                 favicon_url=favicon_url,
                 description=description,
-                visible=data.visible,
+                visible=d.get("visible"),
                 refresh_interval=refresh_interval,
-                is_public=data.is_public,
+                is_public=d.get("is_public"),
             )
 
         # item_count 추가하여 반환

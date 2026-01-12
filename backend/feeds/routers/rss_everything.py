@@ -114,6 +114,7 @@ def crawl_paginated(request, data: PaginationCrawlRequest):
         url_template=data.url_template,
         variables=data.variables,
         delay_ms=data.delay_ms,
+        keep_query_params=data.keep_query_params,
     )
     return PaginationCrawlResponse(**result)
 

@@ -169,6 +169,7 @@ def crawl_paginated_task(
     variables: list,
     delay_ms: int = 1000,
     task_result_id: Optional[int] = None,
+    keep_query_params: bool = True,
 ):
     """
     페이지네이션 크롤링 - 소스 타입에 따라 적절한 방식으로 처리

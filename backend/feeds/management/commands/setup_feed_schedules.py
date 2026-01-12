@@ -69,6 +69,8 @@ def setup_feed_schedule(feed):
     if existing_tasks.exists():
         # 기존 task 중 이름이 같은 것이 있으면 그것을 사용, 아니면 첫 번째를 갱신
         task = existing_tasks.filter(name=task_name).first() or existing_tasks.first()
+        if not task:
+            raise Exception("Unexpected error: No task found despite existing_tasks.exists() being True")
         task.name = task_name
         task.task = "feeds.tasks.update_feed_items"
         task.interval = schedule
@@ -78,7 +80,7 @@ def setup_feed_schedule(feed):
 
         # 동일 args를 가진 추가 항목이 있다면 정리 (중복 제거)
         if existing_tasks.count() > 1:
-            existing_tasks.exclude(id=task.id).delete()
+            existing_tasks.exclude(id=task.pk).delete()
         return
 
     # 없으면 이름으로 새로 생성

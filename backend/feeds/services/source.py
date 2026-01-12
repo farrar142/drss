@@ -340,6 +340,7 @@ class SourceService:
         url_template: str,
         variables: list[dict],
         delay_ms: int = 1000,
+        keep_query_params: bool = True,
     ) -> dict:
         """
         페이지네이션을 사용하여 여러 페이지를 순회하며 크롤링 (비동기 task 호출)
@@ -373,6 +374,7 @@ class SourceService:
             variables=variables,
             delay_ms=delay_ms,
             task_result_id=task_result.id,
+            keep_query_params=keep_query_params,
         )
 
         # Task ID 업데이트

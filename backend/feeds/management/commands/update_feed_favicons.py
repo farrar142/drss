@@ -155,13 +155,17 @@ class Command(BaseCommand):
 
             # feedparser stores channel info in feed.feed (the parsed feed metadata)
             feed_meta = parsed.get("feed", {})
+            if not isinstance(feed_meta, dict):
+                feed_meta = {}
             channel_link = feed_meta.get("link")
 
             if not channel_link:
                 # Fallback: try to get from first entry's base
                 entries = parsed.get("entries", [])
                 if entries and entries[0].get("link"):
-                    channel_link = entries[0].get("link")
+                    link = entries[0].get("link")
+                    if isinstance(link, str):
+                        channel_link = link
 
             if not channel_link:
                 failed += 1

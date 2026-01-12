@@ -22,6 +22,9 @@ from typing import Optional, Any, Dict, Callable, Awaitable
 from dataclasses import dataclass
 
 import websockets
+import websockets.asyncio
+import websockets.asyncio.client
+import websockets.cli
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from .base import BaseBrowserCrawler
@@ -37,7 +40,6 @@ class CDPResponse:
     id: int
     result: Optional[Dict[str, Any]] = None
     error: Optional[Dict[str, Any]] = None
-
 
 class CDPSession:
     """
@@ -57,7 +59,7 @@ class CDPSession:
         """
         self.ws_url = ws_url
         self.timeout = timeout
-        self._ws: Optional[websockets.WebSocketClientProtocol] = None
+        self._ws: Optional[websockets.asyncio.client.ClientConnection] = None
         self._message_id = 0
         self._session_id: Optional[str] = None
         self._pending_responses: Dict[int, asyncio.Future] = {}
@@ -220,10 +222,12 @@ class CDPSession:
             "Target.attachToTarget", {"targetId": target_id, "flatten": True}
         )
 
-        if response.error:
+        if response.error or not response.result:
             raise RuntimeError(f"Failed to attach to target: {response.error}")
 
         self._session_id = response.result.get("sessionId")
+        if not self._session_id:
+            raise RuntimeError("No sessionId returned when attaching to target")
         return self._session_id
 
 
@@ -302,7 +306,7 @@ class BrowserlessPage:
             "Page.navigate", {"url": url}, timeout=timeout
         )
 
-        if response.error:
+        if response.error or not response.result:
             raise RuntimeError(f"Navigation failed: {response.error}")
 
         self._frame_id = response.result.get("frameId")
@@ -353,7 +357,7 @@ class BrowserlessPage:
                 },
             )
 
-            if response.error:
+            if response.error or not response.result:
                 logger.warning(f"Error checking selector: {response.error}")
             elif response.result.get("result", {}).get("value"):
                 return True
@@ -377,7 +381,7 @@ class BrowserlessPage:
             {"expression": expression, "returnByValue": True, "awaitPromise": True},
         )
 
-        if response.error:
+        if response.error or not response.result:
             raise RuntimeError(f"Evaluation failed: {response.error}")
 
         result = response.result.get("result", {})
@@ -397,7 +401,7 @@ class BrowserlessPage:
         # Get document root
         doc_response = await self._session.send("DOM.getDocument", {"depth": 0})
 
-        if doc_response.error:
+        if doc_response.error or not doc_response.result:
             raise RuntimeError(f"Failed to get document: {doc_response.error}")
 
         root_node_id = doc_response.result.get("root", {}).get("nodeId")
@@ -407,7 +411,7 @@ class BrowserlessPage:
             "DOM.getOuterHTML", {"nodeId": root_node_id}
         )
 
-        if html_response.error:
+        if html_response.error or not html_response.result:
             raise RuntimeError(f"Failed to get HTML: {html_response.error}")
 
         return html_response.result.get("outerHTML", "")
@@ -492,10 +496,12 @@ class BrowserlessClient:
             "Target.createTarget", {"url": "about:blank"}
         )
 
-        if response.error:
+        if response.error or not response.result:
             raise RuntimeError(f"Failed to create page: {response.error}")
 
         target_id = response.result.get("targetId")
+        if not target_id:
+            raise RuntimeError("No targetId returned when creating page")
 
         # Attach to the target
         await self._session.attach_to_target(target_id)
@@ -791,6 +797,8 @@ class BrowserlessCrawler(BaseBrowserCrawler):
     @property
     def ws_url(self) -> str:
         """Get the WebSocket URL."""
+        if not self.service_url:
+            raise ValueError("Service URL is not set")
         return self.service_url
 
 
@@ -849,6 +857,12 @@ if __name__ == "__main__":
             wait_until=WaitUntil.NETWORKIDLE2,
             timeout=30.0,
         )
+        if not result.success:
+            print(f"Error: {result.error}")
+            return
+
+        if not result.html:
+            return
 
         if result.success:
             print(f"Success! HTML length: {len(result.html)}")

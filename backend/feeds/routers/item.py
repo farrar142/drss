@@ -6,7 +6,7 @@ from typing import Optional
 
 from ninja import Router
 from ninja.pagination import paginate
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from ninja.errors import HttpError
 
 from base.authentications import JWTAuth, async_jwt
@@ -97,7 +97,7 @@ async def list_items_by_feed(
 
 @router.get("/rss", auth=None, operation_id="exportAllItemsRss")
 async def export_all_items_rss(
-    request,
+    request:HttpRequest,
     page: int = 1,
     page_size: int = 50,
     format: str = "rss",
@@ -114,7 +114,8 @@ async def export_all_items_rss(
     ]
     print(items)
     title = "DRSS - Public Items"
-    link = "https://drss.app/"
+    scheme = request.scheme
+    link = f"{scheme}://{request.get_host()}/"
     description = "Public RSS items from DRSS"
 
     if format == "atom":
@@ -151,9 +152,9 @@ async def export_category_items_rss(
             feed__is_public=True,
         ).order_by("-published_at")[offset : offset + page_size]
     ]
-
+    scheme = request.scheme
     title = f"DRSS - {category.name}"
-    link = f"https://drss.app/category/{category_id}"
+    link = f"{scheme}://{request.get_host()}/category/{category_id}"
     description = f"Public RSS items from category: {category.name}"
 
     if format == "atom":
@@ -191,9 +192,9 @@ async def export_feed_items_rss(
             "-published_at"
         )[offset : offset + page_size]
     ]
-
+    scheme = request.scheme
     title = f"DRSS - {feed.title}"
-    link = f"https://drss.app/feed/{feed_id}"
+    link = f"{scheme}://{request.get_host()}/feed/{feed_id}"
     description = f"RSS items from feed: {feed.title}"
 
     if format == "atom":
