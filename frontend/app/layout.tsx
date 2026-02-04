@@ -56,6 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: siteName,
     description: 'Django RSS Reader',
+    referrer: "no-referrer"
   };
 }
 
