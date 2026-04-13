@@ -152,6 +152,12 @@ export const ko: Translations = {
     pageUrl: '페이지 URL',
     waitSelector: '대기 셀렉터',
     waitSelectorPlaceholder: '페이지 로드 완료 확인용 셀렉터',
+    rssFeedPublic: 'RSS 피드 공개',
+    rssFeedPublicDescription: '/rss 엔드포인트에서 공개할지 여부를 설정합니다',
+    customCss: 'Custom CSS',
+    customCssDescription: '피드 아이템 카드에 적용할 사용자 정의 CSS를 입력하세요',
+    customCssPlaceholder: '.content { font-size: 16px; }\nimg { border-radius: 8px; }',
+    defaultRefreshIntervalHint: '기본값: {minutes}분',
   },
 
   // Settings
@@ -405,6 +411,15 @@ export const ko: Translations = {
     editSource: '소스 수정',
     // StepHeader
     listSelectorStep: '목록 셀렉터',
+    // JSON paste
+    jsonPasteTitle: '설정 붙여넣기 (선택사항)',
+    jsonPasteInstructions: '기존 소스에서 복사한 JSON 설정을 붙여넣으면 자동으로 설정이 적용됩니다.',
+    jsonConfigApplied: '설정이 적용되었습니다. (타입: {type})',
+    // Save step
+    confirmAndSaveSource: '설정을 확인하고 소스를 저장합니다.',
+    // Wait selector
+    waitSelectorLabel: '대기 셀렉터',
+    waitSelectorDescription: 'HTML 캡처 전에 대기할 CSS 셀렉터',
   },
 
   // UI

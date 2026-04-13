@@ -141,7 +141,7 @@ export function UrlStep({
               </div>
               {/* Wait Selector */}
               <div className="space-y-2">
-                <Label htmlFor="wait-selector">Wait Selector</Label>
+                <Label htmlFor="wait-selector">{t.rssEverything.waitSelectorLabel}</Label>
                 <Input
                   id="wait-selector"
                   placeholder="body"
@@ -149,7 +149,7 @@ export function UrlStep({
                   onChange={(e) => onWaitSelectorChange(e.target.value)}
                 />
                 <p className="text-sm text-muted-foreground">
-                  CSS selector to wait for before capturing HTML
+                  {t.rssEverything.waitSelectorDescription}
                 </p>
               </div>
             </div>

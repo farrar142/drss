@@ -21,7 +21,7 @@ import { Label } from '@/ui/label';
 import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
-import { useTranslation } from '@/stores/languageStore';
+import { useTranslation, interpolate } from '@/stores/languageStore';
 import { useRSSStore } from '@/stores/rssStore';
 import { useToast, useConfirm } from '@/stores/toastStore';
 import {
@@ -48,19 +48,10 @@ interface FeedEditPageProps {
   categoryId?: number;
 }
 
-const SOURCE_TYPE_INFO: Record<string, { icon: React.ReactNode; label: string }> = {
-  rss: {
-    icon: <Rss className="w-4 h-4" />,
-    label: 'RSS/Atom',
-  },
-  page_scraping: {
-    icon: <Globe className="w-4 h-4" />,
-    label: 'Page Scraping',
-  },
-  detail_page_scraping: {
-    icon: <FileText className="w-4 h-4" />,
-    label: 'Detail Page Scraping',
-  },
+const SOURCE_TYPE_ICONS: Record<string, React.ReactNode> = {
+  rss: <Rss className="w-4 h-4" />,
+  page_scraping: <Globe className="w-4 h-4" />,
+  detail_page_scraping: <FileText className="w-4 h-4" />,
 };
 
 export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, categoryId: propCategoryId }) => {
@@ -68,6 +59,12 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
   const router = useRouter();
   const { categories, feeds: storeFeeds, addFeed, updateFeed: updateFeedInStore } = useRSSStore();
   const toast = useToast();
+
+  const SOURCE_TYPE_LABELS: Record<string, string> = {
+    rss: t.feed.sourceTypeRss,
+    page_scraping: t.feed.sourceTypePageScraping,
+    detail_page_scraping: t.feed.sourceTypeDetailScraping,
+  };
   const confirm = useConfirm();
 
   // 피드 정보
@@ -166,22 +163,22 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
       return;
     }
 
+    if (!propFeedId && !categoryId) {
+      toast.warning(t.rssEverything.categoryRequired);
+      return;
+    }
+
+    if (refreshInterval !== null && refreshInterval !== undefined && refreshInterval < 1) {
+      toast.warning(t.tasks.enterValidInterval);
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       if (propFeedId) {
         // 피드 수정
-        console.log({
-          title,
-          description,
-          favicon_url: faviconUrl || undefined,
-          visible,
-          is_public: isPublic,
-          refresh_interval: refreshInterval,
-          category_id: categoryId,
-          custom_css: customCss || undefined,
-        })
         const updatedFeed = await updateFeed(propFeedId, {
           title,
           description,
@@ -481,7 +478,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
 
           {/* Favicon URL */}
           <div className="space-y-2">
-            <Label>Favicon URL</Label>
+            <Label>{t.feed.faviconUrl}</Label>
             <div className="flex items-center gap-2">
               {faviconUrl && (
                 <img
@@ -515,7 +512,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
             </div>
             {!propFeedId && (
               <p className="text-xs text-muted-foreground">
-                기본값: {defaultRefreshInterval}분
+                {interpolate(t.feed.defaultRefreshIntervalHint, { minutes: defaultRefreshInterval })}
               </p>
             )}
           </div>
@@ -538,9 +535,9 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
           {/* 공개 여부 (RSS Export) */}
           <div className="flex items-center justify-between py-2">
             <div className="space-y-0.5">
-              <Label htmlFor="is-public">RSS 피드 공개</Label>
+              <Label htmlFor="is-public">{t.feed.rssFeedPublic}</Label>
               <p className="text-xs text-muted-foreground">
-                /rss 엔드포인트에서 공개할지 여부를 설정합니다
+                {t.feed.rssFeedPublicDescription}
               </p>
             </div>
             <Switch
@@ -552,15 +549,15 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
 
           {/* Custom CSS */}
           <div className="space-y-2">
-            <Label htmlFor="custom-css">Custom CSS</Label>
+            <Label htmlFor="custom-css">{t.feed.customCss}</Label>
             <p className="text-xs text-muted-foreground">
-              피드 아이템 카드에 적용할 사용자 정의 CSS를 입력하세요
+              {t.feed.customCssDescription}
             </p>
             <textarea
               id="custom-css"
               value={customCss}
               onChange={(e) => setCustomCss(e.target.value)}
-              placeholder=".content { font-size: 16px; }&#10;img { border-radius: 8px; }"
+              placeholder={t.feed.customCssPlaceholder}
               className="w-full h-32 px-3 py-2 text-sm font-mono border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y"
             />
           </div>
@@ -603,14 +600,14 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, 
                 >
                   {/* 소스 타입 아이콘 */}
                   <div className="flex-shrink-0 p-2 bg-primary/10 rounded-lg">
-                    {SOURCE_TYPE_INFO[source.source_type]?.icon || <Rss className="w-4 h-4" />}
+                    {SOURCE_TYPE_ICONS[source.source_type] || <Rss className="w-4 h-4" />}
                   </div>
 
                   {/* 소스 정보 */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        {SOURCE_TYPE_INFO[source.source_type]?.label || source.source_type}
+                        {SOURCE_TYPE_LABELS[source.source_type] || source.source_type}
                       </span>
                       {source.is_active ? (
                         <Check className="w-4 h-4 text-green-500" />

@@ -30,7 +30,7 @@ export function SaveStep({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          설정을 확인하고 소스를 저장합니다.
+          {t.rssEverything.confirmAndSaveSource}
         </p>
 
         <div className="flex gap-2">

@@ -152,6 +152,12 @@ export const en: Translations = {
     pageUrl: 'Page URL',
     waitSelector: 'Wait Selector',
     waitSelectorPlaceholder: 'Selector to confirm page load',
+    rssFeedPublic: 'RSS Feed Public',
+    rssFeedPublicDescription: 'Whether to expose this feed on the /rss endpoint',
+    customCss: 'Custom CSS',
+    customCssDescription: 'Enter custom CSS to apply to feed item cards',
+    customCssPlaceholder: '.content { font-size: 16px; }\nimg { border-radius: 8px; }',
+    defaultRefreshIntervalHint: 'Default: {minutes} min',
   },
 
   // Settings
@@ -405,6 +411,15 @@ export const en: Translations = {
     editSource: 'Edit Source',
     // StepHeader
     listSelectorStep: 'List Selectors',
+    // JSON paste
+    jsonPasteTitle: 'Paste Config (optional)',
+    jsonPasteInstructions: 'Paste a JSON config copied from an existing source to auto-apply settings.',
+    jsonConfigApplied: 'Config applied. (Type: {type})',
+    // Save step
+    confirmAndSaveSource: 'Review your settings and save the source.',
+    // Wait selector
+    waitSelectorLabel: 'Wait Selector',
+    waitSelectorDescription: 'CSS selector to wait for before capturing HTML',
   },
 
   // UI

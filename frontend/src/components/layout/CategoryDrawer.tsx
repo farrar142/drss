@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '@/types/rss';
 import { useRSSStore } from '@/stores/rssStore';
 import { useTranslation } from '@/stores/languageStore';
+import { useToast } from '@/stores/toastStore';
 import { CategoryItem } from './CategoryItem';
 import {
   deleteCategory,
@@ -191,6 +192,7 @@ export const CategoryDrawer: FC<{
   onClose: () => void;
 }> = ({ open, pathname, variant = 'permanent', onClose }) => {
   const { t } = useTranslation(); const router = useRouter(); const { categories, setCategories, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
+  const toast = useToast();
 
   const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
 
@@ -258,10 +260,11 @@ export const CategoryDrawer: FC<{
       });
     } catch (error) {
       console.error('Failed to save category order:', error);
+      toast.error(t.errors.unknownError);
       // 실패 시 원래 순서로 복구
       refreshCategoriesWithFeeds();
     }
-  }, [setCategories, refreshCategoriesWithFeeds]);
+  }, [setCategories, refreshCategoriesWithFeeds, toast, t]);
 
   // Temporary (mobile) drawer
   if (variant === 'temporary') {

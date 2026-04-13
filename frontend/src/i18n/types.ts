@@ -154,6 +154,12 @@ export interface Translations {
     pageUrl: string;
     waitSelector: string;
     waitSelectorPlaceholder: string;
+    rssFeedPublic: string;
+    rssFeedPublicDescription: string;
+    customCss: string;
+    customCssDescription: string;
+    customCssPlaceholder: string;
+    defaultRefreshIntervalHint: string;
   };
 
   // Settings
@@ -407,6 +413,15 @@ export interface Translations {
     editSource: string;
     // StepHeader
     listSelectorStep: string;
+    // JSON paste
+    jsonPasteTitle: string;
+    jsonPasteInstructions: string;
+    jsonConfigApplied: string;
+    // Save step
+    confirmAndSaveSource: string;
+    // Wait selector
+    waitSelectorLabel: string;
+    waitSelectorDescription: string;
   };
 
   // UI

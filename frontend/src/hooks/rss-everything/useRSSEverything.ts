@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRSSStore } from '@/stores/rssStore';
+import { useTranslation } from '@/stores/languageStore';
+import { useToast } from '@/stores/toastStore';
 import {
   fetchHtml,
   previewItems as previewItemsApi,
@@ -68,6 +70,8 @@ export interface UseRSSEverythingOptions {
 export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   const { context } = options;
   const { setCategories } = useRSSStore();
+  const { t } = useTranslation();
+  const toast = useToast();
   const router = useRouter();
 
   // Context에 따라 초기 스텝 결정
@@ -199,7 +203,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
           }
         } catch (err) {
           console.error('Failed to load source:', err);
-          setError('소스 데이터를 불러오는데 실패했습니다.');
+          setError(t.rssEverything.sourceLoadFailed);
         } finally {
           setIsLoading(false);
         }
@@ -294,13 +298,13 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // RSS 피드 저장 (생성 또는 수정)
   const handleSaveRssFeed = useCallback(async () => {
     if (!url) {
-      setError('URL is required');
+      setError(t.rssEverything.urlRequired);
       return;
     }
 
     // feedId 필수 (기존 피드에 소스 추가)
     if (!context?.feedId) {
-      setError('Feed ID is required');
+      setError(t.errors.unknownError);
       return;
     }
 
@@ -318,8 +322,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
 
         await updateRssEverythingSource(editingSourceId, updateData);
 
-        // 성공 메시지 후 탭 닫기
-        alert('소스가 업데이트되었습니다.');
+        toast.success(t.rssEverything.sourceUpdated);
       } else {
         // 생성 모드: 기존 피드에 소스 추가
         const sourceData: SourceCreateSchema = {
@@ -330,6 +333,8 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         };
 
         await createRssEverythingSource(sourceData);
+
+        toast.success(t.rssEverything.createSuccess);
 
         // 카테고리 새로고침 (피드 목록도 함께 갱신됨)
         const updatedCategories = await listCategories();
@@ -343,11 +348,11 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         router.push('/home');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.errors.unknownError);
     } finally {
       setIsSaving(false);
     }
-  }, [url, customHeaders, router, setCategories, context?.mode, context?.feedId, editingSourceId]);
+  }, [url, customHeaders, router, setCategories, context?.mode, context?.feedId, editingSourceId, toast, t]);
 
   // Fetch HTML from URL (목록 페이지)
   const handleFetchListHTML = useCallback(async () => {
@@ -372,10 +377,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         setListHtml(response.html);
         setCurrentStep('list-select');
       } else {
-        setError(response.error || 'Failed to fetch HTML');
+        setError(response.error || t.errors.networkError);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.errors.unknownError);
     } finally {
       setIsLoading(false);
     }
@@ -384,7 +389,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // 상세 페이지 HTML 가져오기
   const handleFetchDetailHTML = useCallback(async () => {
     if (!detailUrl) {
-      setError('Please enter a sample detail page URL');
+      setError(t.rssEverything.urlRequired);
       return;
     }
 
@@ -406,10 +411,10 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       if (response.success && response.html) {
         setDetailHtml(response.html);
       } else {
-        setError(response.error || 'Failed to fetch detail page');
+        setError(response.error || t.errors.networkError);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.errors.unknownError);
     } finally {
       setIsLoading(false);
     }
@@ -541,7 +546,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   // 목록 선택 다음 단계
   const handleListSelectNext = useCallback(() => {
     if (!listSelectors.itemSelector) {
-      setError('Item selector is required');
+      setError(t.rssEverything.itemSelectorRequired);
       return;
     }
 
@@ -584,18 +589,16 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         detail_image_selector: detailSelectors.detailImageSelector,
         source_type: sourceType
       };
-      console.log('Preview request:', request);
-
       const response = await previewItemsApi(request);
 
       if (response.success) {
         setPreviewItems(response.items || []);
         setCurrentStep('preview');
       } else {
-        setError(response.error || 'Failed to preview items');
+        setError(response.error || t.rssEverything.previewError);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.errors.unknownError);
     } finally {
       setPreviewLoading(false);
     }
@@ -605,7 +608,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   const handleSave = useCallback(async () => {
     // feedId는 필수 (기존 피드에 소스 추가)
     if (!context?.feedId) {
-      setError('Feed ID is required');
+      setError(t.errors.unknownError);
       return;
     }
 
@@ -639,6 +642,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         };
 
         await updateRssEverythingSource(editingSourceId, updateData);
+        toast.success(t.rssEverything.sourceUpdated);
       } else {
         // 생성 모드: 새 소스 생성
         const request: SourceCreateSchema = {
@@ -664,6 +668,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         };
 
         await createRssEverythingSource(request);
+        toast.success(t.rssEverything.createSuccess);
       }
 
       // 카테고리 & 피드 새로고침
@@ -677,11 +682,11 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         router.push('/home');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : t.errors.unknownError);
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, router, context?.feedId, context?.mode, editingSourceId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, router, context?.feedId, context?.mode, editingSourceId, toast, t]);
 
   // Reset and start over
   const handleReset = useCallback(() => {
@@ -715,10 +720,18 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   const goBack = useCallback(() => {
     switch (currentStep) {
       case 'rss-save':
-        setCurrentStep('source-type');
+        if (context?.mode === 'edit' && context?.feedId) {
+          router.push(`/feed/${context.feedId}/edit`);
+        } else {
+          setCurrentStep('source-type');
+        }
         break;
       case 'url':
-        setCurrentStep('source-type');
+        if (context?.mode === 'edit' && context?.feedId) {
+          router.push(`/feed/${context.feedId}/edit`);
+        } else {
+          setCurrentStep('source-type');
+        }
         break;
       case 'list-select':
         setCurrentStep('url');
@@ -733,7 +746,7 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         setCurrentStep('preview');
         break;
     }
-  }, [currentStep, parseMode]);
+  }, [currentStep, parseMode, context?.mode, context?.feedId, router]);
 
   const goToSave = useCallback(() => {
     setCurrentStep('save');

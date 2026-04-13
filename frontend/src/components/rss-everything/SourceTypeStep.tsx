@@ -6,7 +6,7 @@ import { Button } from '@/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/card';
 import { Textarea } from '@/ui/textarea';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/stores/languageStore';
+import { useTranslation, interpolate } from '@/stores/languageStore';
 
 import { BrowserServiceType } from '@/types/rss';
 
@@ -93,9 +93,11 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
       // source_type 확인 및 자동 선택
       if (parsed.source_type) {
         const validTypes: SourceType[] = ['rss', 'page_scraping', 'detail_page_scraping'];
-        if (validTypes.includes(parsed.source_type)) {
-          setSelectedType(parsed.source_type);
+        if (!validTypes.includes(parsed.source_type)) {
+          setJsonError(t.rssEverything.invalidJsonObject);
+          return;
         }
+        setSelectedType(parsed.source_type);
       }
 
       // URL 자동 설정
@@ -132,10 +134,10 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Clipboard className="w-4 h-4" />
-            설정 붙여넣기 (선택사항)
+            {t.rssEverything.jsonPasteTitle}
           </CardTitle>
           <CardDescription>
-            기존 소스에서 복사한 JSON 설정을 붙여넣으면 자동으로 설정이 적용됩니다.
+            {t.rssEverything.jsonPasteInstructions}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -154,7 +156,7 @@ export const SourceTypeStep: React.FC<SourceTypeStepProps> = ({
           {parsedConfig && (
             <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
               <CheckCircle className="w-4 h-4" />
-              설정이 적용되었습니다. (타입: {parsedConfig.source_type || selectedType})
+              {interpolate(t.rssEverything.jsonConfigApplied, { type: parsedConfig.source_type || selectedType })}
             </div>
           )}
         </CardContent>
