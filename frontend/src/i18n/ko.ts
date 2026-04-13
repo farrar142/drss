@@ -90,6 +90,7 @@ export const ko: Translations = {
     refreshing: '새로고침 중...',
     empty: '카테고리 없음',
     emptyDescription: '카테고리를 추가하여 피드를 정리하세요.',
+    allFeeds: '전체',
     feedCount: '피드 {count}개',
     itemCount: '아이템 {count}개',
   },
@@ -408,9 +409,6 @@ export const ko: Translations = {
 
   // UI
   ui: {
-    // Tabs
-    closeAllTabs: '모든 탭 닫기',
-    newTab: '새 탭',
     columnCount: '컬럼 수 조절',
     // AppBar
     showAppBar: '앱바 보이기',

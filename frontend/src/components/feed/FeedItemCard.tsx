@@ -396,7 +396,7 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
       }}
       key={item.id}
       className={cn(
-        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-[92px] @container",
+        "glass-card p-3 sm:p-4 mt-1 cursor-pointer scroll-mt-16 @container",
         viewMode === 'board' ? 'mb-3' : ''
       )}
       style={{
@@ -422,8 +422,8 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
           !collapsed && "sticky z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[top] duration-300"
         )}
         style={{
-          // CSS 변수로 헤더 오프셋 사용 (기본값 92px)
-          top: !collapsed ? 'var(--header-offset, 92px)' : undefined,
+          // CSS 변수로 헤더 오프셋 사용 (헤더 56px)
+          top: !collapsed ? 'var(--header-offset, 3.5rem)' : undefined,
         }}
         onClick={(e) => {
           // When sticky header is clicked and it's actually stuck at top, scroll the card to top
@@ -431,39 +431,22 @@ export const FeedItemCard = forwardRef<HTMLDivElement, {
             const cardEl = localRef.current;
             if (!cardEl) return;
 
-            // 가장 가까운 스크롤 컨테이너 찾기
-            let scrollContainer: HTMLElement | null = cardEl.parentElement;
-            while (scrollContainer) {
-              const overflow = getComputedStyle(scrollContainer).overflowY;
-              if (overflow === 'auto' || overflow === 'scroll') break;
-              scrollContainer = scrollContainer.parentElement;
-            }
-
-            if (!scrollContainer) return;
-
             const cardRect = cardEl.getBoundingClientRect();
-            const containerRect = scrollContainer.getBoundingClientRect();
+            // 앱바 높이 (3.5rem = 56px)
+            const appBarHeight = 56;
+            // 스티키 헤더의 top 위치 = 뷰포트 기준으로 앱바 바로 아래
+            const stickyTop = appBarHeight;
 
-            // 스티키 헤더의 top 위치 계산 (탭바 높이 약 36px 고려)
-            // --header-offset이 0px이면 sticky top은 컨테이너 상단
-            // 하지만 탭바가 sticky로 상단에 있으므로 실제 스티키 영역은 탭바 아래
-            const tabBarHeight = 36;
-            const stickyAreaTop = containerRect.top + tabBarHeight;
+            // 카드 상단이 뷰포트 상단(앱바 아래)보다 위에 있으면 → 스티키 상태
+            const isSticky = cardRect.top < stickyTop - 5;
 
-            // 카드 상단이 스티키 영역보다 위에 있으면 (= 스티키 상태)
-            // 단, 이미 목표 위치 근처에 있으면 접기 동작 수행
-            const isSticky = cardRect.top < stickyAreaTop - 5; // 스티키 상태: 카드 상단이 탭바 위에 있을 때
-            const isNearTargetPosition = Math.abs(cardRect.top - stickyAreaTop - 8) < 20; // 목표 위치 근처
-
-            if (isSticky && !isNearTargetPosition) {
+            if (isSticky) {
               e.stopPropagation();
-              // 카드 상단을 탭바 바로 아래로 이동
-              const currentScrollTop = scrollContainer.scrollTop;
-              const cardOffsetFromContainer = cardRect.top - containerRect.top;
-              const targetScrollTop = currentScrollTop + cardOffsetFromContainer - tabBarHeight - 8;
-              scrollContainer.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
+              // 카드를 앱바 바로 아래로 스크롤
+              const scrollY = window.scrollY + cardRect.top - appBarHeight - 8;
+              window.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
             } else {
-              // 스티키가 아닌 상태이거나 이미 목표 위치에 있을 때 타이틀 클릭하면 접기
+              // 스티키가 아닌 상태 → 접기/펼치기
               e.stopPropagation();
               const newCollapsed = !collapsed;
               setCollapsed(newCollapsed);

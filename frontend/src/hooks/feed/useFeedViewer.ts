@@ -18,11 +18,9 @@ export interface UseFeedViewerOptions {
   newPostsCount?: number;
   /** 자동 새로고침 간격 (ms), 기본 60초 */
   autoRefreshInterval?: number;
-  /** 탭 활성화 여부 (비활성 시 IntersectionObserver 비활성화) */
-  isActive?: boolean;
-  /** 최대 컴럼 수 (탭별 설정, 기본 3) */
+  /** 최대 컬럼 수 (기본 3) */
   maxColumns?: number;
-  /** 스크롤 컨테이너 ref (개별 패널 스크롤용) */
+  /** 스크롤 컨테이너 ref */
   scrollContainerRef?: RefObject<HTMLDivElement | null>;
   /** 아이템 업데이트 콜백 */
   onItemUpdate?: (itemId: number, updatedData: Partial<RSSItem>) => void;
@@ -84,7 +82,6 @@ export function useFeedViewer({
   loading,
   newPostsCount: externalNewPostsCount = 0,
   autoRefreshInterval = 60000,
-  isActive = true,
   maxColumns = 3,
   scrollContainerRef,
   onItemUpdate,
@@ -126,7 +123,6 @@ export function useFeedViewer({
     loading,
     queueThreshold: 5,
     initialDelay: 80,
-    enabled: isActive,
   });
 
   // Use extracted hooks

@@ -1,7 +1,6 @@
 'use client';
 
-import { useRSSEverything } from '@/hooks/rss-everything/useRSSEverything';
-import { RSSEverythingContext } from '@/stores/tabStore';
+import { useRSSEverything, RSSEverythingContext } from '@/hooks/rss-everything/useRSSEverything';
 import {
   StepHeader,
   UrlStep,

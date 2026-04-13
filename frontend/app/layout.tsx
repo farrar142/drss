@@ -36,7 +36,7 @@ const defaultColors = {
 async function fetchSiteSettings(): Promise<SignupStatusSchema | null> {
   try {
     // 서버 사이드에서는 내부 네트워크 URL 사용
-    const apiUrl = process.env.INTERNAL_API_URL || 'http://django:8000';
+    const apiUrl = `http://${process.env.BACKEND_HOST}:8000`;
     const res = await fetch(`${apiUrl}/api/auth/signup-status`, {
       next: { revalidate: 60 }, // 60초마다 재검증
     });

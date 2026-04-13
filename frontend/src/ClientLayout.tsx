@@ -2,14 +2,10 @@
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AppBarProvider } from './context/AppBarContext';
-import AppLayout from './components/layout/AppLayout';
 import { NotificationProvider } from './components/common/NotificationProvider';
 import { useThemeStore, applyThemeColors } from './stores/themeStore';
-import { useTabStore } from './stores/tabStore';
 import { useSiteStore } from './stores/siteStore';
-import { useTranslation } from './stores/languageStore';
-import { useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo } from 'react';
 import { SignupStatusSchema } from './services/api';
 
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -80,9 +76,7 @@ export function ClientLayout({
       <AppBarProvider>
         <NotificationProvider>
           <SiteSettingsLoader initialSiteSettings={initialSiteSettings} />
-          <URLParamHandler />
-          <TabHistoryManager />
-          <AppLayout authChildren={children} siteName={initialSiteSettings.site_name} />
+          {children}
         </NotificationProvider>
       </AppBarProvider>
     </AuthProvider>
@@ -97,95 +91,6 @@ function SiteSettingsLoader({ initialSiteSettings }: { initialSiteSettings: Sign
     // 서버에서 받은 초기 설정을 스토어에 동기화 (설정 페이지 등에서 사용)
     initializeSiteSettings(initialSiteSettings);
   }, [initialSiteSettings, initializeSiteSettings]);
-
-  return null;
-}
-
-// URL 파라미터를 읽어서 탭을 여는 컴포넌트
-function URLParamHandler() {
-  const searchParams = useSearchParams();
-  const { openTab } = useTabStore();
-  const { t } = useTranslation();
-  const hasProcessed = useRef(false);
-
-  useEffect(() => {
-    // 한 번만 처리
-    if (hasProcessed.current) return;
-
-    const openCategory = searchParams.get('openCategory');
-    const openFeed = searchParams.get('openFeed');
-    const categoryId = searchParams.get('categoryId');
-    const openSettings = searchParams.get('openSettings');
-
-    if (openCategory) {
-      hasProcessed.current = true;
-      openTab({
-        type: 'category',
-        title: t.nav.categories,
-        path: `/category/${openCategory}`,
-        resourceId: parseInt(openCategory),
-      });
-      // URL에서 파라미터 제거
-      window.history.replaceState({}, '', '/home');
-    } else if (openFeed && categoryId) {
-      hasProcessed.current = true;
-      openTab({
-        type: 'feed',
-        title: t.nav.feeds,
-        path: `/category/${categoryId}/feed/${openFeed}`,
-        resourceId: parseInt(openFeed),
-      });
-      window.history.replaceState({}, '', '/home');
-    } else if (openSettings) {
-      hasProcessed.current = true;
-      openTab({
-        type: 'settings',
-        title: t.nav.settings,
-        path: '/settings',
-      });
-      window.history.replaceState({}, '', '/home');
-    }
-  }, [searchParams, openTab, t]);
-
-  return null;
-}
-
-// 브라우저 히스토리와 탭 히스토리 동기화
-function TabHistoryManager() {
-  const { panels, activePanelId, goBackTab } = useTabStore();
-  const prevTabRef = useRef<string | null>(null);
-
-  // 브라우저 뒤로가기 시 탭 히스토리 사용
-  useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      e.preventDefault();
-
-      // 탭 히스토리에서 이전 탭으로 이동
-      const wentBack = goBackTab(activePanelId);
-
-      // 탭 히스토리가 없으면 현재 상태 유지
-      if (!wentBack) {
-        window.history.pushState({ tab: true }, '', '/home');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [activePanelId, goBackTab]);
-
-  // 탭 변경 시 브라우저 히스토리에 상태 추가
-  useEffect(() => {
-    const activePanel = panels.find(p => p.id === activePanelId);
-    const currentTabId = activePanel?.activeTabId;
-
-    if (currentTabId && currentTabId !== prevTabRef.current) {
-      // 첫 로드가 아닌 경우에만 히스토리 추가
-      if (prevTabRef.current !== null) {
-        window.history.pushState({ tab: true, tabId: currentTabId }, '', '/home');
-      }
-      prevTabRef.current = currentTabId;
-    }
-  }, [panels, activePanelId]);
 
   return null;
 }

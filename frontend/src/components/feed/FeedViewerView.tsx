@@ -87,7 +87,7 @@ export const FeedViewerView: FC<FeedViewerViewProps> = memo(function FeedViewerV
 
   return (
     <div className={cn(
-      "relative min-h-[calc(100vh-7rem)]",
+      "relative min-h-[calc(100vh-3.5rem)]",
       // 크루징 중에는 pointer-events 비활성화 (성능 최적화)
       isCruising && "pointer-events-none"
     )}>

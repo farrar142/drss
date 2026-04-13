@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { FeedViewer } from '@/components/feed/FeedViewer';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { useRSSStore } from '@/stores/rssStore';
 import { RSSItem } from '@/types/rss';
-import { listAllItems } from '@/services/api';
+import { listItemsByCategory } from '@/services/api';
 import { usePagination, PaginationFilters } from '@/hooks/feed/usePagination';
 
-export default function HomePage() {
-  const { filter } = useSettingsStore();
+export default function CategoryPage() {
+  const params = useParams();
+  const categoryId = Number(params.id);
+  const { filter, columns } = useSettingsStore();
   const { searchQuery } = useRSSStore();
 
   const filters: PaginationFilters = useMemo(() => {
@@ -31,10 +34,10 @@ export default function HomePage() {
     return base;
   }, [filter, searchQuery]);
 
-  const { items, handleLoadMore, handleLoadNew, hasNext, loading } = usePagination<RSSItem>(
-    listAllItems,
+  const { items, handleLoadMore, handleLoadNew, hasNext, loading, updateItem, removeItem } = usePagination<RSSItem>(
+    (args) => listItemsByCategory(categoryId, args),
     (item) => item.published_at,
-    'home',
+    `category-${categoryId}`,
     filters
   );
 
@@ -45,6 +48,9 @@ export default function HomePage() {
       onLoadNew={handleLoadNew}
       hasNext={hasNext}
       loading={loading}
+      maxColumns={columns}
+      onItemUpdate={updateItem}
+      onItemDelete={removeItem}
     />
   );
 }

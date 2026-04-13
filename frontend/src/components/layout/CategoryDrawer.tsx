@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, useState, useEffect, useCallback, memo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Rss, Plus, GripVertical } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { ScrollArea } from '@/ui/scroll-area';
@@ -9,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { RSSCategory, RSSFeed } from '@/types/rss';
 import { useRSSStore } from '@/stores/rssStore';
 import { useTranslation } from '@/stores/languageStore';
-import { useTabStore } from '@/stores/tabStore';
 import { CategoryItem } from './CategoryItem';
 import {
   deleteCategory,
@@ -190,56 +190,34 @@ export const CategoryDrawer: FC<{
   variant?: 'permanent' | 'persistent' | 'temporary';
   onClose: () => void;
 }> = ({ open, pathname, variant = 'permanent', onClose }) => {
-  const { t } = useTranslation();
-  const { categories, setCategories, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
-  const { openTab, activeTabId, saveScrollPosition } = useTabStore();
-  const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
+  const { t } = useTranslation(); const router = useRouter(); const { categories, setCategories, removeCategory, feeds, refreshCategoriesWithFeeds } = useRSSStore();
 
-  // 현재 탭의 스크롤 위치 저장 헬퍼
-  const saveCurrentScroll = useCallback(() => {
-    if (activeTabId) {
-      saveScrollPosition(activeTabId, window.scrollY);
-    }
-  }, [activeTabId, saveScrollPosition]);
+  const [draggingFeed, setDraggingFeed] = useState<FeedSchema | null>(null);
 
   // 탭으로 네비게이션하는 핸들러들
   const handleNavigateHome = useCallback(() => {
-    saveCurrentScroll();
-    openTab({ type: 'home', title: t.nav.mainstream, path: '/home' });
+    router.push('/home');
     // 플로팅 모드(temporary)일 때 드로워 닫기
     if (variant === 'temporary') {
       onClose();
     }
-  }, [openTab, saveCurrentScroll, variant, onClose, t]);
+  }, [router, variant, onClose]);
 
   const handleNavigateCategory = useCallback((category: RSSCategory) => {
-    saveCurrentScroll();
-    openTab({
-      type: 'category',
-      title: category.name,
-      path: '/home', // URL 단순화 - 모든 피드 탭은 /home
-      resourceId: category.id
-    });
+    router.push(`/category/${category.id}`);
     // 플로팅 모드(temporary)일 때 드로워 닫기
     if (variant === 'temporary') {
       onClose();
     }
-  }, [openTab, saveCurrentScroll, variant, onClose]);
+  }, [router, variant, onClose]);
 
   const handleNavigateFeed = useCallback((categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => {
-    saveCurrentScroll();
-    openTab({
-      type: 'feed',
-      title: feedTitle,
-      path: '/home', // URL 단순화 - 모든 피드 탭은 /home
-      resourceId: feedId,
-      favicon: faviconUrl
-    });
+    router.push(`/feed/${feedId}`);
     // 플로팅 모드(temporary)일 때 드로워 닫기
     if (variant === 'temporary') {
       onClose();
     }
-  }, [openTab, saveCurrentScroll, variant, onClose]);
+  }, [router, variant, onClose]);
 
   // 서버에서 초기화된 상태 확인
   const _initialized = useRSSStore((state) => state._initialized);
@@ -251,21 +229,14 @@ export const CategoryDrawer: FC<{
     refreshCategoriesWithFeeds();
   }, [_initialized, refreshCategoriesWithFeeds]);
 
-  // 카테고리 추가 - CategoryEdit 탭 열기
+  // 카테고리 추가 - CategoryEdit 페이지 열기
   const handleOpenAddCategory = useCallback(() => {
-    openTab({
-      type: 'category-edit',
-      title: t.category.add,
-      path: '/category-edit',
-      categoryEditContext: {
-        mode: 'create',
-      },
-    });
+    router.push('/category/new');
     // 플로팅 모드(temporary)일 때 드로워 닫기
     if (variant === 'temporary') {
       onClose();
     }
-  }, [openTab, t, variant, onClose]);
+  }, [router, variant, onClose]);
 
   const handleDeleteCategory = async (category: RSSCategory) => {
     try {

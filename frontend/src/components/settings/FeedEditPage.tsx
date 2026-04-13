@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus,
   Pencil,
@@ -21,7 +22,6 @@ import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
 import { useTranslation } from '@/stores/languageStore';
-import { useTabStore, FeedEditContext } from '@/stores/tabStore';
 import { useRSSStore } from '@/stores/rssStore';
 import { useToast, useConfirm } from '@/stores/toastStore';
 import {
@@ -44,7 +44,8 @@ interface PaginationVariable {
 }
 
 interface FeedEditPageProps {
-  context?: FeedEditContext;
+  feedId?: number;
+  categoryId?: number;
 }
 
 const SOURCE_TYPE_INFO: Record<string, { icon: React.ReactNode; label: string }> = {
@@ -62,9 +63,9 @@ const SOURCE_TYPE_INFO: Record<string, { icon: React.ReactNode; label: string }>
   },
 };
 
-export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
+export const FeedEditPage: React.FC<FeedEditPageProps> = ({ feedId: propFeedId, categoryId: propCategoryId }) => {
   const { t } = useTranslation();
-  const { openTab, updateTab, panels, activePanelId } = useTabStore();
+  const router = useRouter();
   const { categories, feeds: storeFeeds, addFeed, updateFeed: updateFeedInStore } = useRSSStore();
   const toast = useToast();
   const confirm = useConfirm();
@@ -83,7 +84,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
   const [isPublic, setIsPublic] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState<number | undefined>(undefined);
   const [defaultRefreshInterval, setDefaultRefreshInterval] = useState(60);  // 서버 설정에서 가져오는 기본값
-  const [categoryId, setCategoryId] = useState<number | undefined>(context?.categoryId);
+  const [categoryId, setCategoryId] = useState<number | undefined>(propCategoryId);
   const [customCss, setCustomCss] = useState('');
 
   // 페이지네이션 크롤링 모달 상태
@@ -103,33 +104,33 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         const settings = await usersRouterGetUserSettings();
         setDefaultRefreshInterval(settings.default_refresh_interval);
         // 생성 모드이고 refreshInterval이 설정되지 않았으면 기본값 적용
-        if (context?.mode === 'create' && refreshInterval === undefined) {
+        if (!propFeedId && refreshInterval === undefined) {
           setRefreshInterval(settings.default_refresh_interval);
         }
       } catch (err) {
         console.error('Failed to load user settings:', err);
         // 실패해도 기본값 60 사용
-        if (context?.mode === 'create' && refreshInterval === undefined) {
+        if (!propFeedId && refreshInterval === undefined) {
           setRefreshInterval(60);
         }
       }
     };
     loadUserSettings();
-  }, [context?.mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [propFeedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 피드 데이터 로드 (스토어에서 먼저 찾고, 없으면 API 호출)
   const loadFeed = useCallback(async () => {
-    if (context?.mode === 'edit' && context.feedId) {
+    if (propFeedId) {
       setLoading(true);
       setError(null);
       try {
         // 먼저 스토어에서 피드를 찾음
-        let foundFeed = storeFeeds.find(f => f.id === context.feedId);
+        let foundFeed = storeFeeds.find(f => f.id === propFeedId);
 
         // 스토어에 없으면 API 호출
         if (!foundFeed) {
           const feeds = await listFeeds();
-          foundFeed = feeds.find(f => f.id === context.feedId);
+          foundFeed = feeds.find(f => f.id === propFeedId);
         }
 
         if (foundFeed) {
@@ -152,7 +153,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         setLoading(false);
       }
     }
-  }, [context, storeFeeds]);
+  }, [propFeedId, storeFeeds]);
 
   useEffect(() => {
     loadFeed();
@@ -169,7 +170,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     setError(null);
 
     try {
-      if (context?.mode === 'edit' && context.feedId) {
+      if (propFeedId) {
         // 피드 수정
         console.log({
           title,
@@ -181,7 +182,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
           category_id: categoryId,
           custom_css: customCss || undefined,
         })
-        const updatedFeed = await updateFeed(context.feedId, {
+        const updatedFeed = await updateFeed(propFeedId, {
           title,
           description,
           favicon_url: faviconUrl || undefined,
@@ -194,15 +195,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         setFeed(updatedFeed);
         updateFeedInStore(updatedFeed);
 
-        // 탭 제목 업데이트
-        const activePanel = panels.find(p => p.id === activePanelId);
-        const activeTab = activePanel?.tabs.find(tab => tab.id === activePanel?.activeTabId);
-        if (activeTab) {
-          updateTab(activeTab.id, { title: `${updatedFeed.title} - ${t.common.edit}` });
-        }
-
         toast.success(t.feed.updated);
-      } else if (context?.mode === 'create' && categoryId) {
+      } else if (categoryId) {
         // 피드 생성 - 소스 없이 피드만 생성
         const newFeed = await createFeed({
           category_id: categoryId,
@@ -216,19 +210,8 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
         addFeed(newFeed);
         setFeed(newFeed);
 
-        // context를 edit 모드로 전환
-        const activePanel = panels.find(p => p.id === activePanelId);
-        const activeTab = activePanel?.tabs.find(tab => tab.id === activePanel?.activeTabId);
-        if (activeTab) {
-          updateTab(activeTab.id, {
-            title: `${newFeed.title} - ${t.common.edit}`,
-            resourceId: newFeed.id,
-            feedEditContext: {
-              mode: 'edit',
-              feedId: newFeed.id,
-            },
-          });
-        }
+        // 생성 후 편집 페이지로 이동
+        router.replace(`/feed/${newFeed.id}/edit`);
 
         toast.success(t.rssEverything.createSuccess);
       }
@@ -247,33 +230,14 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
       return;
     }
 
-    openTab({
-      type: 'rss-everything',
-      title: `${t.rssEverything.title} - ${feed.title}`,
-      path: '/rss-everything',
-      resourceId: feed.id,
-      context: {
-        mode: 'create',
-        feedId: feed.id,
-      },
-    });
+    router.push(`/rss-everything/create/${feed.id}`);
   };
 
   // 소스 수정 버튼
   const handleEditSource = (source: SourceSchema) => {
     if (!feed) return;
 
-    openTab({
-      type: 'rss-everything',
-      title: `${source.url.substring(0, 30)}... - ${t.common.edit}`,
-      path: '/rss-everything',
-      resourceId: source.id,
-      context: {
-        mode: 'edit',
-        feedId: feed.id,
-        sourceId: source.id,
-      },
-    });
+    router.push(`/rss-everything/edit/${feed.id}/${source.id}`);
   };
 
   // 소스 삭제 버튼
@@ -447,7 +411,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
     );
   }
 
-  const isEditMode = context?.mode === 'edit' && feed !== null;
+  const isEditMode = !!propFeedId && feed !== null;
   const sources = feed?.sources || [];
 
   return (
@@ -549,7 +513,7 @@ export const FeedEditPage: React.FC<FeedEditPageProps> = ({ context }) => {
               />
               <span className="text-muted-foreground">{t.rssEverything.refreshIntervalUnit}</span>
             </div>
-            {context?.mode === 'create' && (
+            {!propFeedId && (
               <p className="text-xs text-muted-foreground">
                 기본값: {defaultRefreshInterval}분
               </p>

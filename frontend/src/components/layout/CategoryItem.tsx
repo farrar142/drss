@@ -3,6 +3,7 @@
 import { ChevronRight, Eye, EyeOff, FolderOpen, GripVertical, MoreVertical, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { FC, useEffect, useMemo, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/button';
 import {
@@ -15,7 +16,6 @@ import {
 import { RSSCategory, RSSFeed } from '@/types/rss';
 import { FeedListItem } from '../feed/FeedListItem';
 import { useRSSStore } from '@/stores/rssStore';
-import { useTabStore } from '@/stores/tabStore';
 import { useTranslation, interpolate } from '@/stores/languageStore';
 import { useToast, useConfirm } from '@/stores/toastStore';
 import {
@@ -60,7 +60,7 @@ export const CategoryItem: FC<{
   isDraggingCategory,
 }) => {
     const { addFeed, updateCategory, updateFeed } = useRSSStore();
-    const { openTab } = useTabStore();
+    const router = useRouter();
     const { t } = useTranslation();
     const toast = useToast();
     const confirm = useConfirm();
@@ -69,45 +69,30 @@ export const CategoryItem: FC<{
     const feeds = useMemo(() => _feeds.filter((f) => f.category == category.id), [_feeds, category.id]);
     const totalItemCount = useMemo(() => feeds.reduce((sum, f) => sum + f.item_count, 0), [feeds]);
     const categoryIdFromPath = pathname.startsWith('/category/') ? pathname.split('/')[2] : null;
-    const isActive = categoryIdFromPath && parseInt(categoryIdFromPath) === category.id;
+    const isActive = !!(categoryIdFromPath && parseInt(categoryIdFromPath) === category.id);
+
+    // 피드 페이지에서 해당 카테고리의 피드가 활성화된 경우 감지
+    const activeFeedId = pathname.startsWith('/feed/') ? parseInt(pathname.split('/')[2]) : null;
+    const hasFeedActive = !!(activeFeedId && feeds.some((f) => f.id === activeFeedId));
 
     useEffect(() => {
-      if (isActive) setExpanded(true);
-    }, [pathname, category.id, isActive]);
+      if (isActive || hasFeedActive) setExpanded(true);
+    }, [pathname, category.id, isActive, hasFeedActive]);
 
     const handleExpandToggle = () => {
       setExpanded((p) => !p);
     };
 
-    // 피드 추가 - FeedEdit 탭 열기
+    // 피드 추가 - FeedEdit 페이지 열기
     const handleAddFeed = () => {
-      openTab({
-        type: 'feed-edit',
-        title: `${t.feed.add} - ${category.name}`,
-        path: '/feed-edit',
-        // resourceId를 음수로 설정하여 카테고리별 생성 탭 구분 (기존 피드 ID와 충돌 방지)
-        resourceId: -category.id,
-        feedEditContext: {
-          mode: 'create',
-          categoryId: category.id,
-        },
-      });
+      router.push(`/feed/new/${category.id}`);
       // 플로팅 모드일 때 드로워 닫기
       onCloseDrawer?.();
     };
 
-    // 카테고리 편집 - CategoryEdit 탭 열기
+    // 카테고리 편집 - CategoryEdit 페이지 열기
     const handleEdit = () => {
-      openTab({
-        type: 'category-edit',
-        title: `${category.name} - ${t.common.edit}`,
-        path: '/category-edit',
-        resourceId: category.id,
-        categoryEditContext: {
-          mode: 'edit',
-          categoryId: category.id,
-        },
-      });
+      router.push(`/category/${category.id}/edit`);
       // 플로팅 모드일 때 드로워 닫기
       onCloseDrawer?.();
     };
@@ -236,6 +221,7 @@ export const CategoryItem: FC<{
                 handleExpandToggle();
                 if (onNavigateCategory) {
                   onNavigateCategory(category);
+                  onCloseDrawer?.();
                 }
               }}
             >
@@ -324,6 +310,7 @@ export const CategoryItem: FC<{
                       feed={feed}
                       key={feed.id}
                       categoryId={category.id}
+                      pathname={pathname}
                       onDragStart={onDragStart}
                       onDragEnd={onDragEnd}
                       onNavigateFeed={onNavigateFeed}

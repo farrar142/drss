@@ -32,31 +32,6 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // SPA 라우팅: 특정 경로를 홈으로 리다이렉트하면서 쿼리 파라미터로 변환
-    // /category/:id → /?openCategory=:id
-    const categoryMatch = pathname.match(/^\/category\/(\d+)$/);
-    if (categoryMatch) {
-        const url = new URL('/home', request.url);
-        url.searchParams.set('openCategory', categoryMatch[1]);
-        return NextResponse.redirect(url);
-    }
-
-    // /category/:id/feed/:feedId → /?openFeed=:feedId&categoryId=:id
-    const feedMatch = pathname.match(/^\/category\/(\d+)\/feed\/(\d+)$/);
-    if (feedMatch) {
-        const url = new URL('/home', request.url);
-        url.searchParams.set('openFeed', feedMatch[2]);
-        url.searchParams.set('categoryId', feedMatch[1]);
-        return NextResponse.redirect(url);
-    }
-
-    // /settings → /?openSettings=true
-    if (pathname === '/settings') {
-        const url = new URL('/home', request.url);
-        url.searchParams.set('openSettings', 'true');
-        return NextResponse.redirect(url);
-    }
-
     // 토큰이 있으면 통과
     return NextResponse.next();
 }

@@ -41,9 +41,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 import { useTranslation } from '../../stores/languageStore';
 import { useMediaModalStore } from '../../stores/mediaModalStore';
 import { CategoryDrawer, DRAWER_WIDTH } from './CategoryDrawer';
-import { SplitPanelView } from './SplitPanelView';
 import { FloatingAppBarToggle } from './FloatingAppBarToggle';
-import { useTabStore } from '../../stores/tabStore';
 import { cn } from '@/lib/utils';
 
 // 검색 입력 컴포넌트 - 디바운스 적용으로 불필요한 리렌더링 방지
@@ -123,11 +121,11 @@ const SearchInput = memo(({ placeholder }: { placeholder: string }) => {
 SearchInput.displayName = 'SearchInput';
 
 interface AppLayoutProps {
-  authChildren?: React.ReactNode;
+  children: React.ReactNode;
   siteName: string;
 }
 
-export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
+export default function AppLayout({ children, siteName }: AppLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout, user } = useAuth();
@@ -138,12 +136,12 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
     filter,
     viewMode,
     showCruisingControls,
+    columns,
     setFilter,
     setViewMode,
     setShowCruisingControls,
+    setColumns,
   } = useSettingsStore();
-
-  const { openTab } = useTabStore();
 
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
 
@@ -206,11 +204,6 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
     }
   };
 
-  // Auth pages don't use the layout
-  if (pathname?.startsWith('/auth/')) {
-    return <>{authChildren}</>;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header - hidden when media modal is open or on mobile when app bar is hidden */}
@@ -228,7 +221,7 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
 
           <h1
             className="text-lg font-semibold cursor-pointer hover:text-primary transition-colors"
-            onClick={() => openTab({ type: 'home', title: t.nav.mainstream, path: '/home' })}
+            onClick={() => router.push('/home')}
           >
             {siteName}
           </h1>
@@ -291,6 +284,24 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
             </Button>
           </Tooltip>
 
+          {/* Column Count Selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <LayoutGrid className="h-4 w-4" />
+                <span className="sr-only">{t.ui.columnCount}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{t.ui.columnCount}</DropdownMenuLabel>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <DropdownMenuItem key={n} onClick={() => setColumns(n)}>
+                  {n}{columns === n && <span className="ml-auto text-primary">✓</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Theme Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -326,12 +337,12 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => openTab({ type: 'settings', title: t.common.settings, path: '/settings' })}>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
                 <Palette className="mr-2 h-4 w-4" />
                 {t.common.settings}
               </DropdownMenuItem>
               {user && (user.is_staff || user.is_superuser) && (
-                <DropdownMenuItem onClick={() => openTab({ type: 'admin', title: t.settings.admin, path: '/admin' })}>
+                <DropdownMenuItem onClick={() => router.push('/admin')}>
                   <Shield className="mr-2 h-4 w-4" />
                   {t.settings.admin}
                 </DropdownMenuItem>
@@ -364,7 +375,7 @@ export default function AppLayout({ authChildren, siteName }: AppLayoutProps) {
           paddingTop: isMediaModalOpen ? 0 : (isMobile && isAppBarHidden) ? 0 : '3.5rem',
         }}
       >
-        <SplitPanelView isMediaModalOpen={isMediaModalOpen} />
+        {children}
       </main>
 
       {/* Floating App Bar Toggle - 모바일에서만 표시 */}

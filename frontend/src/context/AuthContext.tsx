@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useLayoutEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { usersRouterLogin, usersRouterSignup, usersRouterMe } from '@/services/api';
 import { AxiosError } from 'axios';
-import { useTabStore } from '@/stores/tabStore';
 
 export interface User {
   id: number;
@@ -41,7 +40,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
   const [user, setUser] = useState<User | null>(initialUser ?? null);
   // initialUser가 있으면 로딩 상태 false로 시작
   const [loading, setLoading] = useState(!initialUser);
-  const { initializeForUser, clearForLogout } = useTabStore();
 
   useEffect(() => {
     // 서버에서 이미 사용자 정보를 받았으면 추가 fetch 불필요
@@ -56,13 +54,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
       setLoading(false);
     }
   }, [initialUser]);
-
-  // 유저가 변경되면 탭스토어 초기화 (useLayoutEffect로 플래시 방지)
-  useLayoutEffect(() => {
-    if (user) {
-      initializeForUser(user.id);
-    }
-  }, [user, initializeForUser]);
 
   const fetchUser = async () => {
     try {
@@ -113,8 +104,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialUse
     localStorage.removeItem('token');
     // 쿠키에서도 제거
     document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    // 탭스토어 초기화
-    clearForLogout();
     setUser(null);
   };
 

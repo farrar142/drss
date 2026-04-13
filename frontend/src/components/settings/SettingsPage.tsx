@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Palette, RotateCcw, Sun, Moon, Monitor, Type, Globe, ClipboardList, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/button';
@@ -11,7 +12,6 @@ import { Slider } from '@/ui/slider';
 import { useThemeStore, applyThemeColors } from '@/stores/themeStore';
 import { useSettingsStore, fontSizeLevels, fontSizeConfig, FontSizeLevel } from '@/stores/settingsStore';
 import { useTranslation, languageNames, availableLanguages } from '@/stores/languageStore';
-import { useTabStore } from '@/stores/tabStore';
 import { FeedItemCard } from '@/components/feed/FeedItemCard';
 import { RSSItem } from '@/types/rss';
 import { Translations } from '@/i18n/types';
@@ -41,7 +41,7 @@ export function SettingsPage() {
   const { mode, setMode, colors, setColors, resetColors } = useThemeStore();
   const { fontSizeLevel, setFontSizeLevel, cruiseSpeedPercent, setCruiseSpeedPercent } = useSettingsStore();
   const { t, language, setLanguage } = useTranslation();
-  const { openTab } = useTabStore();
+  const router = useRouter();
 
   // 더미 피드 아이템 - 번역 적용
   const dummyItem: RSSItem = {
@@ -89,19 +89,11 @@ export function SettingsPage() {
   };
 
   const handleOpenTaskResults = () => {
-    openTab({
-      type: 'task-results',
-      title: 'Task Results',
-      path: '/task-results',
-    });
+    router.push('/task-results');
   };
 
   const handleOpenPeriodicTasks = () => {
-    openTab({
-      type: 'periodic-tasks',
-      title: 'Periodic Tasks',
-      path: '/periodic-tasks',
-    });
+    router.push('/periodic-tasks');
   };
 
   return (

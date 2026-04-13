@@ -92,6 +92,7 @@ export interface Translations {
     refreshing: string;
     empty: string;
     emptyDescription: string;
+    allFeeds: string;
     feedCount: string;
     itemCount: string;
   };
@@ -410,9 +411,6 @@ export interface Translations {
 
   // UI
   ui: {
-    // Tabs
-    closeAllTabs: string;
-    newTab: string;
     columnCount: string;
     // AppBar
     showAppBar: string;

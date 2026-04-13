@@ -90,6 +90,7 @@ export const en: Translations = {
     refreshing: 'Refreshing...',
     empty: 'No Categories',
     emptyDescription: 'Add a category to organize your feeds.',
+    allFeeds: 'All',
     feedCount: '{count} feeds',
     itemCount: '{count} items',
   },
@@ -408,9 +409,6 @@ export const en: Translations = {
 
   // UI
   ui: {
-    // Tabs
-    closeAllTabs: 'Close all tabs',
-    newTab: 'New tab',
     columnCount: 'Column count',
     // AppBar
     showAppBar: 'Show app bar',

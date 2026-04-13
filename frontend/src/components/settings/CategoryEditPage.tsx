@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AlertCircle,
   Loader2,
@@ -11,7 +12,6 @@ import { Input } from '@/ui/input';
 import { Button } from '@/ui/button';
 import { Switch } from '@/ui/switch';
 import { useTranslation } from '@/stores/languageStore';
-import { useTabStore, CategoryEditContext } from '@/stores/tabStore';
 import { useRSSStore } from '@/stores/rssStore';
 import { useToast } from '@/stores/toastStore';
 import {
@@ -22,14 +22,16 @@ import {
 } from '@/services/api';
 
 interface CategoryEditPageProps {
-  context?: CategoryEditContext;
+  categoryId?: number;
 }
 
-export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) => {
+export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ categoryId: propCategoryId }) => {
   const { t } = useTranslation();
-  const { updateTab, panels, activePanelId } = useTabStore();
+  const router = useRouter();
   const { categories: storeCategories, addCategory, updateCategory: updateCategoryInStore } = useRSSStore();
   const toast = useToast();
+
+  const isCreateMode = !propCategoryId;
 
   // 카테고리 정보
   const [category, setCategory] = useState<CategorySchema | null>(null);
@@ -45,17 +47,17 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
 
   // 카테고리 데이터 로드 (스토어에서 먼저 찾고, 없으면 API 호출)
   const loadCategory = useCallback(async () => {
-    if (context?.mode === 'edit' && context.categoryId) {
+    if (propCategoryId) {
       setLoading(true);
       setError(null);
       try {
         // 먼저 스토어에서 카테고리를 찾음
-        let foundCategory = storeCategories.find(c => c.id === context.categoryId) as CategorySchema | undefined;
+        let foundCategory = storeCategories.find(c => c.id === propCategoryId) as CategorySchema | undefined;
 
         // 스토어에 없으면 API 호출
         if (!foundCategory) {
           const categories = await listCategories();
-          foundCategory = categories.find(c => c.id === context.categoryId);
+          foundCategory = categories.find(c => c.id === propCategoryId);
         }
 
         if (foundCategory) {
@@ -74,7 +76,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
         setLoading(false);
       }
     }
-  }, [context, storeCategories, t]);
+  }, [propCategoryId, storeCategories, t]);
 
   useEffect(() => {
     loadCategory();
@@ -91,28 +93,19 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
     setError(null);
 
     try {
-      if (context?.mode === 'edit' && context.categoryId) {
+      if (propCategoryId) {
         // 카테고리 수정
-        const updatedCategory = await updateCategory(context.categoryId, {
+        const updatedCategory = await updateCategory(propCategoryId, {
           name,
           description,
           visible,
           is_public: isPublic,
-          // is_public은 백엔드 스키마가 업데이트되면 추가
-          // is_public: isPublic,
         } as any);
         setCategory(updatedCategory);
         updateCategoryInStore({ ...updatedCategory, visible: updatedCategory.visible ?? true } as any);
 
-        // 탭 제목 업데이트
-        const activePanel = panels.find(p => p.id === activePanelId);
-        const activeTab = activePanel?.tabs.find(tab => tab.id === activePanel?.activeTabId);
-        if (activeTab) {
-          updateTab(activeTab.id, { title: `${updatedCategory.name} - ${t.common.edit}` });
-        }
-
         toast.success(t.common.success);
-      } else if (context?.mode === 'create') {
+      } else {
         // 카테고리 생성
         const newCategory = await createCategory({
           name,
@@ -124,19 +117,8 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
         addCategory({ ...newCategory, visible: newCategory.visible ?? true } as any);
         setCategory(newCategory);
 
-        // context를 edit 모드로 전환
-        const activePanel = panels.find(p => p.id === activePanelId);
-        const activeTab = activePanel?.tabs.find(tab => tab.id === activePanel?.activeTabId);
-        if (activeTab) {
-          updateTab(activeTab.id, {
-            title: `${newCategory.name} - ${t.common.edit}`,
-            resourceId: newCategory.id,
-            categoryEditContext: {
-              mode: 'edit',
-              categoryId: newCategory.id,
-            },
-          });
-        }
+        // 생성 후 편집 페이지로 이동
+        router.replace(`/category/${newCategory.id}/edit`);
 
         toast.success(t.common.success);
       }
@@ -156,7 +138,7 @@ export const CategoryEditPage: React.FC<CategoryEditPageProps> = ({ context }) =
     );
   }
 
-  const isEditMode = context?.mode === 'edit' && category !== null;
+  const isEditMode = !!propCategoryId && category !== null;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">

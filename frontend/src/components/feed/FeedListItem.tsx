@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Rss,
   MoreVertical,
@@ -21,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/dropdown-menu';
 import { useRSSStore } from '../../stores/rssStore';
-import { useTabStore } from '../../stores/tabStore';
 import { useToast, useConfirm } from '../../stores/toastStore';
 import { useTranslation } from '../../stores/languageStore';
 import {
@@ -35,30 +35,25 @@ import {
 interface FeedListItemProps {
   feed: FeedSchema;
   categoryId: number;
+  pathname?: string;
   onDragStart?: (feed: FeedSchema) => void;
   onDragEnd?: () => void;
   onNavigateFeed?: (categoryId: number, feedId: number, feedTitle: string, faviconUrl?: string) => void;
 }
 
-export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, onDragStart, onDragEnd, onNavigateFeed }) => {
+export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, pathname, onDragStart, onDragEnd, onNavigateFeed }) => {
   const { updateFeed, removeFeed, adjustFeedItemCount } = useRSSStore();
-  const { openTab, closeTabsByFeedId } = useTabStore();
+  const router = useRouter();
   const toast = useToast();
   const confirm = useConfirm();
   const { t } = useTranslation();
 
-  // 피드 수정 - FeedEdit 탭 열기
+  // 활성 상태 감지
+  const isFeedActive = pathname ? (pathname === `/feed/${feed.id}` || pathname.startsWith(`/feed/${feed.id}/`)) : false;
+
+  // 피드 수정 - FeedEdit 페이지 열기
   const handleEdit = () => {
-    openTab({
-      type: 'feed-edit',
-      title: `${feed.title} - ${t.feed.edit}`,
-      path: '/feed-edit',
-      resourceId: feed.id, // 피드별로 다른 탭이 열리도록
-      feedEditContext: {
-        mode: 'edit',
-        feedId: feed.id,
-      },
-    });
+    router.push(`/feed/${feed.id}/edit`);
   };
 
   const handleRefresh = async () => {
@@ -80,8 +75,6 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
     try {
       await deleteFeed(feed.id);
       removeFeed(feed.id);
-      // 삭제된 피드와 관련된 모든 탭 닫기
-      closeTabsByFeedId(feed.id);
     } catch (error) {
       console.error(error);
     }
@@ -131,7 +124,10 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
       <div
         className={cn(
           'flex items-center group rounded-md',
-          'hover:bg-sidebar-accent/40 transition-colors',
+          isFeedActive
+            ? 'bg-primary/10'
+            : 'hover:bg-sidebar-accent/40',
+          'transition-colors',
           !feed.visible && 'opacity-50'
         )}
         draggable
@@ -167,7 +163,8 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
               />
             ) : null}
             <Rss className={cn(
-              "w-4 h-4 text-muted-foreground",
+              "w-4 h-4",
+              isFeedActive ? "text-primary" : "text-muted-foreground",
               feed.favicon_url && "hidden"
             )} />
           </div>
@@ -175,7 +172,10 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           {/* Title */}
           <span
             title={feed.title}
-            className="text-xs text-sidebar-foreground truncate flex-1 min-w-0"
+            className={cn(
+              "text-xs truncate flex-1 min-w-0",
+              isFeedActive ? "text-primary font-medium" : "text-sidebar-foreground"
+            )}
           >
             {feed.title}
           </span>
@@ -188,9 +188,12 @@ export const FeedListItem: React.FC<FeedListItemProps> = ({ feed, categoryId, on
           {/* Item count badge */}
           <span
             className={cn(
-              'text-[10px] px-1.5 py-0.5 rounded-full shrink-0',
-              'bg-muted/80 text-muted-foreground font-medium',
-              feed.item_count > 0 && 'bg-primary/15 text-primary'
+              'text-[10px] px-1.5 py-0.5 rounded-full shrink-0 font-medium',
+              isFeedActive
+                ? 'bg-primary/20 text-primary'
+                : feed.item_count > 0
+                  ? 'bg-primary/15 text-primary'
+                  : 'bg-muted/80 text-muted-foreground'
             )}
           >
             {feed.item_count}

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useRSSStore } from '@/stores/rssStore';
-import { useTabStore, RSSEverythingContext } from '@/stores/tabStore';
 import {
   fetchHtml,
   previewItems as previewItemsApi,
@@ -55,6 +55,12 @@ export interface SelectorValidation {
   warning?: string;
 }
 
+export interface RSSEverythingContext {
+  mode: 'create' | 'edit';
+  feedId: number;
+  sourceId?: number;
+}
+
 export interface UseRSSEverythingOptions {
   context?: RSSEverythingContext;
 }
@@ -62,7 +68,7 @@ export interface UseRSSEverythingOptions {
 export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
   const { context } = options;
   const { setCategories } = useRSSStore();
-  const { openTab, removeTab, panels, activePanelId } = useTabStore();
+  const router = useRouter();
 
   // Context에 따라 초기 스텝 결정
   const getInitialStep = (): Step => {
@@ -330,19 +336,18 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
         setCategories(updatedCategories);
       }
 
-      // 현재 탭 닫고 홈으로
-      const activePanel = panels.find(p => p.id === activePanelId);
-      const currentTab = activePanel?.tabs.find(t => t.type === 'rss-everything');
-      if (currentTab) {
-        removeTab(currentTab.id);
+      // 완료 후 피드 편집 페이지로 돌아가기
+      if (context?.feedId) {
+        router.push(`/feed/${context.feedId}/edit`);
+      } else {
+        router.push('/home');
       }
-      openTab({ type: 'home', title: '메인스트림', path: '/home' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsSaving(false);
     }
-  }, [url, customHeaders, panels, activePanelId, removeTab, openTab, setCategories, context?.mode, context?.feedId, editingSourceId]);
+  }, [url, customHeaders, router, setCategories, context?.mode, context?.feedId, editingSourceId]);
 
   // Fetch HTML from URL (목록 페이지)
   const handleFetchListHTML = useCallback(async () => {
@@ -665,19 +670,18 @@ export function useRSSEverything(options: UseRSSEverythingOptions = {}) {
       const updatedCategories = await listCategories();
       setCategories(updatedCategories);
 
-      // 현재 탭 닫고 홈으로
-      const activePanel = panels.find(p => p.id === activePanelId);
-      const currentTab = activePanel?.tabs.find(t => t.type === 'rss-everything');
-      if (currentTab) {
-        removeTab(currentTab.id);
+      // 완료 후 피드 편집 페이지로 돌아가기
+      if (context?.feedId) {
+        router.push(`/feed/${context.feedId}/edit`);
+      } else {
+        router.push('/home');
       }
-      openTab({ type: 'home', title: '메인스트림', path: '/home' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsSaving(false);
     }
-  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, panels, activePanelId, removeTab, openTab, context?.feedId, context?.mode, editingSourceId]);
+  }, [url, parseMode, listSelectors, detailSelectors, useBrowser, browserService, waitSelector, dateFormats, excludeSelectors, customHeaders, setCategories, router, context?.feedId, context?.mode, editingSourceId]);
 
   // Reset and start over
   const handleReset = useCallback(() => {
